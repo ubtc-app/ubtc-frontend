@@ -2,203 +2,223 @@
 import { useState, useEffect } from 'react'
 import { API_URL } from '../lib/supabase'
 
-export default function DashboardPage() {
+export default function Dashboard() {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
-
-  const load = async () => {
-    try {
-      const res = await fetch(`${API_URL}/dashboard`)
-      const json = await res.json()
-      setData(json)
-      setLastUpdated(new Date())
-    } catch (e) { console.error(e) }
-    setLoading(false)
-  }
 
   useEffect(() => {
-    load()
-    const t = setInterval(load, 30000)
-    return () => clearInterval(t)
+    fetch(`${API_URL}/dashboard`)
+      .then(r => r.json())
+      .then(d => { setData(d); setLoading(false) })
+      .catch(() => setLoading(false))
   }, [])
 
   const mono: any = { fontFamily: 'var(--font-mono)' }
 
-  const getRatio = (v: any, btcPrice: number) => {
-    if (v.btc_amount_sats === 0) return null
-    const btcValue = (v.btc_amount_sats / 100_000_000) * btcPrice
-    const outstanding = parseFloat(v.ubtc_minted)
-    if (outstanding === 0) return null
-    return (btcValue / outstanding) * 100
+  const btcPrice = data?.btc_price_usd ? parseFloat(data.btc_price_usd) : 0
+  const totalUbtc = data?.total_ubtc_minted ? parseFloat(data.total_ubtc_minted) : 0
+  const totalBtc = data?.total_btc_sats ? data.total_btc_sats / 100_000_000 : 0
+  const totalValue = totalBtc * btcPrice
+
+  const getAccountName = (vault: any, index: number) => {
+    if (vault.account_type === 'custody') return `Custody Account`
+    return `Current Account`
   }
 
-  const getAvailableToMint = (v: any, btcPrice: number) => {
-    const btcValue = (v.btc_amount_sats / 100_000_000) * btcPrice
-    const maxMintable = btcValue / 1.5
-    const outstanding = parseFloat(v.ubtc_minted)
-    return Math.max(0, maxMintable - outstanding)
+  const getCollateralRatio = (vault: any) => {
+    const ubtc = parseFloat(vault.ubtc_minted) || 0
+    if (ubtc === 0) return null
+    const btcValue = (vault.btc_amount_sats / 100_000_000) * btcPrice
+    return (btcValue / ubtc) * 100
   }
 
-  const ratioColor = (ratio: number | null) => {
-    if (!ratio) return 'hsl(0 0% 65%)'
-    if (ratio >= 200) return 'hsl(205 85% 55%)'
-    if (ratio >= 150) return 'hsl(38 92% 50%)'
+  const getRatioColor = (ratio: number | null) => {
+    if (!ratio) return 'hsl(205 85% 55%)'
+    if (ratio >= 200) return 'hsl(142 76% 36%)'
+    if (ratio >= 150) return 'hsl(205 85% 55%)'
+    if (ratio >= 120) return 'hsl(38 92% 50%)'
     return 'hsl(0 84% 60%)'
   }
 
-  const ratioLabel = (ratio: number | null) => {
-    if (!ratio) return 'No debt'
-    if (ratio >= 200) return 'Safe'
-    if (ratio >= 150) return 'Healthy'
-    if (ratio >= 120) return 'Warning'
-    return 'At Risk'
-  }
+  const currencies = [
+    { symbol: 'UBTC', name: 'Bitcoin Stable', balance: totalUbtc, prefix: '$', color: 'hsl(38 92% 50%)', icon: '₿', active: true },
+    { symbol: 'USDT', name: 'Tether Dollar', balance: 0, prefix: '$', color: 'hsl(142 76% 36%)', icon: '₮', active: false },
+    { symbol: 'USDC', name: 'USD Coin', balance: 0, prefix: '$', color: 'hsl(220 85% 55%)', icon: '$', active: false },
+  ]
 
-  const statusCol = (s: string) => s === 'active' ? 'hsl(205 85% 55%)' : s === 'closed' ? 'hsl(0 84% 60%)' : 'hsl(38 92% 50%)'
+  if (loading) return (
+    <div style={{ minHeight: '100vh', background: 'hsl(220 15% 5%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: 'hsl(0 0% 65%)', ...mono }}>Loading accounts...</p>
+    </div>
+  )
 
   return (
-    <div style={{ minHeight: '100vh', background: 'hsl(220 15% 5%)', padding: '40px 24px', fontFamily: 'var(--font-display)' }}>
-      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+    <div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', fontFamily: 'var(--font-display)' }}>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'hsl(205 85% 55%)', boxShadow: '0 0 10px hsl(205 85% 55% / 0.8)', animation: 'pulse-glow 2s ease-in-out infinite' }} />
-            <span style={{ fontSize: '11px', ...mono, color: 'hsl(205 85% 55%)', letterSpacing: '0.3em', textTransform: 'uppercase' }}>Live Dashboard</span>
+      {/* Top header */}
+      <div style={{ background: 'hsl(220 15% 5%)', borderBottom: '1px solid hsl(220 10% 12%)', padding: '24px 32px' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <p style={{ color: 'hsl(0 0% 55%)', fontSize: '12px', ...mono, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 4px' }}>Total Balance</p>
+            <h1 style={{ fontSize: '42px', fontWeight: '700', color: 'hsl(0 0% 92%)', margin: 0 }}>
+              ${totalValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+            </h1>
+            <p style={{ color: 'hsl(0 0% 55%)', fontSize: '13px', ...mono, margin: '4px 0 0' }}>
+              {totalBtc.toFixed(4)} BTC locked · {data?.active_vaults || 0} active accounts
+            </p>
           </div>
-          {lastUpdated && (
-            <span style={{ fontSize: '11px', ...mono, color: 'hsl(0 0% 45%)' }}>
-              Updated {lastUpdated.toLocaleTimeString()}
-            </span>
-          )}
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <a href="/vault" style={{ backgroundImage: 'var(--gradient-mint)', color: 'white', textDecoration: 'none', borderRadius: '10px', padding: '12px 24px', fontSize: '13px', fontWeight: '600' }}>+ New Account</a>
+          </div>
         </div>
+      </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '12px' }}>
-          <h1 style={{ fontSize: '48px', fontWeight: '700', lineHeight: '1', backgroundImage: 'var(--gradient-vivid)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', margin: 0 }}>
-            Protocol Overview
-          </h1>
-          <a href="/vault" style={{ backgroundImage: 'var(--gradient-mint)', color: 'white', textDecoration: 'none', borderRadius: '10px', padding: '12px 24px', fontSize: '13px', fontWeight: '600', fontFamily: 'var(--font-display)', boxShadow: '0 0 20px hsl(205 85% 55% / 0.4)' }}>
-            + New Vault
-          </a>
-        </div>
+      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '32px' }}>
 
-        <p style={{ color: 'hsl(0 0% 65%)', fontSize: '14px', ...mono, marginBottom: '40px' }}>
-          Collateral ratios update every 30 seconds using live BTC price.
-        </p>
-
-        {loading && <p style={{ color: 'hsl(0 0% 65%)', ...mono }}>Loading...</p>}
-
-        {data && (
-          <>
-            {/* Stats row */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
-              {[
-                { label: 'Active Vaults', value: String(data.active_vaults) },
-                { label: 'Total BTC Locked', value: `${(data.total_btc_sats / 100_000_000).toFixed(4)} BTC` },
-                { label: 'Total UBTC Minted', value: `$${parseFloat(data.total_ubtc_minted).toLocaleString()}` },
-                { label: 'BTC Price', value: `$${parseFloat(data.btc_price_usd).toLocaleString()}` },
-              ].map(s => (
-                <div key={s.label} style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 16%)', borderRadius: '16px', padding: '20px' }}>
-                  <p style={{ color: 'hsl(0 0% 65%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 8px' }}>{s.label}</p>
-                 <p style={{ fontSize: '20px', fontWeight: '700', color: 'hsl(205 85% 55%)', margin: 0 }}>{s.value}</p>
+        {/* Currency cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '40px' }}>
+          {currencies.map(c => (
+            <div key={c.symbol} style={{ background: 'hsl(220 12% 8%)', border: `1px solid ${c.active ? c.color + '40' : 'hsl(220 10% 14%)'}`, borderRadius: '16px', padding: '24px', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '80px', height: '80px', borderRadius: '50%', background: c.color + '15' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: c.color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: '700', color: c.color }}>{c.icon}</div>
+                  <div>
+                    <p style={{ color: 'hsl(0 0% 92%)', fontWeight: '600', fontSize: '15px', margin: 0 }}>{c.symbol}</p>
+                    <p style={{ color: 'hsl(0 0% 55%)', fontSize: '11px', ...mono, margin: 0 }}>{c.name}</p>
+                  </div>
                 </div>
-              ))}
-            </div>
-
-            {/* Vaults */}
-            <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 16%)', borderRadius: '16px', padding: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h2 style={{ fontSize: '16px', fontWeight: '600', color: 'hsl(0 0% 92%)', margin: 0 }}>Your Vaults</h2>
-                <button onClick={load} style={{ background: 'none', border: '1px solid hsl(220 10% 16%)', color: 'hsl(0 0% 65%)', borderRadius: '8px', padding: '6px 14px', fontSize: '11px', ...mono, cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                  Refresh
-                </button>
+                <span style={{ fontSize: '10px', ...mono, color: c.active ? c.color : 'hsl(0 0% 40%)', border: `1px solid ${c.active ? c.color + '40' : 'hsl(220 10% 20%)'}`, borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase' }}>
+                  {c.active ? 'Active' : 'Coming Soon'}
+                </span>
               </div>
-
-              {data.vaults.length === 0 && (
-                <p style={{ color: 'hsl(0 0% 65%)', ...mono, fontSize: '13px' }}>
-                  No vaults yet. <a href="/vault" style={{ color: 'hsl(205 85% 55%)' }}>Create one</a>
-                </p>
+              <p style={{ color: 'hsl(0 0% 55%)', fontSize: '11px', ...mono, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 4px' }}>Balance</p>
+              <p style={{ color: c.active ? 'hsl(0 0% 92%)' : 'hsl(0 0% 40%)', fontSize: '28px', fontWeight: '700', margin: '0 0 16px' }}>
+                {c.prefix}{c.balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+              </p>
+              {c.active ? (
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <a href="/transfer" style={{ flex: 1, background: c.color + '15', border: `1px solid ${c.color}40`, color: c.color, borderRadius: '8px', padding: '8px 0', fontSize: '12px', fontWeight: '600', textAlign: 'center', textDecoration: 'none', ...mono }}>Send</a>
+                  <a href="/deposit" style={{ flex: 1, background: 'hsl(220 15% 5%)', border: '1px solid hsl(220 10% 16%)', color: 'hsl(0 0% 65%)', borderRadius: '8px', padding: '8px 0', fontSize: '12px', fontWeight: '600', textAlign: 'center', textDecoration: 'none', ...mono }}>Fund</a>
+                  <a href="/mint" style={{ flex: 1, background: 'hsl(220 15% 5%)', border: '1px solid hsl(220 10% 16%)', color: 'hsl(0 0% 65%)', borderRadius: '8px', padding: '8px 0', fontSize: '12px', fontWeight: '600', textAlign: 'center', textDecoration: 'none', ...mono }}>Issue</a>
+                </div>
+              ) : (
+                <div style={{ background: 'hsl(220 15% 5%)', borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
+                  <p style={{ color: 'hsl(0 0% 40%)', fontSize: '11px', ...mono, margin: 0 }}>Integration coming soon</p>
+                </div>
               )}
+            </div>
+          ))}
+        </div>
 
-              {data.vaults.map((v: any) => {
-                const btcPrice = parseFloat(data.btc_price_usd)
-                const btcValue = (v.btc_amount_sats / 100_000_000) * btcPrice
-                const ratio = getRatio(v, btcPrice)
-                const available = getAvailableToMint(v, btcPrice)
-                const rColor = ratioColor(ratio)
-                const barWidth = ratio ? Math.min(100, (ratio / 300) * 100) : 0
+        {/* BTC Price ticker */}
+        <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 14%)', borderRadius: '12px', padding: '16px 24px', marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'hsl(142 76% 36%)', boxShadow: '0 0 8px hsl(142 76% 36% / 0.8)' }} />
+            <span style={{ color: 'hsl(0 0% 65%)', fontSize: '12px', ...mono, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Live Bitcoin Price</span>
+          </div>
+          <span style={{ color: 'hsl(0 0% 92%)', fontSize: '20px', fontWeight: '700', ...mono }}>${btcPrice.toLocaleString()}</span>
+          <div style={{ display: 'flex', gap: '24px' }}>
+            {[
+              { label: 'Alert at 130%', color: 'hsl(38 92% 50%)' },
+              { label: 'Alert at 120%', color: 'hsl(38 92% 50%)' },
+              { label: 'Liquidation at 110%', color: 'hsl(0 84% 60%)' },
+            ].map(t => (
+              <div key={t.label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: t.color }} />
+                <span style={{ color: 'hsl(0 0% 55%)', fontSize: '11px', ...mono }}>{t.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
 
-                return (
-                  <div key={v.vault_id} style={{ background: 'hsl(220 15% 5%)', border: `1px solid ${v.status === 'active' ? 'hsl(220 10% 16%)' : 'hsl(0 84% 60% / 0.3)'}`, borderRadius: '12px', padding: '20px', marginBottom: '12px' }}>
+        {/* Accounts list */}
+        <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '18px', fontWeight: '600', margin: 0 }}>My Accounts</h2>
+          <a href="/vault" style={{ color: 'hsl(205 85% 55%)', fontSize: '13px', textDecoration: 'none', ...mono }}>+ Open Account</a>
+        </div>
 
-                    {/* Header */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                      <span style={{ color: 'hsl(205 85% 55%)', fontWeight: '600', ...mono, fontSize: '13px' }}>{v.vault_id}</span>
-                      <span style={{ color: statusCol(v.status), fontSize: '11px', ...mono, textTransform: 'uppercase', letterSpacing: '0.1em', background: 'hsl(220 12% 8%)', padding: '4px 12px', borderRadius: '20px', border: `1px solid ${statusCol(v.status)}` }}>
-                        {v.status.replace('_', ' ')}
+        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '12px', marginBottom: '40px' }}>
+          {(!data?.vaults || data.vaults.length === 0) && (
+            <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 14%)', borderRadius: '12px', padding: '40px', textAlign: 'center' }}>
+              <p style={{ color: 'hsl(0 0% 55%)', ...mono, margin: '0 0 16px' }}>No accounts yet</p>
+              <a href="/vault" style={{ backgroundImage: 'var(--gradient-mint)', color: 'white', textDecoration: 'none', borderRadius: '8px', padding: '10px 24px', fontSize: '13px', fontWeight: '600' }}>Open Your First Account</a>
+            </div>
+          )}
+          {data?.vaults?.map((vault: any, index: number) => {
+            const ratio = getCollateralRatio(vault)
+            const ratioColor = getRatioColor(ratio)
+            const ubtcBalance = parseFloat(vault.ubtc_minted) || 0
+            const btcLocked = vault.btc_amount_sats / 100_000_000
+            const btcValue = btcLocked * btcPrice
+            const isCustody = vault.account_type === 'custody'
+            const accentColor = isCustody ? 'hsl(38 92% 50%)' : 'hsl(205 85% 55%)'
+
+            return (
+              <a key={vault.vault_id} href={`/account/${vault.vault_id}`} style={{ textDecoration: 'none', display: 'block' }}>
+                <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 14%)', borderRadius: '14px', padding: '20px 24px', display: 'flex', alignItems: 'center', gap: '20px', cursor: 'pointer' }}>
+
+                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: accentColor + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '22px' }}>
+                    {isCustody ? '🔐' : '💳'}
+                  </div>
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+                      <p style={{ color: 'hsl(0 0% 92%)', fontWeight: '600', fontSize: '15px', margin: 0 }}>{getAccountName(vault, index)}</p>
+                      <span style={{ fontSize: '10px', ...mono, color: vault.status === 'active' ? 'hsl(142 76% 36%)' : 'hsl(38 92% 50%)', border: '1px solid currentColor', borderRadius: '20px', padding: '2px 8px', textTransform: 'uppercase', opacity: 0.8 }}>
+                        {vault.status === 'pending_deposit' ? 'Needs Funding' : vault.status}
                       </span>
                     </div>
-
-                    {/* Key metrics */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '16px' }}>
-                      <div style={{ background: 'hsl(220 12% 8%)', borderRadius: '8px', padding: '12px' }}>
-                        <p style={{ color: 'hsl(0 0% 65%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 4px' }}>BTC Locked</p>
-                        <p style={{ color: 'hsl(0 0% 92%)', fontSize: '13px', fontWeight: '600', ...mono, margin: 0 }}>{(v.btc_amount_sats / 100_000_000).toFixed(4)}</p>
-                      </div>
-                      <div style={{ background: 'hsl(220 12% 8%)', borderRadius: '8px', padding: '12px' }}>
-                        <p style={{ color: 'hsl(0 0% 65%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 4px' }}>BTC Value</p>
-                        <p style={{ color: 'hsl(0 0% 92%)', fontSize: '13px', fontWeight: '600', ...mono, margin: 0 }}>${btcValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-                      </div>
-                      <div style={{ background: 'hsl(220 12% 8%)', borderRadius: '8px', padding: '12px' }}>
-                        <p style={{ color: 'hsl(0 0% 65%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 4px' }}>UBTC Minted</p>
-                        <p style={{ color: 'hsl(0 0% 92%)', fontSize: '13px', fontWeight: '600', ...mono, margin: 0 }}>${parseFloat(v.ubtc_minted).toLocaleString()}</p>
-                      </div>
-                      <div style={{ background: 'hsl(220 12% 8%)', borderRadius: '8px', padding: '12px' }}>
-                        <p style={{ color: 'hsl(0 0% 65%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 4px' }}>Can Mint</p>
-                        <p style={{ color: 'hsl(205 85% 55%)', fontSize: '13px', fontWeight: '600', ...mono, margin: 0 }}>${available.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-                      </div>
-                    </div>
-
-                    {/* Collateral ratio bar */}
-                    {ratio !== null && (
-                      <div style={{ marginBottom: '16px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                          <span style={{ color: 'hsl(0 0% 65%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Collateral Ratio</span>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ color: rColor, fontSize: '11px', ...mono, fontWeight: '600' }}>{ratioLabel(ratio)}</span>
-                            <span style={{ color: rColor, fontSize: '14px', fontWeight: '700', ...mono }}>{ratio.toFixed(1)}%</span>
-                          </div>
-                        </div>
-                        <div style={{ height: '4px', background: 'hsl(220 12% 8%)', borderRadius: '2px', overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: `${barWidth}%`, background: rColor, borderRadius: '2px', transition: 'width 0.5s ease' }} />
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
-                          <span style={{ color: 'hsl(0 84% 60%)', fontSize: '9px', ...mono }}>120% liquidation</span>
-                          <span style={{ color: 'hsl(38 92% 50%)', fontSize: '9px', ...mono }}>150% minimum</span>
-                          <span style={{ color: 'hsl(205 85% 55%)', fontSize: '9px', ...mono }}>200%+ safe</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Action buttons */}
-                   {parseFloat(v.ubtc_minted) > 0 && (
-  <div style={{ background: 'hsl(205 85% 55% / 0.08)', border: '1px solid hsl(205 85% 55% / 0.3)', borderRadius: '8px', padding: '10px 14px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-    <span style={{ color: 'hsl(205 85% 55%)', fontSize: '12px', ...mono }}>You have ${parseFloat(v.ubtc_minted).toLocaleString()} UBTC available to withdraw</span>
-    <a href={`/withdraw?vault=${v.vault_id}`} style={{ color: 'hsl(205 85% 55%)', fontSize: '11px', ...mono, textTransform: 'uppercase', letterSpacing: '0.1em', textDecoration: 'none', fontWeight: '600', whiteSpace: 'nowrap', marginLeft: '12px' }}>Withdraw</a>
-  </div>
-)}
-<div style={{ display: 'flex', gap: '10px' }}>
-  <a href={`/deposit?vault=${v.vault_id}`} style={{ color: 'hsl(205 85% 55%)', textDecoration: 'none', fontSize: '11px', ...mono, letterSpacing: '0.1em', textTransform: 'uppercase', border: '1px solid hsl(205 85% 55% / 0.4)', padding: '7px 16px', borderRadius: '6px' }}>Deposit</a>
-  <a href={`/mint?vault=${v.vault_id}`} style={{ color: 'hsl(205 85% 55%)', textDecoration: 'none', fontSize: '11px', ...mono, letterSpacing: '0.1em', textTransform: 'uppercase', border: '1px solid hsl(205 85% 55% / 0.4)', padding: '7px 16px', borderRadius: '6px' }}>Mint</a>
-  <a href={`/redeem?vault=${v.vault_id}`} style={{ color: 'hsl(0 84% 60%)', textDecoration: 'none', fontSize: '11px', ...mono, letterSpacing: '0.1em', textTransform: 'uppercase', border: '1px solid hsl(0 84% 60% / 0.4)', padding: '7px 16px', borderRadius: '6px' }}>Redeem</a>
-  <a href={`/withdraw?vault=${v.vault_id}`} style={{ color: 'hsl(205 85% 55%)', textDecoration: 'none', fontSize: '11px', ...mono, letterSpacing: '0.1em', textTransform: 'uppercase', border: '1px solid hsl(205 85% 55% / 0.4)', padding: '7px 16px', borderRadius: '6px' }}>Withdraw</a>
-</div>
+                    <p style={{ color: 'hsl(0 0% 45%)', fontSize: '11px', ...mono, margin: 0 }}>
+                      {vault.vault_id} · {btcLocked.toFixed(4)} BTC locked
+                    </p>
                   </div>
-                )
-              })}
-            </div>
-          </>
-        )}
+
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <p style={{ color: 'hsl(0 0% 92%)', fontWeight: '700', fontSize: '18px', margin: '0 0 2px', ...mono }}>${ubtcBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                    <p style={{ color: 'hsl(0 0% 55%)', fontSize: '11px', ...mono, margin: 0 }}>UBTC · ${btcValue.toLocaleString(undefined, { maximumFractionDigits: 0 })} BTC value</p>
+                  </div>
+
+                  {ratio && (
+                    <div style={{ textAlign: 'center', flexShrink: 0, minWidth: '80px' }}>
+                      <p style={{ color: ratioColor, fontWeight: '700', fontSize: '18px', margin: '0 0 2px', ...mono }}>{ratio.toFixed(0)}%</p>
+                      <p style={{ color: 'hsl(0 0% 55%)', fontSize: '10px', ...mono, margin: 0, textTransform: 'uppercase' }}>Collateral</p>
+                    </div>
+                  )}
+
+                  {ratio && (
+                    <div style={{ width: '80px', flexShrink: 0 }}>
+                      <div style={{ height: '4px', background: 'hsl(220 10% 14%)', borderRadius: '2px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${Math.min(100, (ratio / 300) * 100)}%`, background: ratioColor, borderRadius: '2px' }} />
+                      </div>
+                      <p style={{ color: 'hsl(0 0% 40%)', fontSize: '10px', ...mono, margin: '4px 0 0', textAlign: 'right' as const }}>
+                        {ratio >= 200 ? 'Healthy' : ratio >= 150 ? 'Safe' : ratio >= 120 ? 'Watch' : 'Risk'}
+                      </p>
+                    </div>
+                  )}
+
+                  <div style={{ color: 'hsl(0 0% 40%)', fontSize: '18px', flexShrink: 0 }}>›</div>
+                </div>
+              </a>
+            )
+          })}
+        </div>
+
+        {/* Quick actions */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+          {[
+            { label: 'Open Account', desc: 'Create BTC account', href: '/vault', icon: '🏦' },
+            { label: 'Issue UBTC', desc: 'Mint stablecoins', href: '/mint', icon: '💵' },
+            { label: 'Send', desc: 'Transfer UBTC', href: '/transfer', icon: '↗️' },
+            { label: 'Recover', desc: 'Account recovery', href: '/recovery', icon: '🔐' },
+          ].map(a => (
+            <a key={a.label} href={a.href} style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 14%)', borderRadius: '12px', padding: '20px', textDecoration: 'none', display: 'block' }}>
+              <span style={{ fontSize: '24px', display: 'block', marginBottom: '10px' }}>{a.icon}</span>
+              <p style={{ color: 'hsl(0 0% 92%)', fontWeight: '600', fontSize: '14px', margin: '0 0 4px' }}>{a.label}</p>
+              <p style={{ color: 'hsl(0 0% 55%)', fontSize: '11px', ...mono, margin: 0 }}>{a.desc}</p>
+            </a>
+          ))}
+        </div>
       </div>
     </div>
   )
