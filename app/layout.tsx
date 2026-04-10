@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import WalletButton from './components/WalletButton'
 
 export const metadata: Metadata = {
   title: 'UBTC — Stable Value. Secured by Bitcoin.',
@@ -26,13 +27,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </a>
 
           <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-           <a href="/dashboard" className="nav-link">My Accounts</a>
-<a href="/wallet" className="nav-link">Wallet</a>
-<a href="/recovery" className="nav-link">Recovery</a>
+            <a href="/dashboard" className="nav-link">My Accounts</a>
+            <a href="/wallet" className="nav-link">Wallet</a>
+            <a href="/recovery" className="nav-link">Recovery</a>
           </div>
 
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <a href="http://localhost:8081" className="nav-link">← Home</a>
+            <WalletButton />
             <a href="/vault" style={{
               backgroundImage: 'var(--gradient-mint)',
               color: 'white', textDecoration: 'none', borderRadius: '8px',
