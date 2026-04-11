@@ -128,7 +128,7 @@ function DepositContent() {
               </p>
             </div>
             <div style={{ width: '100%', background: 'hsl(220 12% 8%)', borderRadius: '20px', padding: '22px' }}>
-              {isStable ? [
+            {(isStable ? [
                 { label: `${tokenName} Locked`, value: '$' + parseFloat(amount).toLocaleString() + ' ' + tokenName },
                 { label: 'Vault ID', value: result.vault_id },
                 { label: 'Next Step', value: `Mint ${utokenName} 1:1 from your account` },
@@ -137,7 +137,7 @@ function DepositContent() {
                 { label: 'USD Value', value: '$' + (parseFloat(amount) * btcPrice).toLocaleString(undefined, { maximumFractionDigits: 0 }) },
                 { label: 'Max UBTC Mintable', value: '$' + ((parseFloat(amount) * btcPrice) / 1.5).toLocaleString(undefined, { maximumFractionDigits: 0 }) },
                 { label: 'Transaction ID', value: result.txid },
-              ].map((item: any) => (
+              ]).map((item: any) => (
                 <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid hsl(220 10% 11%)', gap: '12px' }}>
                   <p style={{ color: 'hsl(0 0% 35%)', fontSize: '12px', ...mono, margin: 0, flexShrink: 0 }}>{item.label}</p>
                   <p style={{ color: 'hsl(0 0% 82%)', fontSize: '12px', fontWeight: '600', ...mono, margin: 0, textAlign: 'right' as const, wordBreak: 'break-all' as const }}>{item.value}</p>

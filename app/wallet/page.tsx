@@ -14,7 +14,7 @@ function WalletContent() {
   const [walletData, setWalletData] = useState<any>(null)
   const [walletTxs, setWalletTxs] = useState<any[]>([])
   const [vaults, setVaults] = useState<any[]>([])
-  const [tokens, setTokens] = useState({ ubtc: true, uusdt: false, uusdc: false })
+  const [tokens, setTokens] = useState({ ubtc: true, uusdt: true, uusdc: true })
   const [showManageTokens, setShowManageTokens] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -25,11 +25,11 @@ function WalletContent() {
 
   const mono: any = { fontFamily: 'var(--font-mono)' }
 
- useEffect(() => {
+  useEffect(() => {
     const stored = localStorage.getItem('ubtc_wallet_address')
     if (stored) {
       setWalletAddress(stored)
-      // Don't auto-load — just show the button on landing
+      loadWallet(stored)
     }
     loadVaults()
   }, [])
@@ -122,13 +122,15 @@ function WalletContent() {
   }
 
   const balance = parseFloat(walletData?.balance || '0')
+  const uusdtBalance = parseFloat(walletData?.uusdt_balance || '0')
+  const uusdcBalance = parseFloat(walletData?.uusdc_balance || '0')
 
   // ── LANDING ──
   if (view === 'landing') return (
     <div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', fontFamily: 'var(--font-display)', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
       <div style={{ maxWidth: '400px', width: '100%', textAlign: 'center' as const }}>
         <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'hsl(205 85% 55% / 0.1)', border: '2px solid hsl(205 85% 55% / 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-          {Icons.wallet(32, 'hsl(205 85% 55%)')}
+          <img src="/ubtcqwallet-logo.png" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
         </div>
         <h1 style={{ color: 'hsl(0 0% 92%)', fontSize: '28px', fontWeight: '700', margin: '0 0 8px' }}>UBTC Wallet</h1>
         <p style={{ color: 'hsl(0 0% 35%)', fontSize: '14px', ...mono, margin: '0 0 32px', lineHeight: '1.7' }}>Send and receive UBTC, UUSDT and UUSDC instantly.</p>
@@ -348,7 +350,6 @@ function WalletContent() {
   return (
     <div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', fontFamily: 'var(--font-display)' }}>
 
-      {/* Manage tokens modal */}
       {showManageTokens && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
           <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 16%)', borderRadius: '20px', padding: '28px', maxWidth: '400px', width: '100%' }}>
@@ -384,7 +385,7 @@ function WalletContent() {
           {Icons.back(16, 'hsl(0 0% 38%)')} Accounts
         </a>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {Icons.wallet(18, 'hsl(0 0% 50%)')}
+          <img src="/ubtcqwallet-logo.png" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
           <span style={{ color: 'hsl(0 0% 55%)', fontWeight: '700', fontSize: '15px' }}>UBTC Wallet</span>
         </div>
         <button onClick={() => loadWallet(walletData?.wallet_address || walletAddress)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'hsl(0 0% 28%)' }}>
@@ -395,17 +396,17 @@ function WalletContent() {
       {/* Balance hero */}
       <div style={{ background: 'hsl(220 15% 4%)', padding: '40px 24px 32px', textAlign: 'center' as const, borderBottom: '1px solid hsl(220 10% 9%)' }}>
         <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'hsl(205 85% 55% / 0.1)', border: '2px solid hsl(205 85% 55% / 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
-          {Icons.wallet(28, 'hsl(205 85% 55%)')}
+          <img src="/ubtcqwallet-logo.png" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
         </div>
         <p style={{ color: 'hsl(0 0% 38%)', fontSize: '12px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 6px' }}>@{walletData?.username}</p>
         <p style={{ color: 'hsl(0 0% 92%)', fontSize: '44px', fontWeight: '700', ...mono, margin: '0 0 4px', lineHeight: '1' }}>
-          ${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          ${(balance + uusdtBalance + uusdcBalance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </p>
-        <p style={{ color: 'hsl(0 0% 28%)', fontSize: '12px', ...mono, margin: '0 0 24px' }}>UBTC Balance</p>
+        <p style={{ color: 'hsl(0 0% 28%)', fontSize: '12px', ...mono, margin: '0 0 24px' }}>Total Balance</p>
 
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', maxWidth: '320px', margin: '0 auto' }}>
           {[
-            { label: 'Send', icon: Icons.send(18, 'hsl(0 0% 55%)'), href: '/transfer' },
+          { label: 'Send', icon: Icons.send(18, 'hsl(0 0% 55%)'), href: `/transfer?from_wallet=${walletData?.wallet_address}&ubtc=${balance}&uusdt=${uusdtBalance}&uusdc=${uusdcBalance}` },
             { label: 'Receive', icon: Icons.receive(18, 'hsl(0 0% 55%)'), action: () => copy(walletData?.wallet_address || '', 'recv') },
             { label: 'Tokens', icon: Icons.settings(18, 'hsl(0 0% 55%)'), action: () => setShowManageTokens(true) },
           ].map(btn => (
@@ -438,8 +439,8 @@ function WalletContent() {
 
         {[
           { show: true, icon: Icons.bitcoin(20, 'hsl(38 92% 50%)'), name: 'UBTC', sub: 'Bitcoin-backed', color: 'hsl(38 92% 50%)', bal: '$' + balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), unit: 'UBTC' },
-          { show: tokens.uusdt, icon: Icons.lock(20, 'hsl(142 76% 36%)'), name: 'UUSDT', sub: '1:1 USDT · Bitcoin-native', color: 'hsl(142 76% 36%)', bal: '$0.00', unit: 'UUSDT' },
-          { show: tokens.uusdc, icon: Icons.lock(20, 'hsl(220 85% 60%)'), name: 'UUSDC', sub: '1:1 USDC · Bitcoin-native', color: 'hsl(220 85% 60%)', bal: '$0.00', unit: 'UUSDC' },
+          { show: tokens.uusdt, icon: Icons.lock(20, 'hsl(142 76% 36%)'), name: 'UUSDT', sub: '1:1 USDT · Bitcoin-native', color: 'hsl(142 76% 36%)', bal: '$' + uusdtBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), unit: 'UUSDT' },
+          { show: tokens.uusdc, icon: Icons.lock(20, 'hsl(220 85% 60%)'), name: 'UUSDC', sub: '1:1 USDC · Bitcoin-native', color: 'hsl(220 85% 60%)', bal: '$' + uusdcBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), unit: 'UUSDC' },
         ].filter(t => t.show).map(t => (
           <div key={t.name} style={{ background: 'hsl(220 12% 8%)', border: `1px solid ${t.color}1a`, borderRadius: '14px', padding: '16px 18px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '14px' }}>
             <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: t.color + '12', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{t.icon}</div>
@@ -492,7 +493,7 @@ function WalletContent() {
                 <p style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', ...mono, margin: 0 }}>{new Date(tx.created_at).toLocaleString()}</p>
               </div>
               <p style={{ color, fontWeight: '700', fontSize: '14px', ...mono, margin: 0 }}>
-                {isIn ? '+' : '-'}{tx.amount} UBTC
+                {isIn ? '+' : '-'}{parseFloat(tx.amount).toLocaleString()} {tx.description?.includes('UUSDT') ? 'UUSDT' : tx.description?.includes('UUSDC') ? 'UUSDC' : 'UBTC'}
               </p>
             </div>
           )

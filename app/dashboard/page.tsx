@@ -70,9 +70,8 @@ export default function Dashboard() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', fontFamily: 'var(--font-display)' }}>
-
-      {/* Header */}
-      <div style={{ background: 'hsl(220 15% 5%)', borderBottom: '1px solid hsl(220 10% 10%)', padding: '0 28px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+{/* Header removed - using global header */}
+      <div style={{ display: 'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <a href="/" style={{ color: 'hsl(0 0% 38%)', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>{Icons.back(20, 'hsl(0 0% 38%)')}</a>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -254,7 +253,7 @@ export default function Dashboard() {
 
                     {/* Open account button */}
                     <a href={`/account/${vault.vault_id}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: meta.color + '08', border: `1px solid ${meta.color}22`, borderRadius: '12px', padding: '12px 16px', textDecoration: 'none' }}>
-                      <span style={{ color: meta.color, fontSize: '13px', fontWeight: '600', fontFamily: 'var(--font-display)' }}>Open Account</span>
+                      <span style={{ color: meta.color, fontSize: '13px', fontWeight: '600', fontFamily: 'var(--font-display)' }}>View Account</span>
                       {Icons.chevronRight(18, meta.color)}
                     </a>
                   </div>

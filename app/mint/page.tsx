@@ -27,6 +27,9 @@ function MintContent() {
   const [qSigningKey, setQSigningKey] = useState('')
   const [keySaved, setKeySaved] = useState(false)
   const [copied, setCopied] = useState('')
+  const [maxWarningAcknowledged, setMaxWarningAcknowledged] = useState(false)
+  const [alertEmail, setAlertEmail] = useState('')
+  const [alertPhone, setAlertPhone] = useState('')
 
   const mono: any = { fontFamily: 'var(--font-mono)' }
 
@@ -75,6 +78,10 @@ function MintContent() {
     ? Math.max(0, uusdtDeposited - uusdtMinted)
     : Math.max(0, uusdcDeposited - uusdcMinted)
   const maxAmount = isStable ? maxStable : maxUbtc
+
+  // Safe max for UBTC — reduces by $50 buffer to handle BTC price fluctuation between frontend and backend calls
+  const safeMaxUbtc = Math.max(0, maxUbtc - 50)
+  const displayMax = isStable ? maxStable : safeMaxUbtc
 
   const makeQSK = (raw: string): string => {
     if (!raw || raw.length < 32) {
@@ -153,7 +160,13 @@ function MintContent() {
     setLoading(false)
   }
 
-  const canProceed = !!amount && parseFloat(amount) > 0 && parseFloat(amount) <= maxAmount && vault?.status === 'active'
+  const parsedAmount = parseFloat(amount || '0')
+  const isMaxAmount = !isStable && displayMax > 0 && parsedAmount >= displayMax * 0.99
+  const totalUbtcAfterMint = ubtcMinted + parsedAmount
+  const liqPrice = btcLocked > 0 ? Math.round((totalUbtcAfterMint * 1.10) / btcLocked) : 0
+  const alert120Price = btcLocked > 0 ? Math.round((totalUbtcAfterMint * 1.20) / btcLocked) : 0
+  const alert115Price = btcLocked > 0 ? Math.round((totalUbtcAfterMint * 1.15) / btcLocked) : 0
+  const canProceed = !!amount && parsedAmount > 0 && parsedAmount <= maxAmount && vault?.status === 'active' && (!isMaxAmount || maxWarningAcknowledged)
   const fieldStyle: any = { display: 'block', width: '100%', padding: '14px 16px', background: 'hsl(220 15% 5%)', border: '1px solid hsl(220 10% 16%)', borderRadius: '12px', color: 'hsl(0 0% 92%)', fontSize: '14px', fontFamily: 'var(--font-mono)', outline: 'none', boxSizing: 'border-box' as const, marginBottom: '12px' }
 
   return (
@@ -176,7 +189,7 @@ function MintContent() {
 
       <div style={{ maxWidth: '480px', margin: '0 auto', padding: '36px 20px' }}>
 
-        {/* ── STEP 1: AMOUNT ── */}
+        {/* STEP 1: AMOUNT */}
         {step === 'amount' && (
           <>
             <div style={{ textAlign: 'center' as const, marginBottom: '32px' }}>
@@ -190,7 +203,7 @@ function MintContent() {
             {/* Currency selector */}
             <div style={{ display: 'flex', background: 'hsl(220 12% 8%)', borderRadius: '16px', padding: '4px', gap: '4px', marginBottom: '24px' }}>
               {currencies.map(c => (
-                <button key={c.key} onClick={() => { setActiveCurrency(c.key); setAmount(''); setError('') }} style={{ flex: 1, background: activeCurrency === c.key ? 'hsl(220 15% 14%)' : 'transparent', border: activeCurrency === c.key ? `1px solid ${c.color}35` : '1px solid transparent', borderRadius: '12px', padding: '11px 6px', cursor: 'pointer', fontFamily: 'var(--font-display)', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: '6px', transition: 'all 0.15s' }}>
+                <button key={c.key} onClick={() => { setActiveCurrency(c.key); setAmount(''); setError(''); setMaxWarningAcknowledged(false) }} style={{ flex: 1, background: activeCurrency === c.key ? 'hsl(220 15% 14%)' : 'transparent', border: activeCurrency === c.key ? `1px solid ${c.color}35` : '1px solid transparent', borderRadius: '12px', padding: '11px 6px', cursor: 'pointer', fontFamily: 'var(--font-display)', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: '6px', transition: 'all 0.15s' }}>
                   {c.icon(18, activeCurrency === c.key ? c.color : 'hsl(0 0% 35%)')}
                   <span style={{ fontSize: '11px', fontWeight: '600', color: activeCurrency === c.key ? 'hsl(0 0% 88%)' : 'hsl(0 0% 38%)' }}>{c.label}</span>
                 </button>
@@ -201,23 +214,23 @@ function MintContent() {
             <div style={{ background: 'hsl(220 12% 8%)', border: `1px solid ${cur.color}18`, borderRadius: '22px', padding: '24px', marginBottom: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: 0 }}>Amount to mint</p>
-                <button onClick={() => setAmount(maxAmount.toFixed(2))} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: cur.color + '12', border: `1px solid ${cur.color}28`, color: cur.color, borderRadius: '8px', padding: '4px 10px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', ...mono }}>
-                  {Icons.plus(12, cur.color)} Max ${maxAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                <button onClick={() => { setAmount(Math.floor(displayMax).toString()); setMaxWarningAcknowledged(false) }} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: cur.color + '12', border: `1px solid ${cur.color}28`, color: cur.color, borderRadius: '8px', padding: '4px 10px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', ...mono }}>
+                  {Icons.plus(12, cur.color)} Max ${displayMax.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </button>
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '16px' }}>
-                <input value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" type="number" autoFocus style={{ flex: 1, background: 'transparent', border: 'none', color: cur.color, fontSize: '48px', fontWeight: '700', fontFamily: 'var(--font-mono)', outline: 'none', padding: '0', width: '100%' }} />
+                <input value={amount} onChange={e => { setAmount(e.target.value); setMaxWarningAcknowledged(false) }} placeholder="0" type="number" autoFocus style={{ flex: 1, background: 'transparent', border: 'none', color: cur.color, fontSize: '48px', fontWeight: '700', fontFamily: 'var(--font-mono)', outline: 'none', padding: '0', width: '100%' }} />
                 <span style={{ color: cur.color, fontSize: '18px', fontWeight: '700', ...mono, flexShrink: 0 }}>{cur.label}</span>
               </div>
               <div style={{ height: '1px', background: 'hsl(220 10% 13%)', marginBottom: '14px' }} />
               <div style={{ display: 'flex', gap: '6px' }}>
                 {[25, 50, 75, 100].map(pct => (
-                  <button key={pct} onClick={() => setAmount((maxAmount * pct / 100).toFixed(2))} style={{ flex: 1, background: 'hsl(220 15% 5%)', border: '1px solid hsl(220 10% 13%)', color: 'hsl(0 0% 38%)', borderRadius: '9px', padding: '9px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', ...mono }}>{pct}%</button>
+                  <button key={pct} onClick={() => { setAmount(Math.floor(displayMax * pct / 100).toString()); setMaxWarningAcknowledged(false) }} style={{ flex: 1, background: 'hsl(220 15% 5%)', border: '1px solid hsl(220 10% 13%)', color: 'hsl(0 0% 38%)', borderRadius: '9px', padding: '9px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', ...mono }}>{pct}%</button>
                 ))}
               </div>
             </div>
 
-            {/* Stats */}
+            {/* Stats for UBTC */}
             {!isStable && vault?.status === 'active' && (
               <div style={{ background: 'hsl(220 12% 8%)', borderRadius: '16px', padding: '16px', marginBottom: '14px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
                 {[
@@ -236,6 +249,7 @@ function MintContent() {
               </div>
             )}
 
+            {/* Stats for stablecoins */}
             {isStable && (
               <div style={{ background: 'hsl(220 12% 8%)', borderRadius: '16px', padding: '16px', marginBottom: '14px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
@@ -261,10 +275,46 @@ function MintContent() {
                     {Icons.warning(14, 'hsl(38 92% 50%)')}
                     <div>
                       <p style={{ color: 'hsl(38 92% 50%)', fontSize: '12px', ...mono, margin: '0 0 4px' }}>No {tokenName} available to mint against</p>
-                      <a href={`/deposit?vault=${vaultId}&currency=${activeCurrency}`} style={{ color: cur.color, fontSize: '12px', ...mono }}>Deposit {tokenName} first →</a>
+                      <a href={`/deposit?vault=${vaultId}&currency=${activeCurrency}`} style={{ color: cur.color, fontSize: '12px', ...mono }}>Deposit {tokenName} first</a>
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Liquidation warning - UBTC max only */}
+            {isMaxAmount && (
+              <div style={{ background: 'hsl(0 84% 60% / 0.07)', border: '2px solid hsl(0 84% 60% / 0.5)', borderRadius: '18px', padding: '22px', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                  {Icons.warning(18, 'hsl(0 84% 60%)')}
+                  <p style={{ color: 'hsl(0 84% 60%)', fontWeight: '700', fontSize: '14px', ...mono, margin: 0 }}>Liquidation Risk Warning</p>
+                </div>
+                <p style={{ color: 'hsl(0 0% 70%)', fontSize: '13px', ...mono, margin: '0 0 14px', lineHeight: '1.7' }}>
+                  You are minting at <strong style={{ color: 'hsl(0 84% 70%)' }}>maximum capacity</strong>. If BTC drops to the prices below your vault will be automatically liquidated.
+                </p>
+                <div style={{ background: 'hsl(220 15% 5%)', borderRadius: '12px', padding: '4px', marginBottom: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderBottom: '1px solid hsl(220 10% 10%)' }}>
+                    <p style={{ color: 'hsl(38 92% 50%)', fontSize: '11px', fontWeight: '700', ...mono, margin: 0 }}>120% collateral - Early Warning</p>
+                    <p style={{ color: 'hsl(38 92% 50%)', fontSize: '15px', fontWeight: '700', ...mono, margin: 0 }}>${alert120Price.toLocaleString()}</p>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderBottom: '1px solid hsl(220 10% 10%)' }}>
+                    <p style={{ color: 'hsl(38 70% 45%)', fontSize: '11px', fontWeight: '700', ...mono, margin: 0 }}>115% collateral - Danger Zone</p>
+                    <p style={{ color: 'hsl(38 70% 45%)', fontSize: '15px', fontWeight: '700', ...mono, margin: 0 }}>${alert115Price.toLocaleString()}</p>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px' }}>
+                    <p style={{ color: 'hsl(0 84% 60%)', fontSize: '11px', fontWeight: '700', ...mono, margin: 0 }}>110% collateral - LIQUIDATION</p>
+                    <p style={{ color: 'hsl(0 84% 60%)', fontSize: '15px', fontWeight: '700', ...mono, margin: 0 }}>${liqPrice.toLocaleString()}</p>
+                  </div>
+                </div>
+                <p style={{ color: 'hsl(0 0% 40%)', fontSize: '11px', ...mono, margin: '0 0 10px' }}>Get notified before liquidation happens:</p>
+                <input value={alertEmail} onChange={e => setAlertEmail(e.target.value)} placeholder="Email address for alerts" type="email" style={{ display: 'block', width: '100%', padding: '12px 14px', background: 'hsl(220 15% 5%)', border: '1px solid hsl(220 10% 18%)', borderRadius: '10px', color: 'hsl(0 0% 88%)', fontSize: '13px', fontFamily: 'var(--font-mono)', outline: 'none', boxSizing: 'border-box' as const, marginBottom: '8px' }} />
+                <input value={alertPhone} onChange={e => setAlertPhone(e.target.value)} placeholder="Phone number (optional)" type="tel" style={{ display: 'block', width: '100%', padding: '12px 14px', background: 'hsl(220 15% 5%)', border: '1px solid hsl(220 10% 18%)', borderRadius: '10px', color: 'hsl(0 0% 88%)', fontSize: '13px', fontFamily: 'var(--font-mono)', outline: 'none', boxSizing: 'border-box' as const, marginBottom: '12px' }} />
+                <div onClick={() => setMaxWarningAcknowledged(!maxWarningAcknowledged)} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', cursor: 'pointer', padding: '12px', background: maxWarningAcknowledged ? 'hsl(142 76% 36% / 0.08)' : 'hsl(220 15% 5%)', border: maxWarningAcknowledged ? '1px solid hsl(142 76% 36% / 0.4)' : '1px solid hsl(220 10% 16%)', borderRadius: '10px' }}>
+                  <div style={{ width: '20px', height: '20px', borderRadius: '5px', border: maxWarningAcknowledged ? '2px solid hsl(142 76% 36%)' : '2px solid hsl(220 10% 30%)', background: maxWarningAcknowledged ? 'hsl(142 76% 36%)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {maxWarningAcknowledged && Icons.check(12, 'white')}
+                  </div>
+                  <p style={{ color: 'hsl(0 0% 55%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.6' }}>I understand my vault will be liquidated if BTC drops to <strong style={{ color: 'hsl(0 84% 65%)' }}>${liqPrice.toLocaleString()}</strong>.</p>
+                </div>
               </div>
             )}
 
@@ -273,7 +323,7 @@ function MintContent() {
               {Icons.quantum(16, 'hsl(38 92% 50%)')}
               <div>
                 <p style={{ color: 'hsl(38 92% 50%)', fontWeight: '600', fontSize: '12px', ...mono, margin: '0 0 4px' }}>Quantum authorization required</p>
-                <p style={{ color: 'hsl(0 0% 35%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.6' }}>You will receive an OTP and a Quantum Signing Key (QSK) — shown once only. Your QSK authorizes all future {cur.label} transfers.</p>
+                <p style={{ color: 'hsl(0 0% 35%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.6' }}>You will receive an OTP and a Quantum Signing Key (QSK) — shown once only.</p>
               </div>
             </div>
 
@@ -286,12 +336,12 @@ function MintContent() {
 
             <button onClick={requestMint} disabled={!canProceed || loading} style={{ width: '100%', background: canProceed && !loading ? `linear-gradient(135deg, ${cur.color}, ${cur.color}bb)` : 'hsl(220 10% 12%)', color: canProceed && !loading ? 'white' : 'hsl(0 0% 28%)', border: 'none', borderRadius: '16px', padding: '18px', fontSize: '17px', fontWeight: '700', cursor: canProceed && !loading ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', boxShadow: canProceed && !loading ? `0 0 40px ${cur.color}35` : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
               {Icons.mint(20, canProceed && !loading ? 'white' : 'hsl(0 0% 28%)')}
-              {loading ? 'Generating OTP...' : !vault || vault.status !== 'active' ? 'Fund account first' : parseFloat(amount || '0') > maxAmount ? 'Amount too high' : `Mint ${amount || '0'} ${cur.label}`}
+              {loading ? 'Generating OTP...' : !vault || vault.status !== 'active' ? 'Fund account first' : parsedAmount > maxAmount ? 'Amount too high' : isMaxAmount && !maxWarningAcknowledged ? 'Acknowledge the warning above' : `Mint ${amount || '0'} ${cur.label}`}
             </button>
           </>
         )}
 
-        {/* ── STEP 2: QUANTUM ── */}
+        {/* STEP 2: QUANTUM */}
         {step === 'quantum' && (
           <>
             <div style={{ textAlign: 'center' as const, marginBottom: '28px' }}>
@@ -302,7 +352,6 @@ function MintContent() {
               <p style={{ color: 'hsl(0 0% 35%)', fontSize: '14px', ...mono, margin: 0 }}>Quantum-sign your {parseFloat(amount).toLocaleString()} {cur.label} issuance</p>
             </div>
 
-            {/* QSK — shown BEFORE signing */}
             <div style={{ background: 'hsl(220 12% 8%)', border: '2px solid hsl(0 84% 60% / 0.4)', borderRadius: '18px', padding: '20px', marginBottom: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -321,18 +370,16 @@ function MintContent() {
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '7px', marginTop: '10px' }}>
                 {Icons.warning(13, 'hsl(0 0% 30%)')}
-                <p style={{ color: 'hsl(0 0% 32%)', fontSize: '11px', ...mono, margin: 0, lineHeight: '1.5' }}>Store offline. This key authorizes all future {cur.label} transfers on this account. Shown once only.</p>
+                <p style={{ color: 'hsl(0 0% 32%)', fontSize: '11px', ...mono, margin: 0, lineHeight: '1.5' }}>Store offline. Shown once only.</p>
               </div>
             </div>
 
-            {/* OTP */}
             <div style={{ background: 'hsl(220 12% 8%)', border: `1px solid ${cur.color}20`, borderRadius: '18px', padding: '24px', marginBottom: '14px', textAlign: 'center' as const }}>
               <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.2em', margin: '0 0 12px' }}>One-Time Code</p>
               <p style={{ color: 'hsl(0 0% 92%)', fontSize: '52px', fontWeight: '700', ...mono, letterSpacing: '0.5em', margin: '0 0 8px', lineHeight: '1' }}>{otpCode}</p>
               <p style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', ...mono, margin: 0 }}>Expires {otpExpires ? new Date(otpExpires).toLocaleTimeString() : ''}</p>
             </div>
 
-            {/* Quantum public key */}
             <div style={{ background: 'hsl(220 12% 8%)', borderRadius: '14px', padding: '14px 16px', marginBottom: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -373,7 +420,7 @@ function MintContent() {
           </>
         )}
 
-        {/* ── STEP 3: DONE ── */}
+        {/* STEP 3: DONE */}
         {step === 'done' && (
           <>
             <div style={{ textAlign: 'center' as const, marginBottom: '28px' }}>
@@ -384,7 +431,6 @@ function MintContent() {
               <p style={{ color: cur.color, fontSize: '14px', ...mono, margin: 0 }}>{parseFloat(amount).toLocaleString()} {cur.label} · Quantum-authorized</p>
             </div>
 
-            {/* QSK — final display */}
             <div style={{ background: 'hsl(220 12% 8%)', border: '2px solid hsl(0 84% 60% / 0.45)', borderRadius: '20px', padding: '24px', marginBottom: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -402,29 +448,24 @@ function MintContent() {
                 </p>
               </div>
               <p style={{ color: 'hsl(0 0% 32%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.6' }}>
-                This key authorizes all future {cur.label} transfers. It works for UBTC, UUSDT and UUSDC on this account. Store it offline like a seed phrase.
+                This key authorizes all future {cur.label} transfers. Store it offline like a seed phrase.
               </p>
             </div>
 
-            {/* Mint summary */}
             <div style={{ background: 'hsl(220 12% 8%)', borderRadius: '16px', padding: '18px', marginBottom: '14px' }}>
               <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 12px' }}>Mint Summary</p>
               {[
-                { icon: Icons.mint(13, cur.color), label: 'Minted', value: parseFloat(amount).toLocaleString() + ' ' + cur.label },
-                { icon: Icons.lock(13, 'hsl(0 0% 35%)'), label: 'Backing', value: isStable ? `$${parseFloat(amount).toLocaleString()} ${tokenName} locked` : `150% BTC collateral` },
-                { icon: Icons.shield(13, 'hsl(142 76% 36%)'), label: 'Authorization', value: 'OTP ✓ · Second Key ✓ · Dilithium3 ✓' },
+                { label: 'Minted', value: parseFloat(amount).toLocaleString() + ' ' + cur.label },
+                { label: 'Backing', value: isStable ? `$${parseFloat(amount).toLocaleString()} ${tokenName} locked` : '150% BTC collateral' },
+                { label: 'Authorization', value: 'OTP · Second Key · Dilithium3' },
               ].map(item => (
                 <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 0', borderBottom: '1px solid hsl(220 10% 11%)', gap: '12px', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                    {item.icon}
-                    <p style={{ color: 'hsl(0 0% 32%)', fontSize: '12px', ...mono, margin: 0 }}>{item.label}</p>
-                  </div>
+                  <p style={{ color: 'hsl(0 0% 32%)', fontSize: '12px', ...mono, margin: 0 }}>{item.label}</p>
                   <p style={{ color: 'hsl(0 0% 75%)', fontSize: '12px', fontWeight: '600', ...mono, margin: 0, textAlign: 'right' as const }}>{item.value}</p>
                 </div>
               ))}
             </div>
 
-            {/* Confirm saved */}
             <div onClick={() => setKeySaved(!keySaved)} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', background: 'hsl(220 12% 8%)', border: `1px solid ${keySaved ? 'hsl(142 76% 36% / 0.4)' : 'hsl(220 10% 14%)'}`, borderRadius: '14px', padding: '16px', marginBottom: '20px', cursor: 'pointer' }}>
               <div style={{ width: '22px', height: '22px', borderRadius: '6px', border: `2px solid ${keySaved ? 'hsl(142 76% 36%)' : 'hsl(220 10% 28%)'}`, background: keySaved ? 'hsl(142 76% 36%)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
                 {keySaved && Icons.check(13, 'white')}
