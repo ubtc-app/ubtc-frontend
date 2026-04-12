@@ -24,8 +24,7 @@ function MintContent() {
   const [otpInput, setOtpInput] = useState('')
   const [secondKey, setSecondKey] = useState('')
   const [mintResult, setMintResult] = useState<any>(null)
-  const [qSigningKey, setQSigningKey] = useState('')
-  const [keySaved, setKeySaved] = useState(false)
+  const [confirmed, setConfirmed] = useState(false)
   const [copied, setCopied] = useState('')
   const [maxWarningAcknowledged, setMaxWarningAcknowledged] = useState(false)
   const [alertEmail, setAlertEmail] = useState('')
@@ -74,22 +73,10 @@ function MintContent() {
   const uusdtMinted = scVaults.filter(s => s.currency === 'UUSDT').reduce((s, x) => s + parseFloat(x.balance || '0'), 0)
   const uusdcDeposited = scVaults.filter(s => s.currency === 'UUSDC').reduce((s, x) => s + parseFloat(x.deposited_amount || '0'), 0)
   const uusdcMinted = scVaults.filter(s => s.currency === 'UUSDC').reduce((s, x) => s + parseFloat(x.balance || '0'), 0)
-  const maxStable = activeCurrency === 'uusdt'
-    ? Math.max(0, uusdtDeposited - uusdtMinted)
-    : Math.max(0, uusdcDeposited - uusdcMinted)
+  const maxStable = activeCurrency === 'uusdt' ? Math.max(0, uusdtDeposited - uusdtMinted) : Math.max(0, uusdcDeposited - uusdcMinted)
   const maxAmount = isStable ? maxStable : maxUbtc
-
-  // Safe max for UBTC — reduces by $50 buffer to handle BTC price fluctuation between frontend and backend calls
   const safeMaxUbtc = Math.max(0, maxUbtc - 50)
   const displayMax = isStable ? maxStable : safeMaxUbtc
-
-  const makeQSK = (raw: string): string => {
-    if (!raw || raw.length < 32) {
-      const r = () => Math.random().toString(36).slice(2, 10).toUpperCase()
-      return `QSK-${r()}-${r()}-${r()}-${r()}`
-    }
-    return 'QSK-' + [0, 8, 16, 24].map(i => raw.slice(i, i + 8).toUpperCase()).join('-')
-  }
 
   const requestMint = async () => {
     if (!amount || parseFloat(amount) <= 0) return
@@ -105,10 +92,28 @@ function MintContent() {
       setOtpCode(data.otp_code)
       setOtpExpires(data.expires_at)
       setQPubKey(data.pq_public_key)
-      setQSigningKey(makeQSK(data.pq_public_key || ''))
       setStep('quantum')
     } catch (e: any) { setError(e.message) }
     setLoading(false)
+  }
+
+  const loadKeyFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target?.result as string)
+        if (data.protocol_second_key?.key) {
+          setSecondKey(data.protocol_second_key.key)
+        } else if (data.key1_dilithium3_qsk?.key) {
+          setSecondKey(data.key1_dilithium3_qsk.key)
+        } else {
+          setError('Could not find Protocol Second Key in file')
+        }
+      } catch { setError('Could not read key file') }
+    }
+    reader.readAsText(file)
   }
 
   const verifyAndMint = async () => {
@@ -147,14 +152,12 @@ function MintContent() {
       } else {
         const mintRes = await fetch(`${API_URL}/mint`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ vault_id: vaultId, ubtc_amount: amount })
+          body: JSON.stringify({ vault_id: vaultId, ubtc_amount: amount, second_key: secondKey })
         })
         const mintData = await mintRes.json()
         if (!mintRes.ok) throw new Error(mintData.error)
         setMintResult(mintData)
       }
-
-      setQSigningKey(makeQSK(verifyData.pq_signature || qSigningKey))
       setStep('done')
     } catch (e: any) { setError(e.message) }
     setLoading(false)
@@ -282,7 +285,7 @@ function MintContent() {
               </div>
             )}
 
-            {/* Liquidation warning - UBTC max only */}
+            {/* Liquidation warning */}
             {isMaxAmount && (
               <div style={{ background: 'hsl(0 84% 60% / 0.07)', border: '2px solid hsl(0 84% 60% / 0.5)', borderRadius: '18px', padding: '22px', marginBottom: '14px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
@@ -318,15 +321,6 @@ function MintContent() {
               </div>
             )}
 
-            {/* Quantum notice */}
-            <div style={{ background: 'hsl(38 92% 50% / 0.05)', border: '1px solid hsl(38 92% 50% / 0.15)', borderRadius: '14px', padding: '14px 16px', marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-              {Icons.quantum(16, 'hsl(38 92% 50%)')}
-              <div>
-                <p style={{ color: 'hsl(38 92% 50%)', fontWeight: '600', fontSize: '12px', ...mono, margin: '0 0 4px' }}>Quantum authorization required</p>
-                <p style={{ color: 'hsl(0 0% 35%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.6' }}>You will receive an OTP and a Quantum Signing Key (QSK) — shown once only.</p>
-              </div>
-            </div>
-
             {error && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'hsl(0 84% 60% / 0.08)', border: '1px solid hsl(0 84% 60% / 0.25)', borderRadius: '12px', padding: '12px 14px', marginBottom: '16px' }}>
                 {Icons.warning(14, 'hsl(0 84% 60%)')}
@@ -352,59 +346,25 @@ function MintContent() {
               <p style={{ color: 'hsl(0 0% 35%)', fontSize: '14px', ...mono, margin: 0 }}>Quantum-sign your {parseFloat(amount).toLocaleString()} {cur.label} issuance</p>
             </div>
 
-            <div style={{ background: 'hsl(220 12% 8%)', border: '2px solid hsl(0 84% 60% / 0.4)', borderRadius: '18px', padding: '20px', marginBottom: '14px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  {Icons.key(16, 'hsl(0 84% 60%)')}
-                  <div>
-                    <p style={{ color: 'hsl(0 84% 60%)', fontWeight: '700', fontSize: '13px', margin: '0 0 2px' }}>Your Quantum Signing Key (QSK)</p>
-                    <p style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', ...mono, margin: 0 }}>Save this now — before you authorize below</p>
-                  </div>
-                </div>
-                <CopyBtn text={qSigningKey} id="qsk-early" />
-              </div>
-              <div style={{ background: 'hsl(220 15% 4%)', border: '1px solid hsl(220 10% 14%)', borderRadius: '12px', padding: '16px', textAlign: 'center' as const }}>
-                <p style={{ color: 'hsl(0 84% 60%)', fontSize: '20px', fontWeight: '700', ...mono, letterSpacing: '0.04em', margin: 0, lineHeight: '1.6' }}>
-                  {qSigningKey}
-                </p>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '7px', marginTop: '10px' }}>
-                {Icons.warning(13, 'hsl(0 0% 30%)')}
-                <p style={{ color: 'hsl(0 0% 32%)', fontSize: '11px', ...mono, margin: 0, lineHeight: '1.5' }}>Store offline. Shown once only.</p>
-              </div>
-            </div>
-
             <div style={{ background: 'hsl(220 12% 8%)', border: `1px solid ${cur.color}20`, borderRadius: '18px', padding: '24px', marginBottom: '14px', textAlign: 'center' as const }}>
               <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.2em', margin: '0 0 12px' }}>One-Time Code</p>
               <p style={{ color: 'hsl(0 0% 92%)', fontSize: '52px', fontWeight: '700', ...mono, letterSpacing: '0.5em', margin: '0 0 8px', lineHeight: '1' }}>{otpCode}</p>
               <p style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', ...mono, margin: 0 }}>Expires {otpExpires ? new Date(otpExpires).toLocaleTimeString() : ''}</p>
             </div>
 
-            <div style={{ background: 'hsl(220 12% 8%)', borderRadius: '14px', padding: '14px 16px', marginBottom: '14px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  {Icons.key(13, 'hsl(0 0% 28%)')}
-                  <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, textTransform: 'uppercase', margin: 0 }}>Quantum Public Key</p>
-                  <span style={{ fontSize: '9px', ...mono, color: 'hsl(142 76% 36%)', background: 'hsl(142 76% 36% / 0.1)', borderRadius: '20px', padding: '2px 7px', border: '1px solid hsl(142 76% 36% / 0.3)' }}>Safe to share</span>
-                </div>
-                <CopyBtn text={qPubKey} id="qpub" />
-              </div>
-              <p style={{ color: 'hsl(38 92% 50%)', fontSize: '10px', ...mono, wordBreak: 'break-all' as const, lineHeight: '1.5', margin: 0 }}>{qPubKey?.slice(0, 72)}...</p>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', background: 'hsl(205 85% 55% / 0.05)', border: '1px solid hsl(205 85% 55% / 0.15)', borderRadius: '10px', padding: '12px 14px', marginBottom: '20px' }}>
-              {Icons.shield(14, 'hsl(205 85% 55%)')}
-              <p style={{ color: 'hsl(0 0% 38%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.6' }}>
-                Enter your OTP code and Protocol Second Key to authorize. The Protocol Second Key is from your wallet creation — <strong style={{ color: 'hsl(0 0% 60%)' }}>not your QSK</strong>.
-              </p>
-            </div>
-
             <label style={{ display: 'block', color: 'hsl(0 0% 35%)', fontSize: '11px', ...mono, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '8px' }}>Enter OTP Code</label>
             <input value={otpInput} onChange={e => setOtpInput(e.target.value)} placeholder="Enter the 6-digit code above" style={fieldStyle} autoFocus />
 
             <label style={{ display: 'block', color: 'hsl(0 0% 35%)', fontSize: '11px', ...mono, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '8px' }}>Protocol Authorization Key</label>
-            <input value={secondKey} onChange={e => setSecondKey(e.target.value)} placeholder="Your protocol second key from wallet creation" type="password" style={{ ...fieldStyle, marginBottom: '4px' }} />
-            <p style={{ color: 'hsl(0 0% 24%)', fontSize: '11px', ...mono, margin: '0 0 20px' }}>This is different from your QSK — it was shown when you created your wallet.</p>
+
+            {/* Load key file button */}
+            <label style={{ display: 'block', width: '100%', background: 'hsl(205 85% 55%)', color: '#000', fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 700, padding: '11px 14px', borderRadius: '10px', cursor: 'pointer', textAlign: 'center' as const, marginBottom: '8px', boxSizing: 'border-box' as const }}>
+              📁 Load Key File (ubtc-keys-*.json)
+              <input type="file" accept=".json" style={{ display: 'none' }} onChange={loadKeyFile} />
+            </label>
+
+            <input value={secondKey} onChange={e => setSecondKey(e.target.value)} placeholder="Or paste your Protocol Second Key" type="password" style={{ ...fieldStyle, marginBottom: '4px' }} />
+            <p style={{ color: 'hsl(0 0% 24%)', fontSize: '11px', ...mono, margin: '0 0 20px' }}>Found in your vault key file under "protocol_second_key".</p>
 
             {error && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'hsl(0 84% 60% / 0.08)', border: '1px solid hsl(0 84% 60% / 0.25)', borderRadius: '12px', padding: '12px 14px', marginBottom: '14px' }}>
@@ -431,33 +391,23 @@ function MintContent() {
               <p style={{ color: cur.color, fontSize: '14px', ...mono, margin: 0 }}>{parseFloat(amount).toLocaleString()} {cur.label} · Quantum-authorized</p>
             </div>
 
-            <div style={{ background: 'hsl(220 12% 8%)', border: '2px solid hsl(0 84% 60% / 0.45)', borderRadius: '20px', padding: '24px', marginBottom: '14px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  {Icons.key(18, 'hsl(0 84% 60%)')}
-                  <div>
-                    <p style={{ color: 'hsl(0 84% 60%)', fontWeight: '700', fontSize: '14px', margin: '0 0 2px' }}>Quantum Signing Key (QSK)</p>
-                    <p style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', ...mono, margin: 0 }}>Shown once only · Never stored by UBTC</p>
-                  </div>
-                </div>
-                <CopyBtn text={qSigningKey} id="qsk-final" />
+            {/* Verification confirmation */}
+            <div style={{ background: 'hsl(142 76% 36% / 0.08)', border: '1px solid hsl(142 76% 36% / 0.3)', borderRadius: '14px', padding: '16px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {Icons.check(20, 'hsl(142 76% 36%)')}
+              <div>
+                <p style={{ color: 'hsl(142 76% 36%)', fontWeight: '700', fontSize: '13px', margin: '0 0 2px' }}>Quantum signature verified</p>
+                <p style={{ color: 'hsl(0 0% 35%)', fontSize: '11px', ...mono, margin: 0 }}>OTP · Protocol Second Key · Dilithium3 — all verified</p>
               </div>
-              <div style={{ background: 'hsl(220 15% 4%)', border: '1px solid hsl(220 10% 14%)', borderRadius: '14px', padding: '20px', textAlign: 'center' as const, marginBottom: '14px' }}>
-                <p style={{ color: 'hsl(0 84% 60%)', fontSize: '22px', fontWeight: '700', ...mono, letterSpacing: '0.04em', margin: 0, lineHeight: '1.6' }}>
-                  {qSigningKey}
-                </p>
-              </div>
-              <p style={{ color: 'hsl(0 0% 32%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.6' }}>
-                This key authorizes all future {cur.label} transfers. Store it offline like a seed phrase.
-              </p>
             </div>
 
+            {/* Mint summary */}
             <div style={{ background: 'hsl(220 12% 8%)', borderRadius: '16px', padding: '18px', marginBottom: '14px' }}>
               <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 12px' }}>Mint Summary</p>
               {[
                 { label: 'Minted', value: parseFloat(amount).toLocaleString() + ' ' + cur.label },
                 { label: 'Backing', value: isStable ? `$${parseFloat(amount).toLocaleString()} ${tokenName} locked` : '150% BTC collateral' },
                 { label: 'Authorization', value: 'OTP · Second Key · Dilithium3' },
+                { label: 'Collateral ratio', value: mintResult?.collateral_ratio ? parseFloat(mintResult.collateral_ratio).toFixed(2) + 'x' : '—' },
               ].map(item => (
                 <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 0', borderBottom: '1px solid hsl(220 10% 11%)', gap: '12px', alignItems: 'center' }}>
                   <p style={{ color: 'hsl(0 0% 32%)', fontSize: '12px', ...mono, margin: 0 }}>{item.label}</p>
@@ -466,16 +416,17 @@ function MintContent() {
               ))}
             </div>
 
-            <div onClick={() => setKeySaved(!keySaved)} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', background: 'hsl(220 12% 8%)', border: `1px solid ${keySaved ? 'hsl(142 76% 36% / 0.4)' : 'hsl(220 10% 14%)'}`, borderRadius: '14px', padding: '16px', marginBottom: '20px', cursor: 'pointer' }}>
-              <div style={{ width: '22px', height: '22px', borderRadius: '6px', border: `2px solid ${keySaved ? 'hsl(142 76% 36%)' : 'hsl(220 10% 28%)'}`, background: keySaved ? 'hsl(142 76% 36%)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
-                {keySaved && Icons.check(13, 'white')}
+            {/* Confirm checkbox */}
+            <div onClick={() => setConfirmed(!confirmed)} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', background: 'hsl(220 12% 8%)', border: `1px solid ${confirmed ? 'hsl(142 76% 36% / 0.4)' : 'hsl(220 10% 14%)'}`, borderRadius: '14px', padding: '16px', marginBottom: '20px', cursor: 'pointer' }}>
+              <div style={{ width: '22px', height: '22px', borderRadius: '6px', border: `2px solid ${confirmed ? 'hsl(142 76% 36%)' : 'hsl(220 10% 28%)'}`, background: confirmed ? 'hsl(142 76% 36%)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
+                {confirmed && Icons.check(13, 'white')}
               </div>
-              <p style={{ color: 'hsl(0 0% 48%)', fontSize: '13px', ...mono, margin: 0, lineHeight: '1.6' }}>I have saved my Quantum Signing Key. I understand it cannot be recovered by UBTC.</p>
+              <p style={{ color: 'hsl(0 0% 48%)', fontSize: '13px', ...mono, margin: 0, lineHeight: '1.6' }}>I understand my UBTC is backed by real Bitcoin collateral locked in my vault. My key file is saved securely offline.</p>
             </div>
 
-            <button onClick={() => { if (keySaved) window.location.href = `/account/${vaultId}?currency=${activeCurrency}` }} disabled={!keySaved} style={{ width: '100%', background: keySaved ? 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))' : 'hsl(220 10% 12%)', color: keySaved ? 'white' : 'hsl(0 0% 28%)', border: 'none', borderRadius: '16px', padding: '18px', fontSize: '17px', fontWeight: '700', cursor: keySaved ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', boxShadow: keySaved ? '0 0 40px hsl(205 85% 55% / 0.4)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-              {Icons.chevronRight(20, keySaved ? 'white' : 'hsl(0 0% 28%)')}
-              {keySaved ? 'View Account' : 'Check the box above to continue'}
+            <button onClick={() => { if (confirmed) window.location.href = `/account/${vaultId}?currency=${activeCurrency}` }} disabled={!confirmed} style={{ width: '100%', background: confirmed ? 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))' : 'hsl(220 10% 12%)', color: confirmed ? 'white' : 'hsl(0 0% 28%)', border: 'none', borderRadius: '16px', padding: '18px', fontSize: '17px', fontWeight: '700', cursor: confirmed ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', boxShadow: confirmed ? '0 0 40px hsl(205 85% 55% / 0.4)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              {Icons.chevronRight(20, confirmed ? 'white' : 'hsl(0 0% 28%)')}
+              {confirmed ? 'View Account' : 'Check the box above to continue'}
             </button>
           </>
         )}
