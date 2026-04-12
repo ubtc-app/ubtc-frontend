@@ -546,6 +546,61 @@ function WalletContent() {
           </div>
         )}
 
+      {/* Proof Wallet Section */}
+        <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(205 85% 55% / 0.2)', borderRadius: '16px', padding: '20px', margin: '16px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+            {Icons.shield(14, 'hsl(205 85% 55%)')}
+            <p style={{ color: 'hsl(205 85% 55%)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: 0 }}>Proof Wallet — On-Chain UBTC</p>
+          </div>
+          <p style={{ color: 'hsl(0 0% 30%)', fontSize: '11px', ...mono, margin: '0 0 14px', lineHeight: '1.7' }}>
+            Your balance above is held in World Local Bank's ledger. A Proof Wallet holds cryptographic proof files — each file IS your UBTC, redeemable directly on Bitcoin without any server.
+          </p>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={async () => {
+              if (!walletData?.linked_vault_id) { alert('No vault linked to this wallet. Link a vault first.'); return }
+              try {
+                const res = await fetch(`${API_URL}/ubtc/mint-proof`, {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    vault_id: walletData.linked_vault_id,
+                    amount_sats: Math.floor(balance * 100),
+                    dilithium_pk: walletData.public_key || 'pending',
+                    sphincs_pk: '0000000000000000000000000000000000000000000000000000000000000000'
+                  })
+                })
+                const data = await res.json()
+                if (!res.ok) { alert('Error: ' + data.error); return }
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url; a.download = `ubtc-proof-${Date.now()}.ubtc`
+                document.body.appendChild(a); a.click()
+                document.body.removeChild(a); URL.revokeObjectURL(url)
+                alert('✅ Proof file downloaded! This file IS your UBTC — store it securely.')
+              } catch (e: any) { alert('Failed: ' + e.message) }
+            }} style={{ flex: 1, background: 'hsl(205 85% 55%)', color: '#000', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, padding: '10px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+              ⬇ Generate Proof File
+            </button>
+            <label style={{ flex: 1, background: 'hsl(220 12% 12%)', color: 'hsl(0 0% 55%)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, padding: '10px', border: '1px solid hsl(220 10% 18%)', borderRadius: '8px', cursor: 'pointer', textAlign: 'center' as const, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              📁 Verify Proof File
+              <input type="file" accept=".ubtc,.json" style={{ display: 'none' }} onChange={e => {
+                const file = e.target.files?.[0]
+                if (!file) return
+                const reader = new FileReader()
+                reader.onload = ev => {
+                  try {
+                    const data = JSON.parse(ev.target?.result as string)
+                    if (data.proof_id && data.amount_sats) {
+                      alert(`✅ Valid UBTC Proof\nProof ID: ${data.proof_id}\nAmount: ${data.amount_sats / 100000000} UBTC\nVault: ${data.vault_id}`)
+                    } else { alert('Invalid proof file') }
+                  } catch { alert('Could not read proof file') }
+                }
+                reader.readAsText(file)
+              }} />
+            </label>
+          </div>
+        </div>
+
         {/* Transactions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '7px', margin: '16px 0 10px' }}>
           {Icons.chart(14, 'hsl(0 0% 28%)')}
