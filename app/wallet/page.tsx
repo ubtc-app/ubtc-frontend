@@ -90,6 +90,9 @@ function WalletContent() {
       if (!res.ok) throw new Error(data.error)
       setCreateResult(data)
       localStorage.setItem('ubtc_wallet_address', data.wallet_address)
+      sessionStorage.setItem('ubtc_qsk', data.private_key || '')
+      sessionStorage.setItem('ubtc_sphincs_sk', data.sphincs_sk || '')
+      sessionStorage.setItem('ubtc_kyber_sk', data.kyber_sk || '')
     } catch (e: any) { setError(e.message) }
     setLoading(false)
   }
@@ -168,7 +171,81 @@ function WalletContent() {
             <div style={{ textAlign: 'center' as const, marginBottom: '8px' }}>
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>{Icons.key(52, 'hsl(205 85% 55%)')}</div>
               <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '24px', fontWeight: '700', margin: '0 0 6px' }}>Save Your Keys</h2>
-              <p style={{ color: 'hsl(0 0% 38%)', fontSize: '14px', ...mono, margin: 0 }}>@{createResult.username} · Wallet created</p>
+         <p style={{ color: 'hsl(0 0% 38%)', fontSize: '14px', ...mono, margin: 0 }}>@{createResult.username} · Wallet created</p>
+            </div>
+
+            {/* KEY EDUCATION */}
+            <div style={{ background: 'hsl(220 15% 5%)', border: '1px solid hsl(38 92% 50% / 0.4)', borderRadius: '12px', padding: '20px' }}>
+              <p style={{ color: 'hsl(38 92% 50%)', fontSize: '11px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.2em', margin: '0 0 12px' }}>⚠️ You have 3 Quantum Keys — Understand Each One</p>
+              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '12px' }}>
+                <div style={{ background: 'hsl(220 15% 7%)', borderRadius: '8px', padding: '12px', borderLeft: '3px solid hsl(205 85% 55%)' }}>
+                  <p style={{ color: 'hsl(205 85% 55%)', fontSize: '11px', ...mono, fontWeight: 700, margin: '0 0 4px' }}>KEY 1 — Dilithium3 Quantum Signing Key (QSK)</p>
+                  <p style={{ color: 'hsl(0 0% 50%)', fontSize: '11px', ...mono, margin: '0 0 4px', lineHeight: '1.7' }}>Used to SIGN every UBTC transfer. Without this key you cannot send UBTC. This is your primary identity key — it proves you authorised every transaction. Store it securely offline.</p>
+                  <p style={{ color: 'hsl(0 0% 30%)', fontSize: '10px', ...mono, margin: 0 }}>Post-quantum secure · Dilithium3 lattice-based · NIST standard</p>
+                </div>
+                <div style={{ background: 'hsl(220 15% 7%)', borderRadius: '8px', padding: '12px', borderLeft: '3px solid hsl(142 70% 45%)' }}>
+                  <p style={{ color: 'hsl(142 70% 45%)', fontSize: '11px', ...mono, fontWeight: 700, margin: '0 0 4px' }}>KEY 2 — SPHINCS+ Backup Signing Key</p>
+                  <p style={{ color: 'hsl(0 0% 50%)', fontSize: '11px', ...mono, margin: '0 0 4px', lineHeight: '1.7' }}>A second quantum signature on all transfers using a completely different algorithm. Even if Dilithium3 were compromised, SPHINCS+ protects you. Store separately from KEY 1.</p>
+                  <p style={{ color: 'hsl(0 0% 30%)', fontSize: '10px', ...mono, margin: 0 }}>Post-quantum secure · Hash-based · Different mathematical family to KEY 1</p>
+                </div>
+                <div style={{ background: 'hsl(220 15% 7%)', borderRadius: '8px', padding: '12px', borderLeft: '3px solid hsl(38 92% 50%)' }}>
+                  <p style={{ color: 'hsl(38 92% 50%)', fontSize: '11px', ...mono, fontWeight: 700, margin: '0 0 4px' }}>KEY 3 — Kyber Redemption Key</p>
+                  <p style={{ color: 'hsl(0 0% 50%)', fontSize: '11px', ...mono, margin: '0 0 4px', lineHeight: '1.7' }}>Decrypts your embedded Bitcoin redemption transaction. This key lets you claim your BTC directly from the Bitcoin blockchain with NO server needed. If World Local Bank disappeared tomorrow, this key lets you redeem your BTC yourself. Guard this with your life.</p>
+                  <p style={{ color: 'hsl(0 0% 30%)', fontSize: '10px', ...mono, margin: 0 }}>Post-quantum secure · Kyber KEM · Self-sovereign redemption</p>
+                </div>
+              </div>
+            </div>
+
+            {/* DOWNLOAD KEYS BUTTON */}
+            <button onClick={() => {
+              const keyData = {
+                wallet_address: createResult.wallet_address,
+                username: createResult.username,
+                created_at: new Date().toISOString(),
+                warning: 'STORE THIS FILE SECURELY OFFLINE. NEVER SHARE IT. LOSING THESE KEYS MEANS LOSING YOUR UBTC.',
+                key1_dilithium3_qsk: {
+                  purpose: 'Signs every UBTC transfer — required to send UBTC',
+                  key: createResult.private_key
+                },
+                key2_sphincs_backup: {
+                  purpose: 'Backup quantum signing — different algorithm to KEY 1',
+                  key: createResult.sphincs_sk
+                },
+                key3_kyber_redemption: {
+                  purpose: 'Decrypts embedded BTC redemption — self-sovereign Bitcoin claim',
+                  key: createResult.kyber_sk
+                }
+              }
+              const blob = new Blob([JSON.stringify(keyData, null, 2)], { type: 'application/json' })
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement('a')
+              a.href = url
+              a.download = `ubtc-keys-${createResult.username}-${Date.now()}.json`
+              document.body.appendChild(a)
+              a.click()
+              document.body.removeChild(a)
+              URL.revokeObjectURL(url)
+            }} style={{ width: '100%', background: 'hsl(38 92% 50%)', color: '#000', fontFamily: 'monospace', fontSize: '13px', fontWeight: 700, padding: '16px', border: 'none', borderRadius: '10px', cursor: 'pointer', letterSpacing: '0.1em' }}>
+              ⬇ Download All 3 Keys as File — Do This Now
+            </button>
+            <p style={{ color: 'hsl(0 0% 25%)', fontSize: '10px', ...mono, textAlign: 'center' as const, margin: 0 }}>Keys are never stored on our servers. This is your only chance to save them.</p>
+            <div style={{ background: 'hsl(220 15% 5%)', border: '1px solid hsl(0 84% 60% / 0.4)', borderRadius: '12px', padding: '16px' }}>
+              <p style={{ color: 'hsl(0 84% 60%)', fontSize: '11px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.2em', margin: '0 0 16px' }}>⚠️ Save All 3 Keys — Never Shown Again</p>
+              <p style={{ color: 'hsl(205 85% 55%)', fontSize: '10px', ...mono, margin: '0 0 4px' }}>KEY 1 — Dilithium3 Signing Key (use this to sign transfers)</p>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                <input readOnly value={createResult.private_key || ''} style={{ flex: 1, background: '#050508', border: '1px solid #1a1a2e', color: '#555', fontFamily: 'monospace', fontSize: '9px', padding: '8px', borderRadius: '6px' }} />
+               <button onClick={() => { const el = document.createElement('textarea'); el.value = createResult.private_key || ''; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); alert('KEY 1 copied!'); }} style={{ background: 'hsl(205 85% 55%)', color: '#000', fontSize: '10px', fontFamily: 'monospace', padding: '8px 14px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Copy</button>
+              </div>
+              <p style={{ color: 'hsl(142 70% 45%)', fontSize: '10px', ...mono, margin: '0 0 4px' }}>KEY 2 — SPHINCS+ Backup Key</p>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                <input readOnly value={createResult.sphincs_sk || ''} style={{ flex: 1, background: '#050508', border: '1px solid #1a1a2e', color: '#555', fontFamily: 'monospace', fontSize: '9px', padding: '8px', borderRadius: '6px' }} />
+               <button onClick={() => { const el = document.createElement('textarea'); el.value = createResult.sphincs_sk || ''; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); alert('KEY 2 copied!'); }} style={{ background: 'hsl(142 70% 45%)', color: '#000', fontSize: '10px', fontFamily: 'monospace', padding: '8px 14px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Copy</button>
+              </div>
+              <p style={{ color: 'hsl(38 92% 50%)', fontSize: '10px', ...mono, margin: '0 0 4px' }}>KEY 3 — Kyber Redemption Key</p>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input readOnly value={createResult.kyber_sk || ''} style={{ flex: 1, background: '#050508', border: '1px solid #1a1a2e', color: '#555', fontFamily: 'monospace', fontSize: '9px', padding: '8px', borderRadius: '6px' }} />
+                <button onClick={() => { const el = document.createElement('textarea'); el.value = createResult.kyber_sk || ''; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); alert('KEY 3 copied!'); }} style={{ background: 'hsl(38 92% 50%)', color: '#000', fontSize: '10px', fontFamily: 'monospace', padding: '8px 14px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Copy</button>
+              </div>
             </div>
 
             <div style={{ background: 'hsl(220 12% 8%)', border: '2px solid hsl(205 85% 55% / 0.4)', borderRadius: '18px', padding: '22px' }}>

@@ -41,7 +41,27 @@ export default function VaultPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      setResult(data); setStep('done')
+     setResult(data); setStep('done')
+      // Store keys in session for immediate use
+      if (data.qsk_private) sessionStorage.setItem('ubtc_qsk', data.qsk_private)
+      if (data.kyber_sk) sessionStorage.setItem('ubtc_kyber_sk', data.kyber_sk)
+      if (data.sphincs_sk) sessionStorage.setItem('ubtc_sphincs_sk', data.sphincs_sk)
+      // Auto-download key file
+      const keyData = {
+        vault_id: data.vault_id,
+        created_at: new Date().toISOString(),
+        warning: 'STORE THIS FILE SECURELY OFFLINE. NEVER SHARE IT.',
+        protocol_second_key: { purpose: 'Authorises minting and withdrawals', key: data.protocol_second_key },
+        key1_dilithium3_qsk: { purpose: 'Signs every UBTC transfer — your quantum identity', key: data.qsk_private },
+        key2_sphincs_backup: { purpose: 'Backup quantum signing — different algorithm to KEY 1', key: data.sphincs_sk },
+        key3_kyber_redemption: { purpose: 'Decrypts embedded BTC redemption — self-sovereign Bitcoin claim', key: data.kyber_sk }
+      }
+      const blob = new Blob([JSON.stringify(keyData, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url; a.download = `ubtc-keys-${data.vault_id}.json`
+      document.body.appendChild(a); a.click()
+      document.body.removeChild(a); URL.revokeObjectURL(url)
     } catch (e: any) { setError(e.message) }
     setLoading(false)
   }
@@ -383,6 +403,24 @@ export default function VaultPage() {
                 </div>
               </div>
             </div>
+            {/* QUANTUM KEYS DISPLAY */}
+            <div style={{ background: 'hsl(220 15% 5%)', border: '1px solid hsl(0 84% 60% / 0.4)', borderRadius: '16px', padding: '24px', textAlign: 'left' as const, marginBottom: '20px' }}>
+              <p style={{ color: 'hsl(0 84% 60%)', fontSize: '11px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.2em', margin: '0 0 4px' }}>⚠️ Your Quantum Keys — Save Now</p>
+              <p style={{ color: 'hsl(0 0% 30%)', fontSize: '11px', ...mono, margin: '0 0 16px' }}>A key file has been downloaded automatically. Store it securely offline. These keys are never stored on our servers.</p>
+              {[
+                { label: 'Protocol Second Key', desc: 'Authorises minting and withdrawals', color: 'hsl(38 92% 50%)', value: result.protocol_second_key },
+                { label: 'KEY 1 — Quantum Signing Key (QSK)', desc: 'Signs every UBTC transfer — your quantum identity', color: 'hsl(205 85% 55%)', value: result.qsk_private },
+                { label: 'KEY 2 — SPHINCS+ Backup', desc: 'Backup quantum signing — different algorithm to KEY 1', color: 'hsl(142 70% 45%)', value: result.sphincs_sk },
+                { label: 'KEY 3 — Kyber Redemption Key', desc: 'Decrypts embedded BTC redemption — self-sovereign Bitcoin claim', color: 'hsl(270 85% 65%)', value: result.kyber_sk },
+              ].map((k, i) => (
+                <div key={i} style={{ marginBottom: '12px', padding: '12px', background: 'hsl(220 15% 7%)', borderRadius: '8px', borderLeft: `3px solid ${k.color}` }}>
+                  <p style={{ color: k.color, fontSize: '10px', ...mono, fontWeight: 700, margin: '0 0 2px' }}>{k.label}</p>
+                  <p style={{ color: 'hsl(0 0% 35%)', fontSize: '10px', ...mono, margin: '0 0 6px' }}>{k.desc}</p>
+                  <p style={{ color: 'hsl(0 0% 25%)', fontSize: '9px', ...mono, margin: 0, wordBreak: 'break-all' as const }}>{k.value?.substring(0, 60)}...</p>
+                </div>
+              ))}
+            </div>
+
             <div style={{ display: 'flex', gap: '12px' }}>
               <a href={`/deposit?vault=${result.vault_id}`} style={{ flex: 1, background: 'linear-gradient(135deg, hsl(205, 85%, 55%), hsl(190, 80%, 50%))', color: 'white', textDecoration: 'none', borderRadius: '10px', padding: '14px 0', fontSize: '14px', fontWeight: '600', fontFamily: 'var(--font-display)', textAlign: 'center' as const, display: 'block', boxShadow: '0 0 30px hsl(205 85% 55% / 0.4)' }}>Fund Account →</a>
               <a href="/dashboard" style={{ flex: 1, background: 'none', border: '1px solid hsl(220 10% 16%)', color: 'hsl(0 0% 65%)', textDecoration: 'none', borderRadius: '10px', padding: '14px 0', fontSize: '14px', fontWeight: '600', fontFamily: 'var(--font-display)', textAlign: 'center' as const, display: 'block' }}>My Accounts</a>

@@ -35,8 +35,23 @@ function TransferContent() {
   const [isOwnWallet, setIsOwnWallet] = useState<boolean | null>(null)
   const [showWarning, setShowWarning] = useState(false)
 const [collateralAcknowledged, setCollateralAcknowledged] = useState(false)
-  const [qsk, setQsk] = useState('')
+ const [qsk, setQsk] = useState(() => sessionStorage.getItem('ubtc_qsk') || '')
   const [qskError, setQskError] = useState('')
+  const loadKeyFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target?.result as string)
+        if (data.key1_dilithium3_qsk?.key) {
+          setQsk(data.key1_dilithium3_qsk.key)
+          setQskError('')
+        } else { setQskError('Invalid key file') }
+      } catch { setQskError('Could not read file') }
+    }
+    reader.readAsText(file)
+  }
 
   const mono: any = { fontFamily: 'var(--font-mono)' }
 
@@ -581,9 +596,13 @@ const [collateralAcknowledged, setCollateralAcknowledged] = useState(false)
                   {Icons.quantum(14, 'hsl(205 85% 55%)')}
                   <p style={{ color: 'hsl(205 85% 55%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.2em', margin: 0 }}>Quantum Signing Key Required</p>
                 </div>
-                <p style={{ color: 'hsl(0 0% 35%)', fontSize: '12px', ...mono, margin: '0 0 12px', lineHeight: '1.6' }}>
-                  Paste your QSK to sign this transfer. Your key is used locally and never stored.
+               <p style={{ color: 'hsl(0 0% 35%)', fontSize: '12px', ...mono, margin: '0 0 12px', lineHeight: '1.6' }}>
+                  Load your key file or paste your QSK. Your key is used locally and never stored.
                 </p>
+                <label style={{ display: 'block', width: '100%', background: 'hsl(205 85% 55%)', color: '#000', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, padding: '10px 14px', borderRadius: '8px', cursor: 'pointer', textAlign: 'center' as const, marginBottom: '10px', boxSizing: 'border-box' as const }}>
+                  📁 Load Key File
+                  <input type="file" accept=".json" style={{ display: 'none' }} onChange={loadKeyFile} />
+                </label>
                 <textarea
                   value={qsk}
                   onChange={e => { setQsk(e.target.value); setQskError('') }}
