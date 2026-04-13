@@ -14,10 +14,12 @@ export default function VaultPage() {
   const [existingTypes, setExistingTypes] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
- const [error, setError] = useState('')
+  const [error, setError] = useState('')
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
+  const [showDetailsModal, setShowDetailsModal] = useState(false)
   const mono: any = { fontFamily: 'var(--font-mono)' }
+
   useEffect(() => {
     fetch(`${API_URL}/dashboard`)
       .then(r => r.json())
@@ -33,8 +35,8 @@ export default function VaultPage() {
       const res = await fetch(`${API_URL}/vaults`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-             user_pubkey: PUBKEY, network: 'testnet4', recovery_blocks: 6,
-         account_type: accountType,
+          user_pubkey: PUBKEY, network: 'testnet4', recovery_blocks: 6,
+          account_type: accountType,
           username: username || 'user',
           custody_type: isSelfCustody ? 'taproot' : custodyPreference,
           yield_strategy: accountType === 'yield' ? 'babylon' : accountType === 'custody_yield' ? 'treasury' : accountType === 'managed_yield' ? 'managed' : accountType === 'prime' ? 'prime' : 'none',
@@ -42,14 +44,12 @@ export default function VaultPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-     setResult(data); setStep('done')
-      // Store keys in session for immediate use
+      setResult(data); setStep('done')
       if (data.qsk_private) sessionStorage.setItem('ubtc_qsk', data.qsk_private)
       if (data.kyber_sk) sessionStorage.setItem('ubtc_kyber_sk', data.kyber_sk)
       if (data.sphincs_sk) sessionStorage.setItem('ubtc_sphincs_sk', data.sphincs_sk)
-      // Auto-download key file
       const keyData = {
-       vault_id: data.vault_id,
+        vault_id: data.vault_id,
         wallet_address: data.wallet_address,
         username: username || data.vault_id,
         created_at: new Date().toISOString(),
@@ -62,7 +62,7 @@ export default function VaultPage() {
       const blob = new Blob([JSON.stringify(keyData, null, 2)], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
-     a.href = url; a.download = `ubtc-keys-${username || data.vault_id}-${Date.now()}.json`
+      a.href = url; a.download = `ubtc-keys-${username || data.vault_id}-${Date.now()}.json`
       document.body.appendChild(a); a.click()
       document.body.removeChild(a); URL.revokeObjectURL(url)
     } catch (e: any) { setError(e.message) }
@@ -82,15 +82,15 @@ export default function VaultPage() {
   }
 
   const selfAccounts = [
-    { type: 'current' as AccountType, icon: '💳', title: 'Current Account', subtitle: 'Everyday spending', description: 'Your everyday UBTC account. Send and receive instantly with no extra steps. Your Bitcoin collateral is locked in a Taproot script — nobody, not even UBTC, can touch it without your signature. Add UUSDT or UUSDC as additional currencies within this account.', yieldLabel: 'No yield — pure collateral', apy: null, tags: ['Instant transfers', 'Multi-currency', 'Self-custody'], color: 'hsl(205 85% 55%)' },
+    { type: 'current' as AccountType, icon: '💳', title: 'Current Account', subtitle: 'Everyday spending', description: 'Your everyday UBTC account. Send and receive instantly with no extra steps. Your Bitcoin collateral is locked in a Taproot script — nobody, not even UBTC, can touch it without your signature.', yieldLabel: 'No yield — pure collateral', apy: null, tags: ['Instant transfers', 'Multi-currency', 'Self-custody'], color: 'hsl(205 85% 55%)' },
     { type: 'savings' as AccountType, icon: '🔐', title: 'Savings Account', subtitle: 'Long-term secure storage', description: 'For holding larger amounts safely. Every outgoing transfer requires explicit confirmation. Add UUSDT or UUSDC as additional currencies — each with the same quantum-secure protection.', yieldLabel: 'No yield — pure collateral', apy: null, tags: ['Transfer confirmation', 'Multi-currency', 'Long-term storage'], color: 'hsl(38 92% 50%)' },
     { type: 'yield' as AccountType, icon: '₿', title: 'Yield Account', subtitle: 'Earn on your Bitcoin — self-custodied', description: 'Your Bitcoin stays in Taproot self-custody while Babylon Protocol stakes it on-chain earning yield in BTC. Add UUSDT or UUSDC as additional currencies within the same account.', yieldLabel: 'Babylon Protocol staking', apy: '3-5%', tags: ['Bitcoin-native yield', 'Non-custodial', 'Multi-currency'], color: 'hsl(142 76% 36%)' },
   ]
 
   const managedAccounts = [
-    { type: 'custody_yield' as AccountType, icon: '📊', title: 'Custody Yield', subtitle: 'Managed yield — UBTC holds custody', description: 'You send Bitcoin to UBTC. We hold it at BitGo or Komainu and deploy institutional yield strategies. Add UUSDT or UUSDC as additional managed currencies within the same account.', yieldLabel: 'Covered calls + T-Bills + BTC lending', apy: '4-6%', tags: ['BitGo / Komainu', '$250M insured', 'Multi-currency'], color: 'hsl(205 85% 55%)' },
-    { type: 'prime' as AccountType, icon: '💎', title: 'Prime Account', subtitle: 'Institutional grade', description: 'For funds, family offices and institutional clients. Segregated custody, prime brokerage features and multi-authorisation controls. Full multi-currency support with dedicated reporting per currency.', yieldLabel: 'Institutional yield strategies', apy: '5-8%', tags: ['Segregated custody', 'Multi-currency', 'Prime reporting'], color: 'hsl(270 85% 65%)' },
-    { type: 'managed_yield' as AccountType, icon: '🏦', title: 'Managed Yield', subtitle: 'Dynamic allocation — best available yield', description: 'UBTC actively manages a diversified yield portfolio across all your currencies — rotating between covered calls, T-Bills, BTC lending and Babylon staking based on market conditions.', yieldLabel: 'Dynamic rotating yield', apy: '6-10%', tags: ['Dynamic allocation', 'All currencies', 'Active management'], color: 'hsl(142 76% 36%)' },
+    { type: 'custody_yield' as AccountType, icon: '📊', title: 'Custody Yield', subtitle: 'Managed yield — UBTC holds custody', description: 'You send Bitcoin to UBTC. We hold it at BitGo or Komainu and deploy institutional yield strategies.', yieldLabel: 'Covered calls + T-Bills + BTC lending', apy: '4-6%', tags: ['BitGo / Komainu', '$250M insured', 'Multi-currency'], color: 'hsl(205 85% 55%)' },
+    { type: 'prime' as AccountType, icon: '💎', title: 'Prime Account', subtitle: 'Institutional grade', description: 'For funds, family offices and institutional clients. Segregated custody, prime brokerage features and multi-authorisation controls.', yieldLabel: 'Institutional yield strategies', apy: '5-8%', tags: ['Segregated custody', 'Multi-currency', 'Prime reporting'], color: 'hsl(270 85% 65%)' },
+    { type: 'managed_yield' as AccountType, icon: '🏦', title: 'Managed Yield', subtitle: 'Dynamic allocation — best available yield', description: 'UBTC actively manages a diversified yield portfolio across all your currencies — rotating between covered calls, T-Bills, BTC lending and Babylon staking.', yieldLabel: 'Dynamic rotating yield', apy: '6-10%', tags: ['Dynamic allocation', 'All currencies', 'Active management'], color: 'hsl(142 76% 36%)' },
   ]
 
   const Card = ({ acc, selected, onClick }: { acc: typeof selfAccounts[0]; selected: boolean; onClick: () => void }) => {
@@ -114,21 +114,14 @@ export default function VaultPage() {
             {acc.apy && <span style={{ color: 'hsl(142 76% 36%)', fontWeight: '700', fontSize: '15px', ...mono }}>{acc.apy}%</span>}
           </div>
         </div>
-
-        {/* Currency preview */}
         <div style={{ display: 'flex', gap: '6px' }}>
-          {[
-            { symbol: '₿', label: 'UBTC', color: 'hsl(38 92% 50%)' },
-            { symbol: '₮', label: 'UUSDT', color: 'hsl(142 76% 36%)' },
-            { symbol: '$', label: 'UUSDC', color: 'hsl(220 85% 60%)' },
-          ].map(c => (
+          {[{ symbol: '₿', label: 'UBTC', color: 'hsl(38 92% 50%)' }, { symbol: '₮', label: 'UUSDT', color: 'hsl(142 76% 36%)' }, { symbol: '$', label: 'UUSDC', color: 'hsl(220 85% 60%)' }].map(c => (
             <div key={c.label} style={{ flex: 1, background: 'hsl(220 15% 5%)', border: `1px solid ${c.color}30`, borderRadius: '6px', padding: '5px', textAlign: 'center' as const }}>
               <p style={{ color: c.color, fontSize: '12px', fontWeight: '700', margin: '0 0 1px' }}>{c.symbol}</p>
               <p style={{ color: 'hsl(0 0% 40%)', fontSize: '9px', ...mono, margin: 0 }}>{c.label}</p>
             </div>
           ))}
         </div>
-
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' as const }}>
           {acc.tags.map(t => <span key={t} style={{ fontSize: '9px', ...mono, color: acc.color, border: `1px solid ${acc.color}40`, borderRadius: '20px', padding: '2px 8px', textTransform: 'uppercase' }}>{t}</span>)}
         </div>
@@ -137,9 +130,79 @@ export default function VaultPage() {
     )
   }
 
+  const canProceed = username.length >= 3 && email.includes('@') && email.includes('.')
+
   return (
     <div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', padding: '40px 24px 80px', fontFamily: 'var(--font-display)' }}>
       <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+
+        {/* ── DETAILS MODAL ── */}
+        {showDetailsModal && (
+          <div style={{ position: 'fixed', inset: 0, background: 'hsl(220 15% 2% / 0.95)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+            <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(205 85% 55% / 0.3)', borderRadius: '24px', padding: '40px', maxWidth: '480px', width: '100%', boxShadow: '0 0 80px hsl(205 85% 55% / 0.15)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'hsl(205 85% 55% / 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>👤</div>
+                <div>
+                  <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '20px', fontWeight: '700', margin: '0 0 2px' }}>Create your identity</h2>
+                  <p style={{ color: 'hsl(205 85% 55%)', fontSize: '12px', fontFamily: 'var(--font-mono)', margin: 0 }}>World Local Bank · UBTC Protocol</p>
+                </div>
+              </div>
+              <p style={{ color: 'hsl(0 0% 45%)', fontSize: '13px', fontFamily: 'var(--font-mono)', margin: '0 0 28px', lineHeight: '1.7', borderTop: '1px solid hsl(220 10% 12%)', paddingTop: '16px' }}>
+                Your username becomes your UBTC wallet address — how others send you money. Your email receives liquidation alerts and account updates. Neither is ever shared or sold.
+              </p>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', color: 'hsl(0 0% 40%)', fontSize: '10px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '8px' }}>
+                  Username <span style={{ color: 'hsl(0 84% 60%)' }}>required</span>
+                </label>
+                <div style={{ position: 'relative' as const }}>
+                  <span style={{ position: 'absolute' as const, left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'hsl(0 0% 35%)', fontSize: '14px', fontFamily: 'var(--font-mono)' }}>@</span>
+                  <input
+                    value={username}
+                    onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                    placeholder="satoshi"
+                    maxLength={20}
+                    autoFocus
+                    style={{ display: 'block', width: '100%', padding: '14px 16px 14px 32px', background: 'hsl(220 15% 5%)', border: `1px solid ${username.length >= 3 ? 'hsl(142 76% 36% / 0.6)' : 'hsl(220 10% 18%)'}`, borderRadius: '12px', color: 'hsl(0 0% 92%)', fontSize: '16px', fontFamily: 'var(--font-mono)', outline: 'none', boxSizing: 'border-box' as const, transition: 'border-color 0.2s' }}
+                  />
+                  {username.length >= 3 && <span style={{ position: 'absolute' as const, right: '14px', top: '50%', transform: 'translateY(-50%)', color: 'hsl(142 76% 36%)', fontSize: '16px' }}>✓</span>}
+                </div>
+                <p style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', fontFamily: 'var(--font-mono)', margin: '6px 0 0' }}>Lowercase letters, numbers and underscores · 3–20 characters</p>
+              </div>
+
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', color: 'hsl(0 0% 40%)', fontSize: '10px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '8px' }}>
+                  Email Address <span style={{ color: 'hsl(0 84% 60%)' }}>required</span>
+                </label>
+                <input
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  type="email"
+                  style={{ display: 'block', width: '100%', padding: '14px 16px', background: 'hsl(220 15% 5%)', border: `1px solid ${email.includes('@') && email.includes('.') ? 'hsl(142 76% 36% / 0.6)' : 'hsl(220 10% 18%)'}`, borderRadius: '12px', color: 'hsl(0 0% 92%)', fontSize: '16px', fontFamily: 'var(--font-mono)', outline: 'none', boxSizing: 'border-box' as const, transition: 'border-color 0.2s' }}
+                />
+                <p style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', fontFamily: 'var(--font-mono)', margin: '6px 0 0' }}>For liquidation alerts and account recovery only — never shared</p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button onClick={() => setShowDetailsModal(false)} style={{ background: 'none', border: '1px solid hsl(220 10% 16%)', color: 'hsl(0 0% 40%)', borderRadius: '12px', padding: '14px 20px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
+                  ← Back
+                </button>
+                <button
+                  onClick={() => {
+                    if (!canProceed) return
+                    setShowDetailsModal(false)
+                    const managed = ['custody_yield', 'prime', 'managed_yield']
+                    if (accountType && managed.includes(accountType)) setStep('custody'); else setStep('confirm')
+                  }}
+                  disabled={!canProceed}
+                  style={{ flex: 1, background: canProceed ? 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))' : 'hsl(220 10% 14%)', color: canProceed ? 'white' : 'hsl(0 0% 30%)', border: 'none', borderRadius: '12px', padding: '14px', fontSize: '15px', fontWeight: '700', cursor: canProceed ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', transition: 'all 0.2s', boxShadow: canProceed ? '0 0 30px hsl(205 85% 55% / 0.4)' : 'none' }}>
+                  Open Account →
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {step !== 'done' && (
           <div style={{ textAlign: 'center' as const, marginBottom: '48px' }}>
@@ -177,23 +240,19 @@ export default function VaultPage() {
         {/* ── STEP 1: Account Selection ── */}
         {step === 'account' && (
           <div>
-            {/* Multi-currency explainer */}
             <div style={{ background: 'hsl(205 85% 55% / 0.05)', border: '1px solid hsl(205 85% 55% / 0.15)', borderRadius: '14px', padding: '20px 24px', marginBottom: '32px' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
                 <span style={{ fontSize: '24px', flexShrink: 0 }}>⚛️</span>
                 <div>
                   <p style={{ color: 'hsl(205 85% 55%)', fontSize: '14px', fontWeight: '600', margin: '0 0 8px' }}>Every account supports multiple currencies — UBTC, UUSDT and UUSDC</p>
                   <p style={{ color: 'hsl(0 0% 65%)', fontSize: '13px', ...mono, margin: 0, lineHeight: '1.8' }}>
-                    Once you open an account, you can add UUSDT and UUSDC as additional currencies within the same account. Each currency is independently quantum-secured — deposit USDT, mint UUSDT 1:1; deposit USDC, mint UUSDC 1:1. All currencies travel on the Bitcoin network as Taproot Assets, sharing the same quantum key pair and security model. UUSDT and UUSDC are not Bitcoin-backed — they are 1:1 backed by the underlying stablecoin locked in your quantum vault.
+                    Once you open an account, you can add UUSDT and UUSDC as additional currencies within the same account. Each currency is independently quantum-secured — deposit USDT, mint UUSDT 1:1; deposit USDC, mint UUSDC 1:1.
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Two column — Self vs Managed */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '32px' }}>
-
-              {/* LEFT — Self Custody */}
               <div>
                 <div style={{ background: 'hsl(205 85% 55% / 0.06)', border: '1px solid hsl(205 85% 55% / 0.2)', borderRadius: '16px', padding: '20px 24px', marginBottom: '16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
@@ -201,16 +260,13 @@ export default function VaultPage() {
                     <h2 style={{ color: 'hsl(205 85% 55%)', fontSize: '16px', fontWeight: '700', margin: 0 }}>Self-Custody Accounts</h2>
                   </div>
                   <p style={{ color: 'hsl(0 0% 92%)', fontSize: '13px', fontWeight: '600', ...mono, margin: '0 0 8px' }}>Your keys. Your Bitcoin. Always.</p>
-                  <p style={{ color: 'hsl(0 0% 60%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.7' }}>
-                    Your collateral is locked in a Taproot script on the Bitcoin blockchain. No company — not even UBTC — can move your assets without your cryptographic signature. You are the sole keyholder. This applies to UBTC, UUSDT and UUSDC equally within the same account.
-                  </p>
+                  <p style={{ color: 'hsl(0 0% 60%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.7' }}>Your collateral is locked in a Taproot script on the Bitcoin blockchain. No company — not even UBTC — can move your assets without your cryptographic signature.</p>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '12px' }}>
                   {selfAccounts.map(acc => <Card key={acc.type} acc={acc} selected={accountType === acc.type} onClick={() => setAccountType(acc.type)} />)}
                 </div>
               </div>
 
-              {/* RIGHT — Managed Custody */}
               <div>
                 <div style={{ background: 'hsl(38 92% 50% / 0.06)', border: '1px solid hsl(38 92% 50% / 0.2)', borderRadius: '16px', padding: '20px 24px', marginBottom: '16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
@@ -218,9 +274,7 @@ export default function VaultPage() {
                     <h2 style={{ color: 'hsl(38 92% 50%)', fontSize: '16px', fontWeight: '700', margin: 0 }}>Managed Custody Accounts</h2>
                   </div>
                   <p style={{ color: 'hsl(0 0% 92%)', fontSize: '13px', fontWeight: '600', ...mono, margin: '0 0 8px' }}>You own everything. We manage it for you.</p>
-                  <p style={{ color: 'hsl(0 0% 60%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.7' }}>
-                    You send your assets to UBTC. We hold them at BitGo or Komainu — regulated custodians insured up to $250M — and deploy institutional yield strategies across all your currencies. UBTC, UUSDT and UUSDC all benefit from the same managed yield strategies within one account.
-                  </p>
+                  <p style={{ color: 'hsl(0 0% 60%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.7' }}>You send your assets to UBTC. We hold them at BitGo or Komainu — regulated custodians insured up to $250M — and deploy institutional yield strategies.</p>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '12px' }}>
                   {managedAccounts.map(acc => <Card key={acc.type} acc={acc} selected={accountType === acc.type} onClick={() => setAccountType(acc.type)} />)}
@@ -228,55 +282,9 @@ export default function VaultPage() {
               </div>
             </div>
 
-            {/* High Yield — full width */}
-            <div style={{ background: 'hsl(220 12% 7%)', border: '2px solid hsl(270 85% 65% / 0.3)', borderRadius: '20px', padding: '32px', marginBottom: '32px', position: 'relative' as const, overflow: 'hidden' }}>
-              <div style={{ position: 'absolute' as const, top: '-60px', right: '-60px', width: '200px', height: '200px', borderRadius: '50%', background: 'hsl(270 85% 65% / 0.06)', pointerEvents: 'none' as const }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap' as const, gap: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'hsl(270 85% 65% / 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', flexShrink: 0 }}>🚀</div>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
-                      <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '20px', fontWeight: '700', margin: 0 }}>High Yield Investment Account</h2>
-                      <span style={{ background: 'hsl(270 85% 65% / 0.15)', color: 'hsl(270 85% 65%)', fontSize: '10px', fontWeight: '700', ...mono, padding: '4px 12px', borderRadius: '20px', textTransform: 'uppercase', border: '1px solid hsl(270 85% 65% / 0.3)' }}>Coming Soon</span>
-                    </div>
-                    <p style={{ color: 'hsl(270 85% 65%)', fontSize: '13px', ...mono, margin: 0 }}>Active trading — maximum yield — all currencies</p>
-                  </div>
-                </div>
-                <div style={{ textAlign: 'right' as const }}>
-                  <p style={{ color: 'hsl(270 85% 65%)', fontSize: '32px', fontWeight: '700', ...mono, margin: '0 0 2px', lineHeight: '1' }}>15-25%</p>
-                  <p style={{ color: 'hsl(0 0% 45%)', fontSize: '11px', ...mono, margin: 0 }}>Target APY</p>
-                </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-                <div>
-                  <p style={{ color: 'hsl(0 0% 65%)', fontSize: '13px', ...mono, margin: '0 0 12px', lineHeight: '1.8' }}>
-                    You send your Bitcoin, USDT or USDC to UBTC. We actively trade all your currencies at our institutional trading desk — derivatives, structured products, arbitrage and market making — targeting significantly higher returns than any passive strategy.
-                  </p>
-                  <p style={{ color: 'hsl(0 0% 65%)', fontSize: '13px', ...mono, margin: 0, lineHeight: '1.8' }}>
-                    Supports UBTC, UUSDT and UUSDC in a single high-yield account.
-                  </p>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '10px' }}>
-                  <div style={{ background: 'hsl(220 15% 5%)', borderRadius: '12px', padding: '14px' }}>
-                    <p style={{ color: 'hsl(0 0% 55%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 6px' }}>Custody</p>
-                    <p style={{ color: 'hsl(270 85% 65%)', fontSize: '12px', ...mono, margin: '0 0 4px', fontWeight: '600' }}>🔐 BitGo Regulated Custody</p>
-                    <p style={{ color: 'hsl(0 0% 55%)', fontSize: '11px', ...mono, margin: 0, lineHeight: '1.6' }}>Your assets held by BitGo on behalf of UBTC — insured up to $250M. UBTC has full trading authority. No self-custody version available.</p>
-                  </div>
-                  <div style={{ background: 'hsl(0 84% 60% / 0.06)', border: '1px solid hsl(0 84% 60% / 0.2)', borderRadius: '10px', padding: '12px' }}>
-                    <p style={{ color: 'hsl(0 84% 60%)', fontSize: '11px', ...mono, margin: 0, lineHeight: '1.6' }}>⚠ High-risk investment product. Target yields not guaranteed. Capital is at risk.</p>
-                  </div>
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' as const }}>
-                {['Active trading', 'BitGo insured custody', 'UBTC + UUSDT + UUSDC', 'Derivatives & arbitrage', 'Structured products', '15-25% target APY'].map(t => (
-                  <span key={t} style={{ fontSize: '10px', ...mono, color: 'hsl(270 85% 65%)', border: '1px solid hsl(270 85% 65% / 0.3)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase' }}>{t}</span>
-                ))}
-              </div>
-            </div>
-
             {/* Continue */}
-            <div style={{ maxWidth: '400px', margin: '0 auto' }}>
-              <button onClick={() => { if (!accountType) return; const managed = ['custody_yield', 'prime', 'managed_yield']; if (managed.includes(accountType)) setStep('custody'); else setStep('confirm') }} disabled={!accountType} style={btnNext(!!accountType)}>
+            <div style={{ maxWidth: '400px', margin: '32px auto 0' }}>
+              <button onClick={() => { if (!accountType) return; setShowDetailsModal(true) }} disabled={!accountType} style={btnNext(!!accountType)}>
                 {accountType ? `Continue with ${accountDetails[accountType]?.title} →` : 'Select an account to continue'}
               </button>
             </div>
@@ -289,13 +297,13 @@ export default function VaultPage() {
             <div style={{ background: 'hsl(38 92% 50% / 0.05)', border: '1px solid hsl(38 92% 50% / 0.2)', borderRadius: '14px', padding: '20px' }}>
               <h3 style={{ color: 'hsl(38 92% 50%)', fontSize: '13px', fontWeight: '600', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Choose your regulated custodian</h3>
               <p style={{ color: 'hsl(0 0% 65%)', fontSize: '13px', ...mono, margin: 0, lineHeight: '1.8' }}>
-                For managed custody accounts UBTC holds and manages your assets. You can additionally choose to have your assets sub-custodied at a regulated third-party custodian — adding an extra layer of regulatory oversight and insurance on top of UBTC management.
+                For managed custody accounts UBTC holds and manages your assets. You can additionally choose to have your assets sub-custodied at a regulated third-party custodian.
               </p>
             </div>
             {[
-              { type: 'ubtc' as const, icon: '🏦', title: 'UBTC Direct Custody', subtitle: 'Standard — immediate activation', description: 'UBTC holds and manages your assets directly across all currencies. No additional KYB or custodian fees beyond standard onboarding.', tags: ['Immediate activation', 'All currencies', 'No additional KYB'], color: 'hsl(205 85% 55%)' },
-              { type: 'bitgo' as const, icon: '🔐', title: 'UBTC + BitGo Sub-Custody', subtitle: '$250M insured — regulated qualified custodian', description: 'UBTC manages your account. Your assets are additionally sub-custodied at BitGo — $60B+ AUM, 50+ countries, SOC2 certified, insured up to $250M.', tags: ['$250M insured', 'SOC2 certified', 'KYB required', 'Institutional'], color: 'hsl(38 92% 50%)' },
-              { type: 'komainu' as const, icon: '🌍', title: 'UBTC + Komainu Sub-Custody', subtitle: 'VARA Dubai & UK FCA regulated', description: 'UBTC manages your account. Your assets are additionally sub-custodied at Komainu — regulated by Dubai VARA and UK FCA, backed by Nomura. Ideal for Middle East and Asian clients.', tags: ['VARA Dubai', 'UK FCA', 'Nomura-backed', 'KYB required'], color: 'hsl(270 85% 65%)' },
+              { type: 'ubtc' as const, icon: '🏦', title: 'UBTC Direct Custody', subtitle: 'Standard — immediate activation', description: 'UBTC holds and manages your assets directly across all currencies.', tags: ['Immediate activation', 'All currencies', 'No additional KYB'], color: 'hsl(205 85% 55%)' },
+              { type: 'bitgo' as const, icon: '🔐', title: 'UBTC + BitGo Sub-Custody', subtitle: '$250M insured — regulated qualified custodian', description: 'UBTC manages your account. Your assets are additionally sub-custodied at BitGo — $60B+ AUM, 50+ countries, SOC2 certified, insured up to $250M.', tags: ['$250M insured', 'SOC2 certified', 'KYB required'], color: 'hsl(38 92% 50%)' },
+              { type: 'komainu' as const, icon: '🌍', title: 'UBTC + Komainu Sub-Custody', subtitle: 'VARA Dubai & UK FCA regulated', description: 'UBTC manages your account. Your assets are additionally sub-custodied at Komainu — regulated by Dubai VARA and UK FCA, backed by Nomura.', tags: ['VARA Dubai', 'UK FCA', 'Nomura-backed', 'KYB required'], color: 'hsl(270 85% 65%)' },
             ].map(opt => (
               <div key={opt.type} onClick={() => setCustodyPreference(opt.type)} style={{ background: 'hsl(220 12% 8%)', border: `2px solid ${custodyPreference === opt.type ? opt.color : 'hsl(220 10% 16%)'}`, borderRadius: '16px', padding: '22px', cursor: 'pointer', transition: 'border-color 0.15s' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -323,14 +331,9 @@ export default function VaultPage() {
           </div>
         )}
 
-     {/* ── STEP 3: Confirm ── */}
+        {/* ── STEP 3: Confirm ── */}
         {step === 'confirm' && accountType && (
           <div style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', flexDirection: 'column' as const, gap: '16px' }}>
-            <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 16%)', borderRadius: '16px', padding: '24px' }}>
-              <p style={{ color: 'hsl(0 0% 35%)', fontSize: '10px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 16px' }}>Your Details</p>
-              <input value={username} onChange={e => setUsername(e.target.value)} placeholder="Username (e.g. Satoshi)" style={{ display: 'block', width: '100%', padding: '13px 16px', background: 'hsl(220 15% 5%)', border: '1px solid hsl(220 10% 16%)', borderRadius: '10px', color: 'hsl(0 0% 92%)', fontSize: '14px', fontFamily: 'var(--font-mono)', outline: 'none', boxSizing: 'border-box' as const, marginBottom: '10px' }} />
-              <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email address" type="email" style={{ display: 'block', width: '100%', padding: '13px 16px', background: 'hsl(220 15% 5%)', border: '1px solid hsl(220 10% 16%)', borderRadius: '10px', color: 'hsl(0 0% 92%)', fontSize: '14px', fontFamily: 'var(--font-mono)', outline: 'none', boxSizing: 'border-box' as const }} />
-            </div>
             {(() => {
               const det = accountDetails[accountType]
               const managed = ['custody_yield', 'prime', 'managed_yield']
@@ -346,11 +349,12 @@ export default function VaultPage() {
                       </div>
                     </div>
                     {[
-                      { label: 'Currencies Supported', value: '₿ UBTC · ₮ UUSDT · $ UUSDC — add currencies after opening' },
+                      { label: 'Username', value: `@${username}` },
+                      { label: 'Email', value: email },
+                      { label: 'Currencies Supported', value: '₿ UBTC · ₮ UUSDT · $ UUSDC' },
                       { label: 'Custody Model', value: det.custodyLabel },
                       { label: 'Yield Strategy', value: det.yieldLabel + (det.apy ? ` — ${det.apy}% APY` : '') },
                       { label: 'UBTC Collateral', value: '150% minimum — $150 BTC locked per $100 UBTC issued' },
-                      { label: 'UUSDT / UUSDC', value: '1:1 backed — $1 USDT locked per $1 UUSDT issued' },
                       ...(isManaged ? [{ label: 'Sub-Custodian', value: custodyPreference === 'ubtc' ? '🏦 UBTC Direct' : custodyPreference === 'bitgo' ? '🔐 BitGo — $250M insured' : '🌍 Komainu — VARA & FCA' }] : []),
                       { label: 'Network', value: 'Bitcoin Testnet4' },
                     ].map(item => (
@@ -363,8 +367,7 @@ export default function VaultPage() {
                   {isManaged && (
                     <div style={{ background: 'hsl(38 92% 50% / 0.06)', border: '1px solid hsl(38 92% 50% / 0.3)', borderRadius: '12px', padding: '16px' }}>
                       <p style={{ color: 'hsl(38 92% 50%)', fontSize: '13px', ...mono, margin: 0, lineHeight: '1.7' }}>
-                        ⚠ By opening this account you transfer custody of your assets to UBTC Protocol. Held at {custodyPreference === 'komainu' ? 'Komainu' : custodyPreference === 'bitgo' ? 'BitGo' : 'UBTC'}. You retain full ownership and can withdraw subject to settlement periods.
-                        {(custodyPreference === 'bitgo' || custodyPreference === 'komainu') && ' KYB verification within 24-48 hours.'}
+                        ⚠ By opening this account you transfer custody of your assets to UBTC Protocol. You retain full ownership and can withdraw subject to settlement periods.
                       </p>
                     </div>
                   )}
@@ -387,14 +390,14 @@ export default function VaultPage() {
             <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'hsl(142 76% 36% / 0.15)', border: '2px solid hsl(142 76% 36% / 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', fontSize: '36px' }}>✅</div>
             <h1 style={{ color: 'hsl(0 0% 92%)', fontSize: '32px', fontWeight: '700', margin: '0 0 8px' }}>Account Opened</h1>
             <p style={{ color: 'hsl(0 0% 55%)', fontSize: '14px', ...mono, margin: '0 0 40px', lineHeight: '1.7' }}>
-              Your {accountDetails[accountType]?.title} is ready. Fund it with Bitcoin then add UUSDT or UUSDC as additional currencies from your account dashboard.
+              Welcome, @{username}! Your {accountDetails[accountType]?.title} is ready. Fund it with Bitcoin to get started.
             </p>
             <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 16%)', borderRadius: '16px', padding: '24px', textAlign: 'left' as const, marginBottom: '20px' }}>
               <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid hsl(220 10% 12%)' }}>
                 <p style={{ color: 'hsl(0 0% 45%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 6px' }}>Account ID</p>
                 <p style={{ color: 'hsl(205 85% 55%)', fontSize: '14px', fontWeight: '600', ...mono, margin: 0 }}>{result.vault_id}</p>
               </div>
-             <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid hsl(220 10% 12%)' }}>
+              <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid hsl(220 10% 12%)' }}>
                 <p style={{ color: 'hsl(0 0% 45%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 6px' }}>Bitcoin Deposit Address</p>
                 <p style={{ color: 'hsl(0 0% 92%)', fontSize: '12px', ...mono, margin: 0, wordBreak: 'break-all' as const, lineHeight: '1.6' }}>{result.deposit_address}</p>
               </div>
@@ -421,7 +424,7 @@ export default function VaultPage() {
                 </div>
               </div>
             </div>
-            {/* QUANTUM KEYS DISPLAY */}
+
             <div style={{ background: 'hsl(220 15% 5%)', border: '1px solid hsl(0 84% 60% / 0.4)', borderRadius: '16px', padding: '24px', textAlign: 'left' as const, marginBottom: '20px' }}>
               <p style={{ color: 'hsl(0 84% 60%)', fontSize: '11px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.2em', margin: '0 0 4px' }}>⚠️ Your Quantum Keys — Save Now</p>
               <p style={{ color: 'hsl(0 0% 30%)', fontSize: '11px', ...mono, margin: '0 0 16px' }}>A key file has been downloaded automatically. Store it securely offline. These keys are never stored on our servers.</p>
