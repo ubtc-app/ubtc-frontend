@@ -412,11 +412,15 @@ function WalletContent() {
                 {Icons.wallet(13, 'hsl(0 0% 30%)')}
                 <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, textTransform: 'uppercase', margin: 0 }}>Wallet Address</p>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <p style={{ color: 'hsl(0 0% 65%)', fontSize: '11px', ...mono, margin: 0, flex: 1, wordBreak: 'break-all' as const }}>{lookupResult.wallet_address}</p>
                 <CopyBtn text={lookupResult.wallet_address} id="lookup-addr" />
               </div>
             </div>
+            <button onClick={() => { setWalletAddress(lookupResult.wallet_address); localStorage.setItem('ubtc_wallet_address', lookupResult.wallet_address); loadWallet(lookupResult.wallet_address) }}
+              style={{ width: '100%', marginTop: '14px', background: 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))', color: 'white', border: 'none', borderRadius: '12px', padding: '14px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
+              Open Wallet →
+            </button>
           </div>
         )}
       </div>
