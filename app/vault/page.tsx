@@ -33,7 +33,7 @@ export default function VaultPage() {
       const res = await fetch(`${API_URL}/vaults`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          user_pubkey: PUBKEY, network: 'regtest', recovery_blocks: 6,
+             user_pubkey: PUBKEY, network: 'testnet4', recovery_blocks: 6,
           account_type: accountType,
           custody_type: isSelfCustody ? 'taproot' : custodyPreference,
           yield_strategy: accountType === 'yield' ? 'babylon' : accountType === 'custody_yield' ? 'treasury' : accountType === 'managed_yield' ? 'managed' : accountType === 'prime' ? 'prime' : 'none',
@@ -344,7 +344,7 @@ export default function VaultPage() {
                       { label: 'UBTC Collateral', value: '150% minimum — $150 BTC locked per $100 UBTC issued' },
                       { label: 'UUSDT / UUSDC', value: '1:1 backed — $1 USDT locked per $1 UUSDT issued' },
                       ...(isManaged ? [{ label: 'Sub-Custodian', value: custodyPreference === 'ubtc' ? '🏦 UBTC Direct' : custodyPreference === 'bitgo' ? '🔐 BitGo — $250M insured' : '🌍 Komainu — VARA & FCA' }] : []),
-                      { label: 'Network', value: 'Bitcoin Regtest → Testnet4 → Mainnet' },
+                      { label: 'Network', value: 'Bitcoin Testnet4' },
                     ].map(item => (
                       <div key={item.label} style={{ padding: '12px 0', borderBottom: '1px solid hsl(220 10% 12%)' }}>
                         <p style={{ color: 'hsl(0 0% 45%)', fontSize: '11px', ...mono, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 4px' }}>{item.label}</p>
@@ -386,10 +386,20 @@ export default function VaultPage() {
                 <p style={{ color: 'hsl(0 0% 45%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 6px' }}>Account ID</p>
                 <p style={{ color: 'hsl(205 85% 55%)', fontSize: '14px', fontWeight: '600', ...mono, margin: 0 }}>{result.vault_id}</p>
               </div>
-              <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid hsl(220 10% 12%)' }}>
+             <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid hsl(220 10% 12%)' }}>
                 <p style={{ color: 'hsl(0 0% 45%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 6px' }}>Bitcoin Deposit Address</p>
                 <p style={{ color: 'hsl(0 0% 92%)', fontSize: '12px', ...mono, margin: 0, wordBreak: 'break-all' as const, lineHeight: '1.6' }}>{result.deposit_address}</p>
               </div>
+              {result.mast_address && (
+                <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid hsl(220 10% 12%)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                    <p style={{ color: 'hsl(205 85% 55%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: 0 }}>Taproot MAST Vault Address</p>
+                    <span style={{ fontSize: '9px', ...mono, color: 'hsl(142 76% 36%)', background: 'hsl(142 76% 36% / 0.1)', borderRadius: '20px', padding: '2px 7px', border: '1px solid hsl(142 76% 36% / 0.3)' }}>P2TR</span>
+                  </div>
+                  <p style={{ color: 'hsl(205 85% 55%)', fontSize: '12px', ...mono, margin: '0 0 6px', wordBreak: 'break-all' as const, lineHeight: '1.6' }}>{result.mast_address}</p>
+                  <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, margin: 0, lineHeight: '1.6' }}>3 spending paths: User withdrawal · Liquidation · Recovery (144 block timelock)</p>
+                </div>
+              )}
               <div>
                 <p style={{ color: 'hsl(0 0% 45%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 6px' }}>Currencies Available</p>
                 <div style={{ display: 'flex', gap: '8px' }}>

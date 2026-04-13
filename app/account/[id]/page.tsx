@@ -628,8 +628,9 @@ function AccountContent() {
                 { label: 'Type', value: meta.title },
                 { label: 'Custody', value: meta.custody },
                 { label: 'Status', value: vault.status === 'active' ? 'Active' : 'Pending' },
-                { label: 'Network', value: 'Bitcoin Regtest' },
+             { label: 'Network', value: vault.network === 'testnet4' ? 'Bitcoin Testnet4' : vault.network === 'mainnet' ? 'Bitcoin Mainnet' : vault.network || 'Bitcoin Testnet4' },
                 { label: 'BTC Address', value: vault.deposit_address },
+                ...(vault.mast_address ? [{ label: 'MAST Vault Address (P2TR)', value: vault.mast_address }] : []),
               ].map(item => (
                 <div key={item.label} style={{ padding: '7px 0', borderBottom: '1px solid hsl(220 10% 10%)' }}>
                   <p style={{ color: 'hsl(0 0% 28%)', fontSize: '9px', ...mono, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 2px' }}>{item.label}</p>
