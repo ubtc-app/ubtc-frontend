@@ -14,10 +14,10 @@ export default function VaultPage() {
   const [existingTypes, setExistingTypes] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
-  const [error, setError] = useState('')
-
+ const [error, setError] = useState('')
+  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const mono: any = { fontFamily: 'var(--font-mono)' }
-
   useEffect(() => {
     fetch(`${API_URL}/dashboard`)
       .then(r => r.json())
@@ -34,7 +34,8 @@ export default function VaultPage() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
              user_pubkey: PUBKEY, network: 'testnet4', recovery_blocks: 6,
-          account_type: accountType,
+         account_type: accountType,
+          username: username || 'user',
           custody_type: isSelfCustody ? 'taproot' : custodyPreference,
           yield_strategy: accountType === 'yield' ? 'babylon' : accountType === 'custody_yield' ? 'treasury' : accountType === 'managed_yield' ? 'managed' : accountType === 'prime' ? 'prime' : 'none',
         })
@@ -48,7 +49,9 @@ export default function VaultPage() {
       if (data.sphincs_sk) sessionStorage.setItem('ubtc_sphincs_sk', data.sphincs_sk)
       // Auto-download key file
       const keyData = {
-        vault_id: data.vault_id,
+       vault_id: data.vault_id,
+        wallet_address: data.wallet_address,
+        username: username || data.vault_id,
         created_at: new Date().toISOString(),
         warning: 'STORE THIS FILE SECURELY OFFLINE. NEVER SHARE IT.',
         protocol_second_key: { purpose: 'Authorises minting and withdrawals', key: data.protocol_second_key },
@@ -59,7 +62,7 @@ export default function VaultPage() {
       const blob = new Blob([JSON.stringify(keyData, null, 2)], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
-      a.href = url; a.download = `ubtc-keys-${data.vault_id}.json`
+     a.href = url; a.download = `ubtc-keys-${username || data.vault_id}-${Date.now()}.json`
       document.body.appendChild(a); a.click()
       document.body.removeChild(a); URL.revokeObjectURL(url)
     } catch (e: any) { setError(e.message) }
@@ -320,9 +323,14 @@ export default function VaultPage() {
           </div>
         )}
 
-        {/* ── STEP 3: Confirm ── */}
+     {/* ── STEP 3: Confirm ── */}
         {step === 'confirm' && accountType && (
           <div style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', flexDirection: 'column' as const, gap: '16px' }}>
+            <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 16%)', borderRadius: '16px', padding: '24px' }}>
+              <p style={{ color: 'hsl(0 0% 35%)', fontSize: '10px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 16px' }}>Your Details</p>
+              <input value={username} onChange={e => setUsername(e.target.value)} placeholder="Username (e.g. Satoshi)" style={{ display: 'block', width: '100%', padding: '13px 16px', background: 'hsl(220 15% 5%)', border: '1px solid hsl(220 10% 16%)', borderRadius: '10px', color: 'hsl(0 0% 92%)', fontSize: '14px', fontFamily: 'var(--font-mono)', outline: 'none', boxSizing: 'border-box' as const, marginBottom: '10px' }} />
+              <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email address" type="email" style={{ display: 'block', width: '100%', padding: '13px 16px', background: 'hsl(220 15% 5%)', border: '1px solid hsl(220 10% 16%)', borderRadius: '10px', color: 'hsl(0 0% 92%)', fontSize: '14px', fontFamily: 'var(--font-mono)', outline: 'none', boxSizing: 'border-box' as const }} />
+            </div>
             {(() => {
               const det = accountDetails[accountType]
               const managed = ['custody_yield', 'prime', 'managed_yield']
