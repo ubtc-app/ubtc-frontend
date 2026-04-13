@@ -25,7 +25,16 @@ function WalletContent() {
 
   const mono: any = { fontFamily: 'var(--font-mono)' }
 
-  useEffect(() => {
+ useEffect(() => {
+    // Check URL params first — allows direct linking from account dashboard
+    const params = new URLSearchParams(window.location.search)
+    const urlAddress = params.get('address')
+    if (urlAddress) {
+      setWalletAddress(urlAddress)
+      localStorage.setItem('ubtc_wallet_address', urlAddress)
+      loadWallet(urlAddress)
+      return
+    }
     const stored = localStorage.getItem('ubtc_wallet_address')
     if (stored) {
       setWalletAddress(stored)

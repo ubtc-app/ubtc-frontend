@@ -683,7 +683,7 @@ function AccountContent() {
                     { icon: Icons.redeem(13, 'hsl(0 0% 45%)'), label: 'Redeem UBTC', href: `/redeem?vault=${vaultId}&currency=ubtc` },
                     { icon: Icons.deposit(13, 'hsl(142 76% 36%)'), label: 'Deposit USDT', href: `/deposit?vault=${vaultId}&currency=uusdt` },
                     { icon: Icons.deposit(13, 'hsl(220 85% 60%)'), label: 'Deposit USDC', href: `/deposit?vault=${vaultId}&currency=uusdc` },
-{ icon: Icons.wallet(13, 'hsl(205 85% 55%)'), label: 'My Wallet', href: `/wallet` },
+{ icon: Icons.wallet(13, 'hsl(205 85% 55%)'), label: 'My Wallet', href: vault.linked_wallet ? `/wallet?address=${vault.linked_wallet}` : `/wallet` },
                   ].map(link => (
                     <a key={link.label} href={link.href} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'hsl(220 15% 5%)', border: '1px solid hsl(220 10% 12%)', color: 'hsl(0 0% 52%)', textDecoration: 'none', borderRadius: '8px', padding: '9px 12px', fontSize: '12px', fontWeight: '600', ...mono }}>
                       {link.icon} {link.label}
