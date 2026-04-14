@@ -449,7 +449,7 @@ function WalletContent() {
         <p style={{ color: 'hsl(0 0% 28%)', fontSize: '12px', ...mono, margin: '0 0 24px' }}>Total Balance</p>
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', maxWidth: '320px', margin: '0 auto' }}>
           {[
-            { label: 'Send', icon: Icons.send(18, 'hsl(0 0% 55%)'), href: `/transfer?from_wallet=${walletData?.wallet_address}` },
+           { label: 'Send', icon: Icons.send(18, 'hsl(0 0% 55%)'), href: `/transfer?from_wallet=${walletData?.wallet_address}&ubtc=${balance}&uusdt=${uusdtBalance}&uusdc=${uusdcBalance}` },
             { label: 'Receive', icon: Icons.receive(18, 'hsl(0 0% 55%)'), action: () => copy(walletData?.wallet_address || '', 'recv') },
             { label: 'Tokens', icon: Icons.settings(18, 'hsl(0 0% 55%)'), action: () => setShowManageTokens(true) },
           ].map(btn => (
