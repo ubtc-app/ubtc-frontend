@@ -260,7 +260,6 @@ function AccountContent() {
         <div style={{ position: 'fixed', inset: 0, background: 'hsl(220 15% 2% / 0.97)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', overflowY: 'auto' as const }}>
           <div style={{ background: 'hsl(220 12% 8%)', border: `1px solid ${scColor}30`, borderRadius: '24px', padding: '36px', maxWidth: '520px', width: '100%' }}>
 
-            {/* Step dots */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '28px' }}>
               {['deposit', 'quantum', 'done'].map((s, i) => {
                 const idx = { deposit: 0, quantum: 1, done: 2 }[addStep]
@@ -277,30 +276,15 @@ function AccountContent() {
                   <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '22px', fontWeight: '700', margin: '0 0 6px' }}>Deposit {scToken}</h2>
                   <p style={{ color: 'hsl(0 0% 38%)', fontSize: '13px', ...mono, margin: 0 }}>Lock {scToken} in quantum vault · Mint {scUToken} 1:1</p>
                 </div>
-
                 <div style={{ background: 'hsl(220 15% 5%)', border: `1px solid ${scColor}20`, borderRadius: '14px', padding: '16px', marginBottom: '14px' }}>
                   <p style={{ color: 'hsl(0 0% 30%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 8px' }}>{scToken} Deposit Address (ERC-20)</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
                     <p style={{ color: scColor, fontSize: '11px', ...mono, margin: 0, flex: 1, wordBreak: 'break-all' as const }}>{scAddr}</p>
                     <CopyBtn text={scAddr} id="sc-addr" />
                   </div>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    {[['ERC-20', true], ['TRC-20', false], ['BEP-20', false]].map(([n, active]) => (
-                      <span key={n as string} style={{ fontSize: '9px', ...mono, color: active ? 'hsl(142 76% 36%)' : 'hsl(0 0% 28%)', background: active ? 'hsl(142 76% 36% / 0.1)' : 'hsl(220 12% 10%)', borderRadius: '20px', padding: '2px 8px', border: `1px solid ${active ? 'hsl(142 76% 36% / 0.3)' : 'hsl(220 10% 16%)'}` }}>
-                        {n as string}{!active && ' · Soon'}
-                      </span>
-                    ))}
-                  </div>
                 </div>
-
-                <div style={{ background: 'hsl(38 92% 50% / 0.05)', border: '1px solid hsl(38 92% 50% / 0.15)', borderRadius: '12px', padding: '12px 14px', marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                  {Icons.quantum(16, 'hsl(38 92% 50%)')}
-                  <p style={{ color: 'hsl(38 92% 50%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.6' }}>You will receive a <strong>Quantum Signing Key (QSK)</strong> after minting — shown once only.</p>
-                </div>
-
                 <label style={{ display: 'block', color: 'hsl(0 0% 38%)', fontSize: '11px', ...mono, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '8px' }}>Amount of {scToken} (min 10)</label>
                 <input value={depositAmount} onChange={e => setDepositAmount(e.target.value)} placeholder="10000" type="number" autoFocus style={{ ...fieldStyle, marginBottom: '10px' }} />
-
                 <div style={{ display: 'flex', gap: '6px', marginBottom: '20px' }}>
                   {['1000', '5000', '10000', '50000'].map(v => (
                     <button key={v} onClick={() => setDepositAmount(v)} style={{ flex: 1, background: depositAmount === v ? scColor + '18' : 'hsl(220 15% 5%)', border: `1px solid ${depositAmount === v ? scColor + '40' : 'hsl(220 10% 14%)'}`, color: depositAmount === v ? scColor : 'hsl(0 0% 35%)', borderRadius: '8px', padding: '8px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', ...mono }}>
@@ -308,9 +292,7 @@ function AccountContent() {
                     </button>
                   ))}
                 </div>
-
                 {addError && <p style={{ color: 'hsl(0 84% 60%)', fontSize: '12px', ...mono, marginBottom: '12px' }}>{addError}</p>}
-
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={resetModal} style={{ background: 'none', border: '1px solid hsl(220 10% 16%)', color: 'hsl(0 0% 40%)', borderRadius: '12px', padding: '14px 20px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>Cancel</button>
                   <button onClick={handleDeposit} disabled={addLoading || !depositAmount || parseFloat(depositAmount) < 10} style={{ flex: 1, background: depositAmount && parseFloat(depositAmount) >= 10 && !addLoading ? `linear-gradient(135deg, ${scColor}, ${scColor}bb)` : 'hsl(220 10% 14%)', color: depositAmount && parseFloat(depositAmount) >= 10 && !addLoading ? 'white' : 'hsl(0 0% 28%)', border: 'none', borderRadius: '12px', padding: '14px', fontSize: '14px', fontWeight: '700', cursor: depositAmount && parseFloat(depositAmount) >= 10 && !addLoading ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)' }}>
@@ -327,40 +309,17 @@ function AccountContent() {
                   <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '22px', fontWeight: '700', margin: '0 0 6px' }}>Quantum Authorization</h2>
                   <p style={{ color: 'hsl(0 0% 38%)', fontSize: '13px', ...mono, margin: 0 }}>Authorize minting of {parseFloat(depositAmount).toLocaleString()} {scUToken}</p>
                 </div>
-
                 <div style={{ background: 'hsl(220 15% 5%)', border: `1px solid ${scColor}20`, borderRadius: '18px', padding: '24px', marginBottom: '14px', textAlign: 'center' as const }}>
                   <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.2em', margin: '0 0 12px' }}>One-Time Code</p>
                   <p style={{ color: 'hsl(0 0% 92%)', fontSize: '46px', fontWeight: '700', ...mono, letterSpacing: '0.5em', margin: '0 0 8px', lineHeight: '1' }}>{otpCode}</p>
                   <p style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', ...mono, margin: 0 }}>Expires {otpExpires ? new Date(otpExpires).toLocaleTimeString() : ''}</p>
                 </div>
-
-                <div style={{ background: 'hsl(220 12% 8%)', borderRadius: '12px', padding: '14px 16px', marginBottom: '14px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      {Icons.key(14, 'hsl(0 0% 30%)')}
-                      <p style={{ color: 'hsl(0 0% 30%)', fontSize: '10px', ...mono, textTransform: 'uppercase', margin: 0 }}>Quantum Public Key</p>
-                    </div>
-                    <CopyBtn text={qPubKey} id="qpub" />
-                  </div>
-                  <p style={{ color: 'hsl(38 92% 50%)', fontSize: '10px', ...mono, wordBreak: 'break-all' as const, lineHeight: '1.5', margin: 0 }}>{qPubKey?.slice(0, 72)}...</p>
-                </div>
-
-                <div style={{ background: 'hsl(0 84% 60% / 0.05)', border: '1px solid hsl(0 84% 60% / 0.15)', borderRadius: '10px', padding: '12px 14px', marginBottom: '18px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                  {Icons.warning(14, 'hsl(0 84% 60%)')}
-                  <p style={{ color: 'hsl(0 84% 60%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.6' }}>Your QSK appears next — shown <strong>once only</strong>. Looks like <span style={{ color: 'hsl(0 0% 65%)' }}>QSK-XXXX-XXXX-XXXX-XXXX</span>. Store it safely.</p>
-                </div>
-
                 <label style={{ display: 'block', color: 'hsl(0 0% 38%)', fontSize: '11px', ...mono, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '8px' }}>Enter OTP Code</label>
                 <input value={otpInput} onChange={e => setOtpInput(e.target.value)} placeholder="123456" style={{ ...fieldStyle, marginBottom: '12px' }} />
-
                 <label style={{ display: 'block', color: 'hsl(0 0% 38%)', fontSize: '11px', ...mono, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '8px' }}>Protocol Authorization Key</label>
-                <input value={secondKey} onChange={e => setSecondKey(e.target.value)} placeholder="Your protocol second key" type="password" style={{ ...fieldStyle, marginBottom: '4px' }} />
-                <p style={{ color: 'hsl(0 0% 25%)', fontSize: '11px', ...mono, margin: '0 0 18px', lineHeight: '1.5' }}>This is your Protocol Second Key from wallet creation — not your QSK.</p>
-
+                <input value={secondKey} onChange={e => setSecondKey(e.target.value)} placeholder="Your protocol second key" type="password" style={{ ...fieldStyle, marginBottom: '18px' }} />
                 {addError && <p style={{ color: 'hsl(0 84% 60%)', fontSize: '12px', ...mono, marginBottom: '12px' }}>{addError}</p>}
-
-                <button onClick={handleQuantumMint} disabled={!otpInput || !secondKey || addLoading} style={{ width: '100%', background: otpInput && secondKey && !addLoading ? `linear-gradient(135deg, ${scColor}, ${scColor}bb)` : 'hsl(220 10% 14%)', color: otpInput && secondKey && !addLoading ? 'white' : 'hsl(0 0% 28%)', border: 'none', borderRadius: '12px', padding: '16px', fontSize: '15px', fontWeight: '700', cursor: otpInput && secondKey && !addLoading ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                  {Icons.quantum(18, 'white')}
+                <button onClick={handleQuantumMint} disabled={!otpInput || !secondKey || addLoading} style={{ width: '100%', background: otpInput && secondKey && !addLoading ? `linear-gradient(135deg, ${scColor}, ${scColor}bb)` : 'hsl(220 10% 14%)', color: otpInput && secondKey && !addLoading ? 'white' : 'hsl(0 0% 28%)', border: 'none', borderRadius: '12px', padding: '16px', fontSize: '15px', fontWeight: '700', cursor: otpInput && secondKey && !addLoading ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)' }}>
                   {addLoading ? 'Minting...' : `Authorize & Mint ${scUToken}`}
                 </button>
               </>
@@ -373,7 +332,6 @@ function AccountContent() {
                   <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '22px', fontWeight: '700', margin: '0 0 6px' }}>Save Your Signing Key</h2>
                   <p style={{ color: scColor, fontSize: '13px', ...mono, margin: 0 }}>{parseFloat(depositAmount).toLocaleString()} {scUToken} minted</p>
                 </div>
-
                 <div style={{ background: 'hsl(220 12% 8%)', border: '2px solid hsl(0 84% 60% / 0.45)', borderRadius: '18px', padding: '22px', marginBottom: '14px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -388,17 +346,14 @@ function AccountContent() {
                   <div style={{ background: 'hsl(220 15% 4%)', border: '1px solid hsl(220 10% 14%)', borderRadius: '12px', padding: '18px', textAlign: 'center' as const, marginBottom: '12px' }}>
                     <p style={{ color: 'hsl(0 84% 60%)', fontSize: '20px', fontWeight: '700', ...mono, letterSpacing: '0.05em', margin: 0, lineHeight: '1.6' }}>{qSigningKey}</p>
                   </div>
-                  <p style={{ color: 'hsl(0 0% 35%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.6' }}>Store offline. This key authorizes all future {scUToken} transfers on this account.</p>
                 </div>
-
                 <div onClick={() => setKeySaved(!keySaved)} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', background: 'hsl(220 12% 8%)', border: `1px solid ${keySaved ? 'hsl(142 76% 36% / 0.4)' : 'hsl(220 10% 14%)'}`, borderRadius: '12px', padding: '14px', marginBottom: '18px', cursor: 'pointer' }}>
                   <div style={{ width: '22px', height: '22px', borderRadius: '6px', border: `2px solid ${keySaved ? 'hsl(142 76% 36%)' : 'hsl(220 10% 28%)'}`, background: keySaved ? 'hsl(142 76% 36%)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     {keySaved && Icons.check(13, 'white')}
                   </div>
                   <p style={{ color: 'hsl(0 0% 48%)', fontSize: '13px', ...mono, margin: 0, lineHeight: '1.6' }}>I have saved my QSK. I understand it cannot be recovered.</p>
                 </div>
-
-                <button onClick={() => { if (keySaved) { resetModal(); setCurrencyTab(scUToken === 'UUSDT' ? 'uusdt' : 'uusdc') } }} disabled={!keySaved} style={{ width: '100%', background: keySaved ? 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))' : 'hsl(220 10% 14%)', color: keySaved ? 'white' : 'hsl(0 0% 28%)', border: 'none', borderRadius: '12px', padding: '16px', fontSize: '15px', fontWeight: '700', cursor: keySaved ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', boxShadow: keySaved ? '0 0 30px hsl(205 85% 55% / 0.4)' : 'none' }}>
+                <button onClick={() => { if (keySaved) { resetModal(); setCurrencyTab(scUToken === 'UUSDT' ? 'uusdt' : 'uusdc') } }} disabled={!keySaved} style={{ width: '100%', background: keySaved ? 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))' : 'hsl(220 10% 14%)', color: keySaved ? 'white' : 'hsl(0 0% 28%)', border: 'none', borderRadius: '12px', padding: '16px', fontSize: '15px', fontWeight: '700', cursor: keySaved ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)' }}>
                   View {scUToken} Account →
                 </button>
               </>
@@ -442,7 +397,6 @@ function AccountContent() {
           </div>
         </div>
 
-        {/* Stats bar */}
         {vault.status === 'active' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px' }}>
             {[
@@ -497,7 +451,6 @@ function AccountContent() {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '20px' }}>
           <div>
-            {/* UBTC */}
             {currencyTab === 'ubtc' && (
               <>
                 {vault.status === 'active' ? <ActionButtons currency="ubtc" /> : (
@@ -528,7 +481,6 @@ function AccountContent() {
               </>
             )}
 
-            {/* UUSDT */}
             {currencyTab === 'uusdt' && (
               <>
                 {uusdtBal > 0 ? (
@@ -541,29 +493,16 @@ function AccountContent() {
                       </div>
                       <span style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', ...mono }}>{uusdtTxs.length} records</span>
                     </div>
-                    {uusdtTxs.length === 0 ? (
-                      <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 12%)', borderRadius: '14px', padding: '40px', textAlign: 'center' as const }}>
-                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px', opacity: 0.3 }}>{Icons.chart(36, 'hsl(142 76% 36%)')}</div>
-                        <p style={{ color: 'hsl(0 0% 28%)', fontSize: '13px', ...mono, margin: 0 }}>No UUSDT transactions yet</p>
-                      </div>
-                    ) : (
-                      <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 12%)', borderRadius: '14px', overflow: 'hidden' }}>
-                        {uusdtTxs.map((tx, i) => <TxRow key={tx.id} tx={tx} i={i} total={uusdtTxs.length} />)}
-                      </div>
-                    )}
+                    <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 12%)', borderRadius: '14px', overflow: 'hidden' }}>
+                      {uusdtTxs.map((tx, i) => <TxRow key={tx.id} tx={tx} i={i} total={uusdtTxs.length} />)}
+                    </div>
                   </>
                 ) : (
                   <div style={{ background: 'hsl(220 12% 8%)', border: '1px dashed hsl(142 76% 36% / 0.3)', borderRadius: '18px', padding: '52px 40px', textAlign: 'center' as const }}>
                     <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '18px', opacity: 0.6 }}>{Icons.lock(52, 'hsl(142 76% 36%)')}</div>
                     <h3 style={{ color: 'hsl(0 0% 92%)', fontSize: '20px', fontWeight: '700', margin: '0 0 10px' }}>Add UUSDT to this Account</h3>
-                    <p style={{ color: 'hsl(0 0% 42%)', fontSize: '13px', ...mono, margin: '0 0 6px', lineHeight: '1.8', maxWidth: '420px', marginLeft: 'auto', marginRight: 'auto' }}>
-                      Deposit USDT (ERC-20) and mint UUSDT 1:1. Your USDT is locked in a quantum vault. UUSDT is Bitcoin-native via Taproot Assets.
-                    </p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center', marginBottom: '28px' }}>
-                      {Icons.quantum(14, 'hsl(142 76% 36%)')}
-                      <p style={{ color: 'hsl(142 76% 36%)', fontSize: '12px', ...mono, margin: 0 }}>You will receive a QSK — shown once only</p>
-                    </div>
-                    <button onClick={() => setShowAddModal('UUSDT')} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))', color: 'white', border: 'none', borderRadius: '12px', padding: '14px 32px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)', boxShadow: '0 0 24px hsl(205 85% 55% / 0.4)' }}>
+                    <p style={{ color: 'hsl(0 0% 42%)', fontSize: '13px', ...mono, margin: '0 0 28px', lineHeight: '1.8' }}>Deposit USDT and mint UUSDT 1:1. Your USDT is locked in a quantum vault.</p>
+                    <button onClick={() => setShowAddModal('UUSDT')} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))', color: 'white', border: 'none', borderRadius: '12px', padding: '14px 32px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
                       {Icons.deposit(16, 'white')} Deposit USDT & Mint UUSDT
                     </button>
                   </div>
@@ -571,7 +510,6 @@ function AccountContent() {
               </>
             )}
 
-            {/* UUSDC */}
             {currencyTab === 'uusdc' && (
               <>
                 {uusdcBal > 0 ? (
@@ -584,29 +522,16 @@ function AccountContent() {
                       </div>
                       <span style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', ...mono }}>{uusdcTxs.length} records</span>
                     </div>
-                    {uusdcTxs.length === 0 ? (
-                      <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 12%)', borderRadius: '14px', padding: '40px', textAlign: 'center' as const }}>
-                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px', opacity: 0.3 }}>{Icons.chart(36, 'hsl(220 85% 60%)')}</div>
-                        <p style={{ color: 'hsl(0 0% 28%)', fontSize: '13px', ...mono, margin: 0 }}>No UUSDC transactions yet</p>
-                      </div>
-                    ) : (
-                      <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 12%)', borderRadius: '14px', overflow: 'hidden' }}>
-                        {uusdcTxs.map((tx, i) => <TxRow key={tx.id} tx={tx} i={i} total={uusdcTxs.length} />)}
-                      </div>
-                    )}
+                    <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 12%)', borderRadius: '14px', overflow: 'hidden' }}>
+                      {uusdcTxs.map((tx, i) => <TxRow key={tx.id} tx={tx} i={i} total={uusdcTxs.length} />)}
+                    </div>
                   </>
                 ) : (
                   <div style={{ background: 'hsl(220 12% 8%)', border: '1px dashed hsl(220 85% 60% / 0.3)', borderRadius: '18px', padding: '52px 40px', textAlign: 'center' as const }}>
                     <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '18px', opacity: 0.6 }}>{Icons.lock(52, 'hsl(220 85% 60%)')}</div>
                     <h3 style={{ color: 'hsl(0 0% 92%)', fontSize: '20px', fontWeight: '700', margin: '0 0 10px' }}>Add UUSDC to this Account</h3>
-                    <p style={{ color: 'hsl(0 0% 42%)', fontSize: '13px', ...mono, margin: '0 0 6px', lineHeight: '1.8', maxWidth: '420px', marginLeft: 'auto', marginRight: 'auto' }}>
-                      Deposit USDC (ERC-20) and mint UUSDC 1:1. Your USDC is locked in a quantum vault. UUSDC is Bitcoin-native via Taproot Assets.
-                    </p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center', marginBottom: '28px' }}>
-                      {Icons.quantum(14, 'hsl(220 85% 60%)')}
-                      <p style={{ color: 'hsl(220 85% 60%)', fontSize: '12px', ...mono, margin: 0 }}>You will receive a QSK — shown once only</p>
-                    </div>
-                    <button onClick={() => setShowAddModal('UUSDC')} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))', color: 'white', border: 'none', borderRadius: '12px', padding: '14px 32px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)', boxShadow: '0 0 24px hsl(205 85% 55% / 0.4)' }}>
+                    <p style={{ color: 'hsl(0 0% 42%)', fontSize: '13px', ...mono, margin: '0 0 28px', lineHeight: '1.8' }}>Deposit USDC and mint UUSDC 1:1. Your USDC is locked in a quantum vault.</p>
+                    <button onClick={() => setShowAddModal('UUSDC')} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))', color: 'white', border: 'none', borderRadius: '12px', padding: '14px 32px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
                       {Icons.deposit(16, 'white')} Deposit USDC & Mint UUSDC
                     </button>
                   </div>
@@ -618,17 +543,38 @@ function AccountContent() {
           {/* ── SIDEBAR ── */}
           <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '12px' }}>
 
+            {/* MY WALLET — always at top */}
+            <div style={{ background: 'hsl(220 12% 8%)', border: '2px solid hsl(38 92% 50% / 0.5)', borderRadius: '16px', padding: '18px', boxShadow: '0 0 28px hsl(38 92% 50% / 0.12)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                {Icons.wallet(15, 'hsl(38 92% 50%)')}
+                <p style={{ color: 'hsl(38 92% 50%)', fontSize: '10px', fontWeight: '700', ...mono, margin: 0, textTransform: 'uppercase' as const, letterSpacing: '0.12em' }}>Your UBTC Wallet</p>
+              </div>
+              <p style={{ color: 'hsl(0 0% 38%)', fontSize: '11px', ...mono, margin: '0 0 14px', lineHeight: '1.7' }}>
+                This <strong style={{ color: 'hsl(205 85% 55%)' }}>Account</strong> locks BTC and mints UBTC. Your  <strong style={{ color: 'hsl(38 92% 50%)' }}> Wallet </strong> is your address to send &amp; receive UBTC with others.
+              </p>
+              <a
+                href={vault.linked_wallet ? `/wallet?address=${vault.linked_wallet}` : `/wallet`}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: 'hsl(38 92% 50%)', color: '#000', textDecoration: 'none', borderRadius: '10px', padding: '13px', fontSize: '14px', fontWeight: '700', fontFamily: 'var(--font-display)', boxShadow: '0 0 24px hsl(38 92% 50% / 0.5)', marginBottom: vault.linked_wallet ? '8px' : '0' }}
+              >
+                {Icons.wallet(17, '#000')} Open My Wallet
+              </a>
+              {vault.linked_wallet && (
+                <p style={{ color: 'hsl(0 0% 22%)', fontSize: '9px', ...mono, margin: 0, textAlign: 'center' as const, wordBreak: 'break-all' as const }}>{vault.linked_wallet}</p>
+              )}
+            </div>
+
+            {/* ACCOUNT DETAILS */}
             <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 12%)', borderRadius: '14px', padding: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '12px' }}>
-                {Icons.vault(14, 'hsl(0 0% 40%)')}
-                <h3 style={{ color: 'hsl(0 0% 88%)', fontSize: '13px', fontWeight: '600', margin: 0 }}>Account Details</h3>
+                {Icons.shield(13, 'hsl(0 0% 35%)')}
+                <h3 style={{ color: 'hsl(0 0% 55%)', fontSize: '11px', fontWeight: '600', margin: 0, textTransform: 'uppercase' as const, letterSpacing: '0.1em', ...mono }}>Account Details</h3>
               </div>
               {[
                 { label: 'Account ID', value: vaultId },
                 { label: 'Type', value: meta.title },
                 { label: 'Custody', value: meta.custody },
                 { label: 'Status', value: vault.status === 'active' ? 'Active' : 'Pending' },
-             { label: 'Network', value: vault.network === 'testnet4' ? 'Bitcoin Testnet4' : vault.network === 'mainnet' ? 'Bitcoin Mainnet' : vault.network || 'Bitcoin Testnet4' },
+                { label: 'Network', value: vault.network === 'testnet4' ? 'Bitcoin Testnet4' : vault.network === 'mainnet' ? 'Bitcoin Mainnet' : vault.network || 'Bitcoin Testnet4' },
                 { label: 'BTC Address', value: vault.deposit_address },
                 ...(vault.mast_address ? [{ label: 'MAST Vault Address (P2TR)', value: vault.mast_address }] : []),
               ].map(item => (
@@ -639,59 +585,6 @@ function AccountContent() {
               ))}
             </div>
 
-            <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 12%)', borderRadius: '14px', padding: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '12px' }}>
-                {Icons.chart(14, 'hsl(0 0% 40%)')}
-                <h3 style={{ color: 'hsl(0 0% 88%)', fontSize: '13px', fontWeight: '600', margin: 0 }}>All Currencies</h3>
-              </div>
-              {[
-                { icon: Icons.bitcoin(16, 'hsl(38 92% 50%)'), name: 'UBTC', balance: ubtcBalance, locked: btcLocked.toFixed(4) + ' BTC', color: 'hsl(38 92% 50%)', active: true, soon: false },
-                { icon: Icons.lock(16, 'hsl(142 76% 36%)'), name: 'UUSDT', balance: uusdtBal, locked: uusdtDep > 0 ? '$' + uusdtDep.toLocaleString() + ' USDT' : 'Not added', color: 'hsl(142 76% 36%)', active: uusdtBal > 0, soon: false },
-                { icon: Icons.lock(16, 'hsl(220 85% 60%)'), name: 'UUSDC', balance: uusdcBal, locked: uusdcDep > 0 ? '$' + uusdcDep.toLocaleString() + ' USDC' : 'Not added', color: 'hsl(220 85% 60%)', active: uusdcBal > 0, soon: false },
-                { icon: Icons.chart(16, 'hsl(260 80% 65%)'), name: 'UETH', balance: 0, locked: '', color: 'hsl(260 80% 65%)', active: false, soon: true },
-                { icon: Icons.chart(16, 'hsl(280 90% 65%)'), name: 'USOL', balance: 0, locked: '', color: 'hsl(280 90% 65%)', active: false, soon: true },
-                { icon: Icons.chart(16, 'hsl(200 90% 55%)'), name: 'UXRP', balance: 0, locked: '', color: 'hsl(200 90% 55%)', active: false, soon: true },
-              ].map(cur => (
-                <div key={cur.name} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderBottom: '1px solid hsl(220 10% 10%)', opacity: cur.soon ? 0.3 : 1 }}>
-                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: cur.color + '14', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{cur.icon}</div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ color: cur.active ? 'hsl(0 0% 85%)' : 'hsl(0 0% 35%)', fontWeight: '600', fontSize: '12px', margin: '0 0 1px' }}>{cur.name}</p>
-                    <p style={{ color: 'hsl(0 0% 25%)', fontSize: '9px', ...mono, margin: 0 }}>{cur.soon ? 'Coming Soon' : cur.locked}</p>
-                  </div>
-                  <p style={{ color: cur.active ? cur.color : 'hsl(0 0% 22%)', fontWeight: '700', fontSize: '12px', ...mono, margin: 0 }}>
-                    {cur.soon ? '—' : '$' + cur.balance.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                  </p>
-                </div>
-              ))}
-              <div style={{ paddingTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <p style={{ color: 'hsl(0 0% 30%)', fontSize: '11px', ...mono, margin: 0 }}>Total</p>
-                <p style={{ color: 'hsl(0 0% 88%)', fontWeight: '700', fontSize: '15px', ...mono, margin: 0 }}>${totalBalance.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-              </div>
-            </div>
-
-            {vault.status === 'active' && (
-              <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 12%)', borderRadius: '14px', padding: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '12px' }}>
-                  {Icons.send(14, 'hsl(0 0% 40%)')}
-                  <h3 style={{ color: 'hsl(0 0% 88%)', fontSize: '13px', fontWeight: '600', margin: 0 }}>Quick Links</h3>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '5px' }}>
-                  {[
-                    { icon: Icons.deposit(13, 'hsl(38 92% 50%)'), label: 'Deposit Bitcoin', href: `/deposit?vault=${vaultId}&currency=ubtc` },
-                    { icon: Icons.mint(13, 'hsl(205 85% 55%)'), label: 'Mint UBTC', href: `/mint?vault=${vaultId}&currency=ubtc` },
-                    { icon: Icons.transfer(13, 'hsl(205 85% 55%)'), label: 'Transfer UBTC', href: `/transfer?vault=${vaultId}&currency=ubtc` },
-                    { icon: Icons.redeem(13, 'hsl(0 0% 45%)'), label: 'Redeem UBTC', href: `/redeem?vault=${vaultId}&currency=ubtc` },
-                    { icon: Icons.deposit(13, 'hsl(142 76% 36%)'), label: 'Deposit USDT', href: `/deposit?vault=${vaultId}&currency=uusdt` },
-                    { icon: Icons.deposit(13, 'hsl(220 85% 60%)'), label: 'Deposit USDC', href: `/deposit?vault=${vaultId}&currency=uusdc` },
-{ icon: Icons.wallet(13, 'hsl(205 85% 55%)'), label: 'My Wallet', href: vault.linked_wallet ? `/wallet?address=${vault.linked_wallet}` : `/wallet` },
-                  ].map(link => (
-                    <a key={link.label} href={link.href} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'hsl(220 15% 5%)', border: '1px solid hsl(220 10% 12%)', color: 'hsl(0 0% 52%)', textDecoration: 'none', borderRadius: '8px', padding: '9px 12px', fontSize: '12px', fontWeight: '600', ...mono }}>
-                      {link.icon} {link.label}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>

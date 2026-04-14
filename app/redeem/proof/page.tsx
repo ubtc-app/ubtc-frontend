@@ -126,16 +126,16 @@ export default function RedeemProofPage() {
     try {
       // Call backend to construct + broadcast the redemption tx
       // Backend uses the vault's taproot_secret_key to sign PATH 1 spend
-      const res = await fetch(`${API_URL}/proofs/redeem`, {
+   const res = await fetch(`${API_URL}/proofs/redeem`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           proof_id: proof.proof_id,
           vault_id: proof.collateral?.vault_id,
           destination_address: destinationAddress,
-          kyber_key: keyFile?.key3_kyber_redemption?.key,
-          fee_rate: feeRate,
           ubtc_amount: proof.ownership?.ubtc_amount,
+          fee_rate: feeRate,
+          taproot_key: proof.redemption_template?.taproot_secret_key_encrypted,
         })
       })
       const data = await res.json()
