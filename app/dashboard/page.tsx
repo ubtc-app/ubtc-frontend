@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { API_URL } from '../lib/supabase'
 import { Icons } from '../components/Icons'
 
@@ -9,10 +9,31 @@ export default function Dashboard() {
   const [btcPrice, setBtcPrice] = useState(0)
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'self' | 'managed'>('self')
+  const [scanning, setScanning] = useState<string | null>(null)
+  const [scanResult, setScanResult] = useState<Record<string, string>>({})
+  const pollRef = useRef<NodeJS.Timeout | null>(null)
 
   const mono: any = { fontFamily: 'var(--font-mono)' }
 
-  useEffect(() => { loadAll() }, [])
+  useEffect(() => {
+    loadAll()
+    return () => { if (pollRef.current) clearInterval(pollRef.current) }
+  }, [])
+
+  // Auto-poll pending vaults every 30 seconds
+  useEffect(() => {
+    if (pollRef.current) clearInterval(pollRef.current)
+    const hasPending = vaults.some(v => v.status === 'pending_deposit')
+    if (hasPending) {
+      pollRef.current = setInterval(async () => {
+        const pending = vaults.filter(v => v.status === 'pending_deposit')
+        for (const v of pending) {
+          await scanVault(v.vault_id, true)
+        }
+      }, 30_000)
+    }
+    return () => { if (pollRef.current) clearInterval(pollRef.current) }
+  }, [vaults])
 
   const loadAll = async () => {
     setLoading(true)
@@ -30,6 +51,27 @@ export default function Dashboard() {
       setBtcPrice(parseFloat(price.btc_usd) || 0)
     } catch (e) { console.error(e) }
     setLoading(false)
+  }
+
+  const scanVault = async (vaultId: string, silent = false) => {
+    if (!silent) setScanning(vaultId)
+    try {
+      const res = await fetch(`${API_URL}/deposit/scan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vault_id: vaultId })
+      })
+      const data = await res.json()
+      if (data.found) {
+        setScanResult(prev => ({ ...prev, [vaultId]: `✅ ${data.amount_btc} BTC detected — vault active` }))
+        await loadAll()
+      } else {
+        if (!silent) setScanResult(prev => ({ ...prev, [vaultId]: 'No deposit found yet. Check back in a few minutes.' }))
+      }
+    } catch {
+      if (!silent) setScanResult(prev => ({ ...prev, [vaultId]: 'Scan failed — check your connection' }))
+    }
+    if (!silent) setScanning(null)
   }
 
   const selfCustody = ['current', 'savings', 'yield']
@@ -70,40 +112,20 @@ export default function Dashboard() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', fontFamily: 'var(--font-display)' }}>
-{/* Header removed - using global header */}
-      <div style={{ display: 'none' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <a href="/" style={{ color: 'hsl(0 0% 38%)', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>{Icons.back(20, 'hsl(0 0% 38%)')}</a>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {Icons.bitcoin(22, 'hsl(205 85% 55%)')}
-            <span style={{ color: 'hsl(0 0% 82%)', fontWeight: '700', fontSize: '17px' }}>UBTC</span>
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <a href="/vault" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'hsl(220 12% 10%)', border: '1px solid hsl(220 10% 16%)', color: 'hsl(0 0% 60%)', textDecoration: 'none', borderRadius: '10px', padding: '8px 14px', fontSize: '13px', fontWeight: '600' }}>
-            {Icons.plus(16, 'hsl(0 0% 60%)')}
-            <span>New Account</span>
-          </a>
-        <a href="/wallet" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'hsl(205 85% 55% / 0.1)', border: '1px solid hsl(205 85% 55% / 0.3)', color: 'hsl(205 85% 65%)', textDecoration: 'none', borderRadius: '10px', padding: '8px 14px', fontSize: '13px', fontWeight: '600' }}>
-            {Icons.wallet(16, 'hsl(205 85% 65%)')}
-            <span>My Wallet</span>
-          </a>         
- <button onClick={loadAll} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'hsl(0 0% 30%)' }}>
-            {Icons.refresh(20, 'hsl(0 0% 30%)')}
-          </button>
-        </div>
-      </div>
 
       {/* Summary bar */}
       <div style={{ background: 'hsl(220 15% 4%)', borderBottom: '1px solid hsl(220 10% 9%)', padding: '28px 32px' }}>
         <div style={{ maxWidth: '1060px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
-            <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.2em', margin: '0 0 6px' }}>Total Portfolio</p>
+            <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.2em', margin: '0 0 6px' }}>Total Collateral · BTC locked in USD</p>
             <p style={{ color: 'hsl(0 0% 92%)', fontSize: '42px', fontWeight: '700', ...mono, margin: '0 0 4px', lineHeight: '1' }}>
-              ${totalBalance.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              ${(totalBtcLocked * btcPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
-            <p style={{ color: 'hsl(0 0% 28%)', fontSize: '12px', ...mono, margin: 0 }}>
-              {totalBtcLocked.toFixed(4)} BTC locked · ${(totalBtcLocked * btcPrice).toLocaleString(undefined, { maximumFractionDigits: 0 })} collateral
+            <p style={{ color: 'hsl(142 76% 36%)', fontSize: '12px', fontWeight: '600', ...mono, margin: '0 0 2px' }}>
+              ${(totalBtcLocked * btcPrice - totalUbtc).toLocaleString(undefined, { maximumFractionDigits: 2 })} available to mint
+            </p>
+            <p style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', ...mono, margin: 0 }}>
+              {totalBtcLocked.toFixed(6)} BTC locked · {totalUbtc.toLocaleString()} UBTC debt outstanding
             </p>
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
@@ -116,7 +138,7 @@ export default function Dashboard() {
               <div key={item.label} style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 13%)', borderRadius: '12px', padding: '12px 16px', textAlign: 'center' as const, minWidth: '90px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px', justifyContent: 'center', marginBottom: '5px' }}>
                   {item.icon}
-                  <p style={{ color: 'hsl(0 0% 32%)', fontSize: '9px', ...mono, textTransform: 'uppercase', margin: 0 }}>{item.label}</p>
+                  <p style={{ color: 'hsl(0 0% 32%)', fontSize: '9px', ...mono, textTransform: 'uppercase' as const, margin: 0 }}>{item.label}</p>
                 </div>
                 <p style={{ color: item.color, fontWeight: '700', fontSize: '14px', ...mono, margin: 0 }}>{item.val}</p>
               </div>
@@ -166,9 +188,45 @@ export default function Dashboard() {
               const total = ubtcBal + uusdtBal + uusdcBal
               const ratio = ubtcBal > 0 ? (btcValue / ubtcBal * 100) : 0
               const ratioColor = ratio >= 200 ? 'hsl(142 76% 36%)' : ratio >= 150 ? 'hsl(38 92% 50%)' : ratio > 0 ? 'hsl(0 84% 60%)' : 'hsl(0 0% 35%)'
+              const isPending = vault.status === 'pending_deposit'
+              const isScanning = scanning === vault.vault_id
+              const thisScanResult = scanResult[vault.vault_id]
 
               return (
-                <div key={vault.vault_id} style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 13%)', borderRadius: '20px', overflow: 'hidden' }}>
+                <div key={vault.vault_id} style={{ background: 'hsl(220 12% 8%)', border: `1px solid ${isPending ? 'hsl(38 92% 50% / 0.3)' : 'hsl(220 10% 13%)'}`, borderRadius: '20px', overflow: 'hidden' }}>
+
+                  {/* Pending deposit banner */}
+                  {isPending && (
+                    <div style={{ background: 'hsl(38 92% 50% / 0.08)', borderBottom: '1px solid hsl(38 92% 50% / 0.2)', padding: '12px 18px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'hsl(38 92% 50%)', animation: 'pulse 2s infinite' }} />
+                          <p style={{ color: 'hsl(38 92% 55%)', fontSize: '12px', ...mono, margin: 0 }}>
+                            Waiting for Bitcoin deposit · auto-checking every 30s
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => scanVault(vault.vault_id)}
+                          disabled={isScanning}
+                          style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'hsl(38 92% 50%)', color: '#000', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '11px', fontWeight: '700', cursor: isScanning ? 'not-allowed' : 'pointer', ...mono, flexShrink: 0, opacity: isScanning ? 0.7 : 1 }}
+                        >
+                          {Icons.refresh(12, '#000')}
+                          {isScanning ? 'Scanning...' : 'Scan Now'}
+                        </button>
+                      </div>
+                      {thisScanResult && (
+                        <p style={{ color: thisScanResult.startsWith('✅') ? 'hsl(142 76% 45%)' : 'hsl(0 0% 40%)', fontSize: '11px', ...mono, margin: '8px 0 0' }}>
+                          {thisScanResult}
+                        </p>
+                      )}
+                      <div style={{ marginTop: '10px', background: 'hsl(220 15% 5%)', borderRadius: '8px', padding: '10px 12px' }}>
+                        <p style={{ color: 'hsl(0 0% 28%)', fontSize: '9px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.12em', margin: '0 0 4px' }}>Send BTC to this address</p>
+                        <p style={{ color: 'hsl(205 85% 60%)', fontSize: '11px', ...mono, margin: 0, wordBreak: 'break-all' as const }}>
+                          {vault.mast_address || vault.deposit_address}
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Card header */}
                   <div style={{ padding: '20px 22px', borderBottom: '1px solid hsl(220 10% 11%)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -180,8 +238,8 @@ export default function Dashboard() {
                         <p style={{ color: 'hsl(0 0% 88%)', fontWeight: '700', fontSize: '15px', margin: '0 0 3px' }}>{meta.title}</p>
                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                           <span style={{ fontSize: '9px', ...mono, color: meta.color, border: `1px solid ${meta.color}35`, borderRadius: '20px', padding: '2px 8px' }}>{meta.tag}</span>
-                          <span style={{ fontSize: '9px', ...mono, color: vault.status === 'active' ? 'hsl(142 76% 36%)' : 'hsl(38 92% 50%)', }}>
-                            {vault.status === 'active' ? '● Active' : '○ Pending'}
+                          <span style={{ fontSize: '9px', ...mono, color: isPending ? 'hsl(38 92% 50%)' : 'hsl(142 76% 36%)' }}>
+                            {isPending ? '○ Awaiting Deposit' : '● Active'}
                           </span>
                         </div>
                       </div>
@@ -251,8 +309,7 @@ export default function Dashboard() {
                       }
                     </div>
 
-                    {/* Open account button */}
-                    <a href={`/account/${vault.vault_id}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: meta.color + '08', border: `1px solid ${meta.color}22`, borderRadius: '12px', padding: '12px 16px', textDecoration: 'none' }}>
+                  <a href={`/account/${vault.vault_id}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: meta.color + '08', border: `1px solid ${meta.color}22`, borderRadius: '12px', padding: '12px 16px', textDecoration: 'none' }}>
                       <span style={{ color: meta.color, fontSize: '13px', fontWeight: '600', fontFamily: 'var(--font-display)' }}>View Account</span>
                       {Icons.chevronRight(18, meta.color)}
                     </a>

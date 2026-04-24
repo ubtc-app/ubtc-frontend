@@ -22,11 +22,6 @@ export default function Header() {
           My Accounts
         </a>
 
-        <a href="/wallet" style={{ display: 'flex', alignItems: 'center', gap: '7px', color: 'hsl(205 85% 65%)', textDecoration: 'none', fontSize: '13px', fontWeight: '600', fontFamily: 'var(--font-display)', padding: '8px 14px', borderRadius: '8px', background: 'hsl(205 85% 55% / 0.1)', border: '1px solid hsl(205 85% 55% / 0.3)' }}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z"/></svg>
-          My Wallet
-        </a>
-
         <a href="/vault" style={{ display: 'flex', alignItems: 'center', gap: '7px', color: 'white', textDecoration: 'none', fontSize: '13px', fontWeight: '700', fontFamily: 'var(--font-display)', padding: '8px 16px', borderRadius: '8px', background: 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))', boxShadow: '0 0 20px hsl(205 85% 55% / 0.3)' }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
           New Account

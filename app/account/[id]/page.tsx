@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
-import { API_URL } from '../../lib/supabase'
+import { API_URL, supabase } from '../../lib/supabase'
 import { Icons } from '../../components/Icons'
 
 function AccountContent() {
@@ -20,7 +20,8 @@ function AccountContent() {
   const [moveError, setMoveError] = useState('')
   const [moveDone, setMoveDone] = useState(false)
   const [movePsk, setMovePsk] = useState('')
-  const movePskInputRef = useRef<HTMLInputElement>(null)
+ const movePskInputRef = useRef<HTMLInputElement>(null)
+  const moveInProgress = useRef(false)
   const [stablecoins, setStablecoins] = useState<any[]>([])
   const [scTransactions, setScTransactions] = useState<any[]>([])
   const [btcPrice, setBtcPrice] = useState(0)
@@ -40,7 +41,10 @@ function AccountContent() {
   const [qSigningKey, setQSigningKey] = useState('')
   const [keySaved, setKeySaved] = useState(false)
   const [copied, setCopied] = useState('')
-
+ const [notifications, setNotifications] = useState<any[]>([])
+  const [ubtcCirculation, setUbtcCirculation] = useState(0)
+ const [totalEverMinted, setTotalEverMinted] = useState(0)
+  const [redemptionHistory, setRedemptionHistory] = useState<any[]>([])
   const mono: any = { fontFamily: 'var(--font-mono)' }
 
   const accountMeta: Record<string, { icon: any; title: string; color: string; tag: string; custody: string }> = {
@@ -52,7 +56,20 @@ function AccountContent() {
     managed_yield: { icon: Icons.yield(22, 'hsl(142 76% 36%)'), title: 'Managed Yield', color: 'hsl(142 76% 36%)', tag: 'Managed 6-10%', custody: 'BitGo / Komainu' },
   }
 
-  useEffect(() => { loadAll() }, [vaultId])
+ useEffect(() => {
+    loadAll()
+
+    // Realtime subscriptions
+    const vaultSub = supabase
+      .channel('vault-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'vaults', filter: `id=eq.${vaultId}` }, () => loadAll())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ubtc_wallets' }, () => loadAll())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ubtc_proofs' }, () => loadAll())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'vault_notifications', filter: `vault_id=eq.${vaultId}` }, () => loadAll())
+      .subscribe()
+
+    return () => { supabase.removeChannel(vaultSub) }
+  }, [vaultId])
 
   const loadAll = async () => {
     setLoading(true)
@@ -93,6 +110,31 @@ function AccountContent() {
         fetch(`${API_URL}/stablecoin/${sc.vault_id}/transactions`).then(r => r.json()).catch(() => ({ transactions: [] }))
       ))
       setScTransactions(scTxResults.flatMap((r: any) => r.transactions || []))
+  } catch (e) { console.error(e) }
+ // Fetch redemption history
+    try {
+      const redRes = await fetch(`${API_URL}/vaults/${vaultId}/redemptions`)
+      const redData = await redRes.json()
+      setRedemptionHistory(redData.redemptions || [])
+    } catch (e) { console.error(e) }
+    // Fetch total ever minted
+    try {
+      const mintRes = await fetch(`${API_URL}/vaults/${vaultId}/transactions`)
+      const mintData = await mintRes.json()
+      const total = (mintData.transactions || []).filter((t: any) => t.kind === 'mint').reduce((sum: number, t: any) => sum + parseFloat(t.amount || '0'), 0)
+      setTotalEverMinted(total)
+    } catch (e) { console.error(e) }
+    // Fetch circulation
+    try {
+      const circRes = await fetch(`${API_URL}/vaults/${vaultId}/circulation`)
+      const circData = await circRes.json()
+      setUbtcCirculation(parseFloat(circData.total_in_circulation || '0'))
+    } catch (e) { console.error(e) }
+    // Fetch notifications
+    try {
+      const notifRes = await fetch(`${API_URL}/vaults/${vaultId}/notifications`)
+      const notifData = await notifRes.json()
+      setNotifications(notifData.notifications || [])
     } catch (e) { console.error(e) }
     setLoading(false)
   }
@@ -148,8 +190,10 @@ function AccountContent() {
     setAddLoading(false)
   }
 
-  const handleMoveToWallet = async () => {
+ const handleMoveToWallet = async () => {
     if (!moveAmount || !vault.linked_wallet) return
+    if (moveInProgress.current) return
+    moveInProgress.current = true
     setMoveLoading(true); setMoveError('')
     try {
    const res = await fetch(`${API_URL}/vaults/${vaultId}/send-to-wallet`, {
@@ -163,7 +207,13 @@ function AccountContent() {
       setMoveDone(true)
       await loadAll()
     } catch (e: any) { setMoveError(e.message) }
-    setMoveLoading(false)
+  setMoveLoading(false)
+    moveInProgress.current = false
+  }
+
+  const dismissNotification = async (notifId: string) => {
+    await fetch(`${API_URL}/vaults/${vaultId}/notifications/${notifId}/dismiss`, { method: 'POST' })
+    setNotifications(prev => prev.filter(n => n.id !== notifId))
   }
 
   const resetModal = () => {
@@ -247,6 +297,18 @@ function AccountContent() {
   return (
     <div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', fontFamily: 'var(--font-display)' }}>
 
+  {/* ── NOTIFICATIONS ── */}
+    {notifications.map(notif => (
+      <div key={notif.id} style={{ position: 'fixed', top: '80px', right: '24px', zIndex: 200, background: 'hsl(38 92% 50% / 0.95)', borderRadius: '16px', padding: '16px 20px', maxWidth: '380px', boxShadow: '0 8px 32px hsl(0 0% 0% / 0.4)', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+        <span style={{ fontSize: '20px', flexShrink: 0 }}>⚠️</span>
+        <div style={{ flex: 1 }}>
+          <p style={{ color: '#000', fontSize: '13px', fontWeight: '700', margin: '0 0 4px', fontFamily: 'var(--font-display)' }}>Collateral Update</p>
+          <p style={{ color: 'hsl(0 0% 10%)', fontSize: '12px', fontFamily: 'var(--font-mono)', margin: '0 0 10px', lineHeight: '1.5' }}>{notif.message}</p>
+          <button onClick={() => dismissNotification(notif.id)} style={{ background: '#000', color: 'hsl(38 92% 50%)', border: 'none', borderRadius: '8px', padding: '6px 16px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>OK</button>
+        </div>
+      </div>
+    ))}
+
     {/* ── MOVE TO WALLET MODAL ── */}
       {showMoveModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'hsl(220 15% 2% / 0.97)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
@@ -256,17 +318,17 @@ function AccountContent() {
                 <div style={{ textAlign: 'center' as const, marginBottom: '24px' }}>
                   <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'hsl(38 92% 50% / 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>{Icons.wallet(26, 'hsl(38 92% 50%)')}</div>
                   <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '20px', fontWeight: '700', margin: '0 0 6px' }}>Move UBTC to Wallet</h2>
-                  <p style={{ color: 'hsl(0 0% 38%)', fontSize: '12px', ...mono, margin: 0 }}>Moves to your linked wallet only · Available: {ubtcBalance} UBTC</p>
+                 <p style={{ color: 'hsl(0 0% 38%)', fontSize: '12px', ...mono, margin: 0 }}>Moves to your linked wallet only · Available: {Math.max(0, ubtcBalance - ubtcCirculation).toFixed(2)} UBTC</p>
                 </div>
 
                 {/* Quick amounts */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '14px' }}>
-                  {[
-                    Math.floor(ubtcBalance * 0.25),
-                    Math.floor(ubtcBalance * 0.5),
-                    Math.floor(ubtcBalance * 0.75),
-                    Math.floor(ubtcBalance),
-                  ].map((v, i) => ['25%', '50%', '75%', 'Max'].map((label, j) => i === j ? (
+                 {(() => { const avail = Math.max(0, ubtcBalance - ubtcCirculation); return [
+                    Math.floor(avail * 0.25),
+                    Math.floor(avail * 0.5),
+                    Math.floor(avail * 0.75),
+                    Math.floor(avail),
+                  ]})().map((v, i) => ['25%', '50%', '75%', 'Max'].map((label, j) => i === j ? (
                     <button key={label} onClick={() => setMoveAmount(String(v))} style={{ background: moveAmount === String(v) ? 'hsl(38 92% 50% / 0.18)' : 'hsl(220 15% 5%)', border: `1px solid ${moveAmount === String(v) ? 'hsl(38 92% 50% / 0.5)' : 'hsl(220 10% 14%)'}`, color: moveAmount === String(v) ? 'hsl(38 92% 50%)' : 'hsl(0 0% 35%)', borderRadius: '8px', padding: '8px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', ...mono }}>{label}</button>
                   ) : null))}
                 </div>
@@ -341,7 +403,7 @@ function AccountContent() {
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={() => { setShowMoveModal(false); setMovePsk('') }} style={{ background: 'none', border: '1px solid hsl(220 10% 16%)', color: 'hsl(0 0% 40%)', borderRadius: '12px', padding: '14px 20px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>Cancel</button>
                   <button
-                    onClick={handleMoveToWallet}
+                  onClick={() => { if (!moveInProgress.current) handleMoveToWallet() }}
                    disabled={moveLoading || !moveAmount || parseFloat(moveAmount) <= 0 || parseFloat(moveAmount) > ubtcBalance || !movePsk}
                     style={{ flex: 1, background: moveAmount && parseFloat(moveAmount) > 0 && parseFloat(moveAmount) <= ubtcBalance && movePsk && !moveLoading ? 'hsl(38 92% 50%)' : 'hsl(220 10% 14%)', color: moveAmount && parseFloat(moveAmount) > 0 && parseFloat(moveAmount) <= ubtcBalance && movePsk && !moveLoading ? '#000' : 'hsl(0 0% 28%)', border: 'none', borderRadius: '12px', padding: '14px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)' }}
                   >
@@ -354,7 +416,7 @@ function AccountContent() {
                 <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
                 <h2 style={{ color: 'hsl(142 76% 36%)', fontSize: '20px', fontWeight: '700', margin: '0 0 8px' }}>Done!</h2>
                 <p style={{ color: 'hsl(0 0% 42%)', fontSize: '13px', ...mono, margin: '0 0 24px' }}>{moveAmount} UBTC moved to your wallet</p>
-                <button onClick={() => { setShowMoveModal(false); setMovePsk('') }} style={{ background: 'hsl(38 92% 50%)', color: '#000', border: 'none', borderRadius: '12px', padding: '13px 32px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>Open Wallet →</button>
+             <button onClick={() => { setShowMoveModal(false); setMovePsk(''); window.location.href = '/wallet?address=' + (vault.linked_wallet || '') }} style={{ background: 'hsl(38 92% 50%)', color: '#000', border: 'none', borderRadius: '12px', padding: '13px 32px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>Open Wallet →</button>
               </div>
             )}
           </div>
@@ -448,22 +510,28 @@ function AccountContent() {
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                   <span style={{ fontSize: '10px', ...mono, color: meta.color, border: `1px solid ${meta.color}35`, borderRadius: '20px', padding: '2px 10px', textTransform: 'uppercase' }}>{meta.tag}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>{Icons.shield(12, 'hsl(0 0% 28%)')}<span style={{ fontSize: '10px', ...mono, color: 'hsl(0 0% 28%)' }}>{meta.custody}</span></div>
-                  <button onClick={loadAll} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>{Icons.refresh(14, 'hsl(0 0% 28%)')}</button>
+                  <button onClick={loadAll} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        {Icons.refresh(13, 'hsl(0 0% 55%)') }
+                        <span style={{ fontSize: '10px', color: 'hsl(0 0% 55%)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>Scan for recent deposits</span>
+                      </span>
+                    </button>
                 </div>
               </div>
             </div>
           </div>
           <div style={{ textAlign: 'right' as const }}>
-            <p style={{ color: 'hsl(0 0% 30%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 4px' }}>Total Balance</p>
-            <p style={{ color: 'hsl(0 0% 92%)', fontSize: '32px', fontWeight: '700', ...mono, margin: '0 0 2px', lineHeight: '1' }}>${totalBalance.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-            <p style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', ...mono, margin: 0 }}>{btcLocked.toFixed(4)} BTC {uusdtDep > 0 ? `· $${uusdtDep.toLocaleString()} USDT` : ''} {uusdcDep > 0 ? `· $${uusdcDep.toLocaleString()} USDC` : ''} locked</p>
+            <p style={{ color: 'hsl(0 0% 30%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 4px' }}>Collateral Balance · BTC locked in USD</p>
+            <p style={{ color: 'hsl(0 0% 92%)', fontSize: '32px', fontWeight: '700', ...mono, margin: '0 0 2px', lineHeight: '1' }}>${btcValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+            <p style={{ color: 'hsl(142 76% 36%)', fontSize: '12px', fontWeight: '600', ...mono, margin: '0 0 2px' }}>${remainingMintable > 0 ? remainingMintable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'} available to mint</p>
+            <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, margin: 0 }}>{btcLocked.toFixed(6)} BTC locked · updates with live BTC price</p>
           </div>
         </div>
 
         {vault.status === 'active' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px' }}>
             {[
-              { icon: Icons.bitcoin(14, 'hsl(205 85% 55%)'), label: 'UBTC Minted', value: '$' + ubtcBalance.toLocaleString(undefined, { maximumFractionDigits: 0 }), sub: 'Max: $' + maxMintable.toLocaleString(undefined, { maximumFractionDigits: 0 }), color: 'hsl(205 85% 55%)' },
+             { icon: Icons.bitcoin(14, 'hsl(205 85% 55%)'), label: 'UBTC Debt', value: '$' + ubtcBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), sub: ubtcBalance + ' UBTC minted against BTC', color: 'hsl(205 85% 55%)' },
               { icon: Icons.lock(14, 'hsl(38 92% 50%)'), label: 'BTC Locked', value: btcLocked.toFixed(4), sub: '$' + btcValue.toLocaleString(undefined, { maximumFractionDigits: 0 }), color: 'hsl(38 92% 50%)' },
               { icon: Icons.shield(14, ratioColor), label: 'Collateral', value: ratio > 0 ? ratio.toFixed(0) + '%' : '—', sub: ratio >= 200 ? 'Healthy' : ratio >= 150 ? 'Adequate' : ratio > 0 ? 'Low' : 'No UBTC', color: ratioColor },
               { icon: Icons.lock(14, 'hsl(142 76% 36%)'), label: 'USDT Locked', value: uusdtDep > 0 ? '$' + uusdtDep.toLocaleString() : '—', sub: uusdtBal > 0 ? uusdtBal.toLocaleString() + ' UUSDT' : 'Not added', color: 'hsl(142 76% 36%)' },
@@ -514,8 +582,10 @@ function AccountContent() {
                     {/* 3 Key Stats */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '20px' }}>
                       {[
-                        { label: 'UBTC Minted', value: '$' + ubtcBalance.toLocaleString(undefined, { maximumFractionDigits: 2 }), sub: ubtcBalance.toFixed(4) + ' UBTC issued', color: 'hsl(205 85% 55%)', bg: 'hsl(205 85% 55% / 0.08)', border: 'hsl(205 85% 55% / 0.2)' },
-                        { label: 'UBTC Mintable', value: '$' + maxMintable.toLocaleString(undefined, { maximumFractionDigits: 2 }), sub: remainingMintable > 0 ? '$' + remainingMintable.toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' still available' : 'Fully minted', color: 'hsl(38 92% 50%)', bg: 'hsl(38 92% 50% / 0.08)', border: 'hsl(38 92% 50% / 0.2)' },
+                     { label: 'UBTC Debt (Minted)', value: '$' + ubtcBalance.toLocaleString(undefined, { maximumFractionDigits: 2 }), sub: totalEverMinted > ubtcBalance ? totalEverMinted.toFixed(2) + ' UBTC total issued · ' + ubtcBalance.toFixed(2) + ' outstanding' : ubtcBalance.toFixed(2) + ' UBTC outstanding', color: 'hsl(205 85% 55%)', bg: 'hsl(205 85% 55% / 0.08)', border: 'hsl(205 85% 55% / 0.2)' },
+                        { label: 'Available to Move to Wallet', value: Math.max(0, ubtcBalance - ubtcCirculation).toFixed(2) + ' UBTC', sub: ubtcCirculation > 0 ? ubtcCirculation.toFixed(2) + ' UBTC already in circulation' : 'None moved yet', color: 'hsl(38 92% 50%)', bg: 'hsl(38 92% 50% / 0.08)', border: 'hsl(38 92% 50% / 0.2)' },
+                       
+                        { label: 'Available to Mint', value: remainingMintable > 0 ? '$' + remainingMintable.toLocaleString(undefined, { maximumFractionDigits: 2 }) : '$0', sub: remainingMintable > 0 ? 'of $' + maxMintable.toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' max' : 'Fully minted', color: 'hsl(38 92% 50%)', bg: 'hsl(38 92% 50% / 0.08)', border: 'hsl(38 92% 50% / 0.2)' },
                         { label: 'Redeemable', value: '$' + ubtcBalance.toLocaleString(undefined, { maximumFractionDigits: 2 }), sub: ubtcBalance > 0 ? (ubtcBalance / btcPrice * 100_000_000).toFixed(0) + ' sats' : 'No UBTC minted', color: 'hsl(142 76% 36%)', bg: 'hsl(142 76% 36% / 0.08)', border: 'hsl(142 76% 36% / 0.2)' },
                       ].map(item => (
                         <div key={item.label} style={{ background: item.bg, border: `1px solid ${item.border}`, borderRadius: '12px', padding: '14px 16px' }}>
@@ -527,7 +597,7 @@ function AccountContent() {
                     </div>
 
                     {/* Smart banner */}
-                    {ubtcBalance > 0 && (
+                 {ubtcBalance > 0 && walletBalance > 0 && walletBalance === ubtcBalance && (
                       <div style={{ background: 'hsl(38 92% 50% / 0.07)', border: '1px solid hsl(38 92% 50% / 0.25)', borderRadius: '12px', padding: '14px 18px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           {Icons.wallet(18, 'hsl(38 92% 50%)')}
@@ -549,7 +619,21 @@ function AccountContent() {
 
                 {/* Account Activity */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>{Icons.deposit(16, 'hsl(0 0% 45%)')}<h3 style={{ color: 'hsl(0 0% 88%)', fontSize: '14px', fontWeight: '600', margin: 0 }}>Account Activity</h3></div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {Icons.deposit(16, 'hsl(0 0% 45%)')}
+                    <h3 style={{ color: 'hsl(0 0% 88%)', fontSize: '14px', fontWeight: '600', margin: 0 }}>Account Activity</h3>
+                    <button
+                      onClick={async () => {
+                        const res = await fetch(`${API_URL}/deposit/scan`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ vault_id: vaultId }) })
+                        const data = await res.json()
+                        if (data.found) await loadAll()
+                      }}
+                      title="Scan for new deposits"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '2px 6px', gap: '5px' }}
+                    >
+                      {Icons.refresh(13, 'hsl(0 0% 55%)')}
+                    </button>
+                  </div>
                   <span style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', ...mono }}>{transactions.length} records · Mints &amp; Redeems</span>
                 </div>
                 {transactions.length === 0 ? (
@@ -560,6 +644,38 @@ function AccountContent() {
                 ) : (
                   <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 12%)', borderRadius: '14px', overflow: 'hidden', marginBottom: '24px' }}>
                     {transactions.map((tx, i) => <TxRow key={tx.id} tx={tx} i={i} total={transactions.length} />)}
+                  </div>
+                )}
+
+            {/* Redemption History */}
+                {redemptionHistory.length > 0 && (
+                  <div style={{ marginBottom: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {Icons.redeem(16, 'hsl(142 76% 36%)')}
+                        <h3 style={{ color: 'hsl(0 0% 88%)', fontSize: '14px', fontWeight: '600', margin: 0 }}>Redemption History</h3>
+                      </div>
+                      <span style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', ...mono }}>{redemptionHistory.length} redemptions against your BTC</span>
+                    </div>
+                    <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 12%)', borderRadius: '14px', overflow: 'hidden' }}>
+                      {redemptionHistory.map((r: any, i: number) => (
+                        <div key={r.proof_id} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: i < redemptionHistory.length - 1 ? '1px solid hsl(220 10% 10%)' : 'none', gap: '14px' }}>
+                          <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'hsl(142 76% 36% / 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            {Icons.redeem(16, 'hsl(142 76% 36%)')}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <p style={{ color: 'hsl(0 0% 88%)', fontWeight: '600', fontSize: '13px', margin: '0 0 2px' }}>{r.ubtc_amount} UBTC Redeemed</p>
+                            <p style={{ color: 'hsl(0 0% 32%)', fontSize: '11px', ...mono, margin: 0 }}>
+                              {new Date(r.redeemed_at).toLocaleString()} · BTC @ ${r.btc_price ? parseFloat(r.btc_price).toLocaleString(undefined, {maximumFractionDigits: 0}) : '—'}
+                            </p>
+                          </div>
+                          <div style={{ textAlign: 'right' as const }}>
+                            <p style={{ color: 'hsl(142 76% 36%)', fontWeight: '700', fontSize: '14px', ...mono, margin: '0 0 2px' }}>-{r.sats_released ? parseInt(r.sats_released).toLocaleString() : '—'} sats</p>
+                            <p style={{ color: 'hsl(0 0% 30%)', fontSize: '10px', ...mono, margin: 0 }}>${r.ubtc_amount} released</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 
@@ -656,7 +772,7 @@ function AccountContent() {
                 <p style={{ color: 'hsl(38 92% 50%)', fontSize: '10px', fontWeight: '700', ...mono, margin: 0, textTransform: 'uppercase' as const, letterSpacing: '0.12em' }}>Your UBTC Wallet</p>
               </div>
               <p style={{ color: 'hsl(0 0% 38%)', fontSize: '11px', ...mono, margin: '0 0 14px', lineHeight: '1.7' }}>
-                This <strong style={{ color: 'hsl(205 85% 55%)' }}>Account</strong> locks BTC and mints UBTC. Your <strong style={{ color: 'hsl(38 92% 50%)' }}>Wallet</strong> is your address to send &amp; receive UBTC with others.
+                This <strong style={{ color: 'hsl(205 85% 55%)' }}>Account</strong> locks BTC and mints UBTC. Your <strong style={{ color: 'hsl(38 92% 50%)' }}>Wallet </strong> is your address to send &amp; receive UBTC with others.
               </p>
               <a href={vault.linked_wallet ? `/wallet?address=${vault.linked_wallet}` : `/wallet`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: 'hsl(38 92% 50%)', color: '#000', textDecoration: 'none', borderRadius: '10px', padding: '13px', fontSize: '14px', fontWeight: '700', fontFamily: 'var(--font-display)', boxShadow: '0 0 24px hsl(38 92% 50% / 0.5)', marginBottom: '10px' }}>
                 {Icons.wallet(17, '#000')} Open My Wallet

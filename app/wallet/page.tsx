@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, Suspense } from 'react'
-import { API_URL } from '../lib/supabase'
+import { API_URL, supabase } from '../lib/supabase'
 import { Icons } from '../components/Icons'
 
 function WalletContent() {
@@ -23,25 +23,34 @@ function WalletContent() {
   const [copied, setCopied] = useState('')
   const [protocolKeySaved, setProtocolKeySaved] = useState(false)
   const [pendingProofs, setPendingProofs] = useState<any[]>([])
-  const [proofModal, setProofModal] = useState<{type: 'warning' | 'success' | null, proof?: any}>({type: null})
+  const [proofModal, setProofModal] = useState<{ type: 'warning' | 'success' | null, proof?: any }>({ type: null })
 
   const mono: any = { fontFamily: 'var(--font-mono)' }
 
-  useEffect(() => {
+ useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const urlAddress = params.get('address')
+    const addr = urlAddress || localStorage.getItem('ubtc_wallet_address') || ''
     if (urlAddress) {
       setWalletAddress(urlAddress)
       localStorage.setItem('ubtc_wallet_address', urlAddress)
       loadWallet(urlAddress)
-      return
-    }
-    const stored = localStorage.getItem('ubtc_wallet_address')
-    if (stored) {
-      setWalletAddress(stored)
-      loadWallet(stored)
+    } else if (addr) {
+      setWalletAddress(addr)
+      loadWallet(addr)
     }
     loadVaults()
+
+    // Realtime subscriptions
+    if (addr) {
+      const walletSub = supabase
+        .channel('wallet-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'ubtc_wallets' }, () => loadWallet(addr))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'ubtc_proofs' }, () => loadWallet(addr))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'wallet_transactions' }, () => loadWallet(addr))
+        .subscribe()
+      return () => { supabase.removeChannel(walletSub) }
+    }
   }, [])
 
   const loadVaults = async () => {
@@ -58,34 +67,21 @@ function WalletContent() {
       const res = await fetch(`${API_URL}/wallets/all`)
       const data = await res.json()
       const wData = (data.wallets || []).find((w: any) => w.wallet_address === addr)
-      if (wData) {
-        setWalletData(wData)
-        setView('dashboard')
-      } else {
-        localStorage.removeItem('ubtc_wallet_address')
-        setView('landing')
-      }
+      if (wData) { setWalletData(wData); setView('dashboard') }
+      else { localStorage.removeItem('ubtc_wallet_address'); setView('landing') }
       try {
         const txRes = await fetch(`${API_URL}/wallet/${addr}/transactions`)
-        if (txRes.ok) {
-          const txData = await txRes.json()
-          setWalletTxs(txData.transactions || [])
-        }
+        if (txRes.ok) { const txData = await txRes.json(); setWalletTxs(txData.transactions || []) }
       } catch {}
       try {
         const proofRes = await fetch(`${API_URL}/proofs/${addr}`)
-        if (proofRes.ok) {
-          const proofData = await proofRes.json()
-          setPendingProofs(proofData.proofs || [])
-        }
+        if (proofRes.ok) { const proofData = await proofRes.json(); setPendingProofs(proofData.proofs || []) }
       } catch {}
     } catch (e) { console.error(e) }
   }
 
   const copy = (text: string, id: string) => {
-    navigator.clipboard.writeText(text)
-    setCopied(id)
-    setTimeout(() => setCopied(''), 2000)
+    navigator.clipboard.writeText(text); setCopied(id); setTimeout(() => setCopied(''), 2000)
   }
 
   const CopyBtn = ({ text, id }: { text: string; id: string }) => (
@@ -111,21 +107,39 @@ function WalletContent() {
     } catch (e: any) { alert('Download failed: ' + e.message) }
   }
 
-  const createWallet = async () => {
+ const createWallet = async () => {
     if (!username || !email) return
     setLoading(true); setError('')
     try {
+      // Step 1 — generate all keys client-side, never touch server
+      const { createWallet: generateWallet, persistWallet } = await import('../lib/wallet/wallet')
+      const wallet = await generateWallet()
+
+      // Step 2 — send ONLY public keys to server for registration
       const res = await fetch(`${API_URL}/wallet/create`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, wallet_name: walletName || 'My Wallet', linked_vault_id: linkedVaultId })
+        body: JSON.stringify({
+          username,
+          email,
+          wallet_name: walletName || 'My Wallet',
+          linked_vault_id: linkedVaultId,
+          wallet_address: wallet.address,
+          kyber_pk: wallet.publicKeys.kyber,
+          taproot_pk: wallet.publicKeys.taproot,
+          dilithium_pk: wallet.publicKeys.dilithium,
+        })
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      setCreateResult(data)
-      localStorage.setItem('ubtc_wallet_address', data.wallet_address)
-      sessionStorage.setItem('ubtc_qsk', data.private_key || '')
-      sessionStorage.setItem('ubtc_sphincs_sk', data.sphincs_sk || '')
-      sessionStorage.setItem('ubtc_kyber_sk', data.kyber_sk || '')
+
+      // Step 3 — persist encrypted wallet locally (no secrets on server)
+      await persistWallet(wallet)
+      localStorage.setItem('ubtc_wallet_address', wallet.address)
+
+      // Step 4 — show mnemonic to user (only time it's ever shown)
+      setCreateResult({ ...data, mnemonic: wallet.mnemonic, wallet_address: wallet.address })
+
+      // NO sessionStorage of private keys — they live encrypted in IndexedDB
     } catch (e: any) { setError(e.message) }
     setLoading(false)
   }
@@ -149,12 +163,9 @@ function WalletContent() {
   const inputStyle: any = { display: 'block', width: '100%', padding: '13px 16px', background: 'hsl(220 15% 5%)', border: '1px solid hsl(220 10% 14%)', borderRadius: '12px', color: 'hsl(0 0% 92%)', fontSize: '14px', fontFamily: 'var(--font-mono)', outline: 'none', boxSizing: 'border-box' as const, marginBottom: '12px' }
 
   const accountMeta: Record<string, { icon: string; title: string }> = {
-    current: { icon: '💳', title: 'Current Account' },
-    savings: { icon: '🔐', title: 'Savings Account' },
-    yield: { icon: '₿', title: 'Yield Account' },
-    custody_yield: { icon: '📊', title: 'Custody Yield' },
-    prime: { icon: '💎', title: 'Prime Account' },
-    managed_yield: { icon: '🏦', title: 'Managed Yield' },
+    current: { icon: '💳', title: 'Current Account' }, savings: { icon: '🔐', title: 'Savings Account' },
+    yield: { icon: '₿', title: 'Yield Account' }, custody_yield: { icon: '📊', title: 'Custody Yield' },
+    prime: { icon: '💎', title: 'Prime Account' }, managed_yield: { icon: '🏦', title: 'Managed Yield' },
   }
 
   const balance = parseFloat(walletData?.balance || '0')
@@ -221,30 +232,30 @@ function WalletContent() {
                 ))}
               </div>
             </div>
-            <button onClick={() => {
-              const keyData = {
-                wallet_address: createResult.wallet_address,
-                username: createResult.username,
-                created_at: new Date().toISOString(),
-                warning: 'STORE THIS FILE SECURELY OFFLINE. NEVER SHARE IT.',
-                key1_dilithium3_qsk: { purpose: 'Signs every UBTC transfer — required to send UBTC', key: createResult.private_key },
-                key2_sphincs_backup: { purpose: 'Backup quantum signing — different algorithm to KEY 1', key: createResult.sphincs_sk },
-                key3_kyber_redemption: { purpose: 'Decrypts embedded BTC redemption — self-sovereign Bitcoin claim', key: createResult.kyber_sk }
-              }
-              const blob = new Blob([JSON.stringify(keyData, null, 2)], { type: 'application/json' })
-              const url = URL.createObjectURL(blob)
-              const a = document.createElement('a')
-              a.href = url; a.download = `ubtc-keys-${createResult.username}-${Date.now()}.json`
-              document.body.appendChild(a); a.click()
-              document.body.removeChild(a); URL.revokeObjectURL(url)
-            }} style={{ width: '100%', background: 'hsl(38 92% 50%)', color: '#000', fontFamily: 'monospace', fontSize: '13px', fontWeight: 700, padding: '16px', border: 'none', borderRadius: '10px', cursor: 'pointer', letterSpacing: '0.1em' }}>
-              ⬇ Download All 3 Keys as File — Do This Now
-            </button>
+            {createResult.mnemonic && (
+              <div style={{ background: 'hsl(220 15% 5%)', border: '1px solid hsl(38 92% 50% / 0.5)', borderRadius: '12px', padding: '20px' }}>
+                <p style={{ color: 'hsl(38 92% 50%)', fontSize: '11px', fontFamily: 'monospace', textTransform: 'uppercase' as const, letterSpacing: '0.2em', margin: '0 0 16px', fontWeight: 700 }}>⚠️ Your Recovery Phrase — Write This Down Now</p>
+                <p style={{ color: 'hsl(0 0% 45%)', fontSize: '12px', fontFamily: 'monospace', margin: '0 0 16px', lineHeight: '1.6' }}>These 24 words are the ONLY way to recover your wallet. Never share them. Never store them digitally. Write them on paper and store safely offline.</p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '16px' }}>
+                  {createResult.mnemonic.split(' ').map((word: string, i: number) => (
+                    <div key={i} style={{ background: 'hsl(220 15% 8%)', border: '1px solid hsl(220 10% 16%)', borderRadius: '8px', padding: '8px 10px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <span style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', fontFamily: 'monospace', minWidth: '20px' }}>{i + 1}.</span>
+                      <span style={{ color: 'hsl(0 0% 88%)', fontSize: '13px', fontFamily: 'monospace', fontWeight: 600 }}>{word}</span>
+                    </div>
+                  ))}
+                </div>
+                <button onClick={() => {
+                  navigator.clipboard.writeText(createResult.mnemonic)
+                }} style={{ background: 'hsl(220 12% 12%)', color: 'hsl(0 0% 55%)', border: '1px solid hsl(220 10% 18%)', borderRadius: '8px', padding: '10px 16px', fontSize: '12px', fontFamily: 'monospace', cursor: 'pointer', width: '100%' }}>
+                  Copy to clipboard (paste into secure password manager)
+                </button>
+              </div>
+            )}
             <div onClick={() => setProtocolKeySaved(!protocolKeySaved)} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', background: 'hsl(220 12% 8%)', border: `1px solid ${protocolKeySaved ? 'hsl(142 76% 36% / 0.4)' : 'hsl(220 10% 14%)'}`, borderRadius: '12px', padding: '14px', cursor: 'pointer' }}>
               <div style={{ width: '22px', height: '22px', borderRadius: '6px', border: `2px solid ${protocolKeySaved ? 'hsl(142 76% 36%)' : 'hsl(220 10% 28%)'}`, background: protocolKeySaved ? 'hsl(142 76% 36%)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 {protocolKeySaved && Icons.check(13, 'white')}
               </div>
-              <p style={{ color: 'hsl(0 0% 45%)', fontSize: '13px', ...mono, margin: 0, lineHeight: '1.6' }}>I have saved all 3 keys. I understand they cannot be recovered.</p>
+              <p style={{ color: 'hsl(0 0% 45%)', fontSize: '13px', ...mono, margin: 0, lineHeight: '1.6' }}>I have written down my 24-word recovery phrase and stored it safely offline.</p>
             </div>
             <button onClick={() => { if (protocolKeySaved) { setWalletData(createResult); setWalletAddress(createResult.wallet_address); setView('dashboard'); loadWallet(createResult.wallet_address) } }} disabled={!protocolKeySaved} style={{ background: protocolKeySaved ? 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))' : 'hsl(220 10% 12%)', color: protocolKeySaved ? 'white' : 'hsl(0 0% 28%)', border: 'none', borderRadius: '14px', padding: '16px', fontSize: '16px', fontWeight: '700', cursor: protocolKeySaved ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', boxShadow: protocolKeySaved ? '0 0 30px hsl(205 85% 55% / 0.4)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
               {Icons.wallet(18, protocolKeySaved ? 'white' : 'hsl(0 0% 28%)')} Open My Wallet →
@@ -252,24 +263,18 @@ function WalletContent() {
           </div>
         ) : (
           <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 14%)', borderRadius: '20px', padding: '28px' }}>
-            <label style={{ display: 'block', color: 'hsl(0 0% 35%)', fontSize: '11px', ...mono, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '8px' }}>Username</label>
+            <label style={{ display: 'block', color: 'hsl(0 0% 35%)', fontSize: '11px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.12em', marginBottom: '8px' }}>Username</label>
             <input value={username} onChange={e => setUsername(e.target.value)} placeholder="satoshi" style={inputStyle} autoFocus />
-            <label style={{ display: 'block', color: 'hsl(0 0% 35%)', fontSize: '11px', ...mono, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '8px' }}>Email</label>
+            <label style={{ display: 'block', color: 'hsl(0 0% 35%)', fontSize: '11px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.12em', marginBottom: '8px' }}>Email</label>
             <input value={email} onChange={e => setEmail(e.target.value)} placeholder="satoshi@bitcoin.org" type="email" style={inputStyle} />
-            <label style={{ display: 'block', color: 'hsl(0 0% 35%)', fontSize: '11px', ...mono, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '8px' }}>Wallet Name (optional)</label>
+            <label style={{ display: 'block', color: 'hsl(0 0% 35%)', fontSize: '11px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.12em', marginBottom: '8px' }}>Wallet Name (optional)</label>
             <input value={walletName} onChange={e => setWalletName(e.target.value)} placeholder="My Main Wallet" style={inputStyle} />
-            <label style={{ display: 'block', color: 'hsl(0 0% 35%)', fontSize: '11px', ...mono, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '8px' }}>Link to Vault (optional)</label>
+            <label style={{ display: 'block', color: 'hsl(0 0% 35%)', fontSize: '11px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.12em', marginBottom: '8px' }}>Link to Vault (optional)</label>
             <select value={linkedVaultId} onChange={e => setLinkedVaultId(e.target.value)} style={{ ...inputStyle, appearance: 'none' as const }}>
               <option value="">No vault linked</option>
-              {vaults.map(v => {
-                const meta = accountMeta[v.account_type] || { icon: '💳', title: v.account_type }
-                return <option key={v.vault_id} value={v.vault_id}>{meta.icon} {meta.title} — {v.vault_id}</option>
-              })}
+              {vaults.map(v => { const meta = accountMeta[v.account_type] || { icon: '💳', title: v.account_type }; return <option key={v.vault_id} value={v.vault_id}>{meta.icon} {meta.title} — {v.vault_id}</option> })}
             </select>
-            {error && <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: 'hsl(0 84% 60% / 0.08)', border: '1px solid hsl(0 84% 60% / 0.25)', borderRadius: '10px', padding: '12px 14px', marginBottom: '14px' }}>
-              {Icons.warning(14, 'hsl(0 84% 60%)')}
-              <p style={{ color: 'hsl(0 84% 60%)', fontSize: '13px', ...mono, margin: 0 }}>{error}</p>
-            </div>}
+            {error && <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: 'hsl(0 84% 60% / 0.08)', border: '1px solid hsl(0 84% 60% / 0.25)', borderRadius: '10px', padding: '12px 14px', marginBottom: '14px' }}>{Icons.warning(14, 'hsl(0 84% 60%)')}<p style={{ color: 'hsl(0 84% 60%)', fontSize: '13px', ...mono, margin: 0 }}>{error}</p></div>}
             <button onClick={createWallet} disabled={loading || !username || !email} style={{ width: '100%', background: username && email && !loading ? 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))' : 'hsl(220 10% 12%)', color: username && email && !loading ? 'white' : 'hsl(0 0% 28%)', border: 'none', borderRadius: '12px', padding: '16px', fontSize: '16px', fontWeight: '700', cursor: username && email && !loading ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
               {Icons.key(18, username && email && !loading ? 'white' : 'hsl(0 0% 28%)')}
               {loading ? 'Creating...' : 'Create Wallet & Generate Keys'}
@@ -302,9 +307,7 @@ function WalletContent() {
               <p style={{ color: 'hsl(0 0% 65%)', fontSize: '11px', ...mono, margin: 0, flex: 1, wordBreak: 'break-all' as const }}>{lookupResult.wallet_address}</p>
               <CopyBtn text={lookupResult.wallet_address} id="lookup-addr" />
             </div>
-            <button onClick={() => { setWalletAddress(lookupResult.wallet_address); localStorage.setItem('ubtc_wallet_address', lookupResult.wallet_address); loadWallet(lookupResult.wallet_address) }} style={{ width: '100%', background: 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))', color: 'white', border: 'none', borderRadius: '12px', padding: '14px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
-              Open Wallet →
-            </button>
+            <button onClick={() => { setWalletAddress(lookupResult.wallet_address); localStorage.setItem('ubtc_wallet_address', lookupResult.wallet_address); loadWallet(lookupResult.wallet_address) }} style={{ width: '100%', background: 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))', color: 'white', border: 'none', borderRadius: '12px', padding: '14px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>Open Wallet →</button>
           </div>
         )}
       </div>
@@ -315,89 +318,69 @@ function WalletContent() {
   return (
     <div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', fontFamily: 'var(--font-display)' }}>
 
-      {/* ── PROOF DOWNLOAD MODAL ── */}
+      {/* Proof download modal */}
       {proofModal.type && (
         <div style={{ position: 'fixed', inset: 0, background: 'hsl(220 15% 2% / 0.95)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-          <div style={{ background: 'hsl(220 12% 8%)', borderRadius: '24px', padding: '40px', maxWidth: '480px', width: '100%', boxShadow: `0 0 80px ${proofModal.type === 'success' ? 'hsl(142 76% 36% / 0.2)' : 'hsl(38 92% 50% / 0.2)'}`, border: `2px solid ${proofModal.type === 'success' ? 'hsl(142 76% 36% / 0.4)' : 'hsl(38 92% 50% / 0.4)'}` }}>
-
+          <div style={{ background: 'hsl(220 12% 8%)', borderRadius: '24px', padding: '40px', maxWidth: '480px', width: '100%', border: `2px solid ${proofModal.type === 'success' ? 'hsl(142 76% 36% / 0.4)' : 'hsl(38 92% 50% / 0.4)'}` }}>
             {proofModal.type === 'warning' && (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '20px' }}>
                   <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'hsl(38 92% 50% / 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', flexShrink: 0 }}>⚠️</div>
                   <div>
                     <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '20px', fontWeight: '700', margin: '0 0 2px' }}>Read Before Downloading</h2>
-                    <p style={{ color: 'hsl(38 92% 50%)', fontSize: '12px', fontFamily: 'var(--font-mono)', margin: 0 }}>Bearer Instrument Warning</p>
+                    <p style={{ color: 'hsl(38 92% 50%)', fontSize: '12px', ...mono, margin: 0 }}>Bearer Instrument Warning</p>
                   </div>
                 </div>
-
                 <div style={{ background: 'hsl(220 15% 5%)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
-                  <p style={{ color: 'hsl(0 0% 75%)', fontSize: '13px', fontFamily: 'var(--font-mono)', margin: '0 0 16px', lineHeight: '1.7' }}>
-                    This proof file is <strong style={{ color: 'hsl(38 92% 50%)' }}>digital cash</strong>. Anyone with BOTH of these can redeem your Bitcoin:
-                  </p>
+                  <p style={{ color: 'hsl(0 0% 75%)', fontSize: '13px', ...mono, margin: '0 0 16px', lineHeight: '1.7' }}>This proof file is <strong style={{ color: 'hsl(38 92% 50%)' }}>digital cash</strong>. Anyone with both of these can redeem your Bitcoin:</p>
                   <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '8px', marginBottom: '16px' }}>
                     {[{ icon: '📄', label: 'This .ubtc proof file' }, { icon: '🔑', label: 'Your KEY 3 (Kyber key)' }].map(item => (
                       <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'hsl(0 84% 60% / 0.08)', border: '1px solid hsl(0 84% 60% / 0.2)', borderRadius: '8px', padding: '12px 14px' }}>
                         <span style={{ fontSize: '18px' }}>{item.icon}</span>
-                        <p style={{ color: 'hsl(0 0% 82%)', fontSize: '13px', fontFamily: 'var(--font-mono)', margin: 0, fontWeight: 600 }}>{item.label}</p>
+                        <p style={{ color: 'hsl(0 0% 82%)', fontSize: '13px', ...mono, margin: 0, fontWeight: 600 }}>{item.label}</p>
                       </div>
                     ))}
                   </div>
                   <div style={{ borderTop: '1px solid hsl(220 10% 12%)', paddingTop: '14px', display: 'flex', flexDirection: 'column' as const, gap: '8px' }}>
-                    {[
-                      'Store proof file and KEY 3 in separate secure locations',
-                      'Never store them together on the same device',
-                      'Never send them in the same email or message',
-                      'Treat this file like physical cash',
-                    ].map((rule, i) => (
+                    {['Store proof file and KEY 3 in separate secure locations', 'Never store them together on the same device', 'Never send them in the same email or message', 'Treat this file like physical cash'].map((rule, i) => (
                       <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                         <span style={{ color: 'hsl(38 92% 50%)', fontSize: '12px', marginTop: '1px', flexShrink: 0 }}>→</span>
-                        <p style={{ color: 'hsl(0 0% 55%)', fontSize: '12px', fontFamily: 'var(--font-mono)', margin: 0, lineHeight: '1.5' }}>{rule}</p>
+                        <p style={{ color: 'hsl(0 0% 55%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.5' }}>{rule}</p>
                       </div>
                     ))}
                   </div>
                 </div>
-
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={() => setProofModal({ type: null })} style={{ background: 'none', border: '1px solid hsl(220 10% 18%)', color: 'hsl(0 0% 40%)', borderRadius: '12px', padding: '14px 20px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
-                    Cancel
-                  </button>
-                  <button onClick={() => downloadProof(proofModal.proof)} style={{ flex: 1, background: 'hsl(38 92% 50%)', color: '#000', border: 'none', borderRadius: '12px', padding: '14px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
-                    I Understand — Download Proof File
-                  </button>
+                  <button onClick={() => setProofModal({ type: null })} style={{ background: 'none', border: '1px solid hsl(220 10% 18%)', color: 'hsl(0 0% 40%)', borderRadius: '12px', padding: '14px 20px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>Cancel</button>
+                  <button onClick={() => downloadProof(proofModal.proof)} style={{ flex: 1, background: 'hsl(38 92% 50%)', color: '#000', border: 'none', borderRadius: '12px', padding: '14px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>I Understand — Download</button>
                 </div>
               </>
             )}
-
             {proofModal.type === 'success' && (
               <>
                 <div style={{ textAlign: 'center' as const, marginBottom: '24px' }}>
                   <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'hsl(142 76% 36% / 0.15)', border: '2px solid hsl(142 76% 36% / 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: '32px' }}>✅</div>
                   <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '22px', fontWeight: '700', margin: '0 0 6px' }}>Proof File Downloaded</h2>
-                  <p style={{ color: 'hsl(142 76% 36%)', fontSize: '13px', fontFamily: 'var(--font-mono)', margin: 0 }}>
-                    {proofModal.proof?.proof_data?.ownership?.ubtc_amount || '?'} UBTC bearer instrument
-                  </p>
+                  <p style={{ color: 'hsl(142 76% 36%)', fontSize: '13px', ...mono, margin: 0 }}>{proofModal.proof?.proof_data?.ownership?.ubtc_amount || '?'} UBTC bearer instrument</p>
                 </div>
-
                 <div style={{ background: 'hsl(220 15% 5%)', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
-                  <p style={{ color: 'hsl(0 0% 55%)', fontSize: '12px', fontFamily: 'var(--font-mono)', margin: '0 0 14px', lineHeight: '1.7' }}>
-                    Server copy marked for deletion. Store your proof file now:
-                  </p>
+                  <p style={{ color: 'hsl(0 0% 55%)', fontSize: '12px', ...mono, margin: '0 0 14px', lineHeight: '1.7' }}>Server copy marked for deletion. Store your proof file now:</p>
                   {[
                     { icon: '💾', text: 'Save the .ubtc file to a USB drive or secure offline storage' },
                     { icon: '🔑', text: 'Store KEY 3 separately — different device or location' },
                     { icon: '🔴', text: 'Never put both files on the same cloud storage or device' },
-                    { icon: '₿', text: 'To redeem: go to Redeem → upload proof + KEY 3 → broadcast to Bitcoin' },
+                    { icon: '₿', text: 'To redeem: tap Redeem in your wallet and upload your proof file + KEY 3' },
                   ].map((item, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '10px' }}>
                       <span style={{ fontSize: '16px', flexShrink: 0 }}>{item.icon}</span>
-                      <p style={{ color: 'hsl(0 0% 70%)', fontSize: '12px', fontFamily: 'var(--font-mono)', margin: 0, lineHeight: '1.5' }}>{item.text}</p>
+                      <p style={{ color: 'hsl(0 0% 70%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.5' }}>{item.text}</p>
                     </div>
                   ))}
                 </div>
-
-                <button onClick={() => setProofModal({ type: null })} style={{ width: '100%', background: 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))', color: 'white', border: 'none', borderRadius: '12px', padding: '16px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)', boxShadow: '0 0 30px hsl(205 85% 55% / 0.4)' }}>
-                  Got it — Done
-                </button>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button onClick={() => setProofModal({ type: null })} style={{ flex: 1, background: 'none', border: '1px solid hsl(220 10% 18%)', color: 'hsl(0 0% 40%)', borderRadius: '12px', padding: '14px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>Done</button>
+                  <a href="/redeem/proof" style={{ flex: 1, background: 'linear-gradient(135deg, hsl(38,92%,50%), hsl(32,90%,45%))', color: '#000', border: 'none', borderRadius: '12px', padding: '14px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Redeem Now →</a>
+                </div>
               </>
             )}
           </div>
@@ -442,35 +425,36 @@ function WalletContent() {
 
       {/* Balance hero */}
       <div style={{ background: 'hsl(220 15% 4%)', padding: '40px 24px 32px', textAlign: 'center' as const, borderBottom: '1px solid hsl(220 10% 9%)' }}>
-        <p style={{ color: 'hsl(0 0% 38%)', fontSize: '12px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 6px' }}>@{walletData?.username}</p>
+        <p style={{ color: 'hsl(0 0% 38%)', fontSize: '12px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 6px' }}>@{walletData?.username}</p>
         <p style={{ color: 'hsl(0 0% 92%)', fontSize: '44px', fontWeight: '700', ...mono, margin: '0 0 4px', lineHeight: '1' }}>
           ${(balance + uusdtBalance + uusdcBalance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </p>
         <p style={{ color: 'hsl(0 0% 28%)', fontSize: '12px', ...mono, margin: '0 0 24px' }}>Total Balance</p>
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', maxWidth: '320px', margin: '0 auto' }}>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', maxWidth: '380px', margin: '0 auto' }}>
           {[
-           { label: 'Send', icon: Icons.send(18, 'hsl(0 0% 55%)'), href: `/transfer?from_wallet=${walletData?.wallet_address}&ubtc=${balance}&uusdt=${uusdtBalance}&uusdc=${uusdcBalance}` },
+            { label: 'Send', icon: Icons.send(18, 'hsl(0 0% 55%)'), href: `/transfer?from_wallet=${walletData?.wallet_address}&ubtc=${balance}&uusdt=${uusdtBalance}&uusdc=${uusdcBalance}` },
             { label: 'Receive', icon: Icons.receive(18, 'hsl(0 0% 55%)'), action: () => copy(walletData?.wallet_address || '', 'recv') },
+            { label: 'Redeem', icon: Icons.redeem(18, 'hsl(38 92% 50%)'), href: '/redeem/proof', highlight: true },
             { label: 'Tokens', icon: Icons.settings(18, 'hsl(0 0% 55%)'), action: () => setShowManageTokens(true) },
           ].map(btn => (
             btn.href
-              ? <a key={btn.label} href={btn.href} style={{ flex: 1, background: 'hsl(220 12% 10%)', border: '1px solid hsl(220 10% 15%)', borderRadius: '14px', padding: '14px 8px', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: '6px', textDecoration: 'none' }}>
-                  {btn.icon}
-                  <span style={{ color: 'hsl(0 0% 48%)', fontSize: '12px', fontWeight: '600', ...mono }}>{btn.label}</span>
-                </a>
-              : <button key={btn.label} onClick={btn.action} style={{ flex: 1, background: 'hsl(220 12% 10%)', border: '1px solid hsl(220 10% 15%)', borderRadius: '14px', padding: '14px 8px', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: '6px', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
-                  {btn.icon}
-                  <span style={{ color: 'hsl(0 0% 48%)', fontSize: '12px', fontWeight: '600', ...mono }}>{btn.label}</span>
-                </button>
+              ? <a key={btn.label} href={btn.href} style={{ flex: 1, background: (btn as any).highlight ? 'hsl(38 92% 50% / 0.1)' : 'hsl(220 12% 10%)', border: `1px solid ${(btn as any).highlight ? 'hsl(38 92% 50% / 0.3)' : 'hsl(220 10% 15%)'}`, borderRadius: '14px', padding: '14px 8px', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: '6px', textDecoration: 'none' }}>
+                {btn.icon}
+                <span style={{ color: (btn as any).highlight ? 'hsl(38 92% 55%)' : 'hsl(0 0% 48%)', fontSize: '11px', fontWeight: '600', ...mono }}>{btn.label}</span>
+              </a>
+              : <button key={btn.label} onClick={(btn as any).action} style={{ flex: 1, background: 'hsl(220 12% 10%)', border: '1px solid hsl(220 10% 15%)', borderRadius: '14px', padding: '14px 8px', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: '6px', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
+                {btn.icon}
+                <span style={{ color: 'hsl(0 0% 48%)', fontSize: '11px', fontWeight: '600', ...mono }}>{btn.label}</span>
+              </button>
           ))}
         </div>
-        {copied === 'recv' && <p style={{ color: 'hsl(142 76% 36%)', fontSize: '12px', ...mono, margin: '12px 0 0' }}>Address copied</p>}
       </div>
+      {copied === 'recv' && <p style={{ color: 'hsl(142 76% 36%)', fontSize: '12px', ...mono, margin: '12px 0 0', textAlign: 'center' as const }}>Address copied</p>}
 
       <div style={{ maxWidth: '480px', margin: '0 auto', padding: '24px 16px' }}>
 
         {/* Assets */}
-        <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 10px' }}>Assets</p>
+        <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 10px' }}>Assets</p>
         {[
           { show: true, name: 'UBTC', sub: 'Bitcoin-backed', color: 'hsl(38 92% 50%)', bal: '$' + balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), unit: 'UBTC' },
           { show: tokens.uusdt, name: 'UUSDT', sub: '1:1 USDT · Bitcoin-native', color: 'hsl(142 76% 36%)', bal: '$' + uusdtBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), unit: 'UUSDT' },
@@ -491,7 +475,7 @@ function WalletContent() {
         {/* Wallet address */}
         {walletData && (
           <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 12%)', borderRadius: '14px', padding: '16px', margin: '16px 0' }}>
-            <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 8px' }}>Wallet Address</p>
+            <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 8px' }}>Wallet Address</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <p style={{ color: 'hsl(205 85% 55%)', fontSize: '11px', ...mono, margin: 0, flex: 1, wordBreak: 'break-all' as const }}>{walletData.wallet_address}</p>
               <CopyBtn text={walletData.wallet_address} id="wal-addr" />
@@ -504,64 +488,32 @@ function WalletContent() {
           <div style={{ background: 'hsl(220 12% 8%)', border: '2px solid hsl(38 92% 50% / 0.6)', borderRadius: '16px', padding: '20px', margin: '16px 0', boxShadow: '0 0 24px hsl(38 92% 50% / 0.15)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
               <span style={{ fontSize: '18px' }}>📥</span>
-              <p style={{ color: 'hsl(38 92% 50%)', fontSize: '12px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: 0, fontWeight: 700 }}>
+              <p style={{ color: 'hsl(38 92% 50%)', fontSize: '12px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: 0, fontWeight: 700 }}>
                 {pendingProofs.length} Incoming Proof File{pendingProofs.length > 1 ? 's' : ''} — Action Required
               </p>
             </div>
-            <p style={{ color: 'hsl(0 0% 45%)', fontSize: '11px', fontFamily: 'var(--font-mono)', margin: '0 0 16px', lineHeight: '1.7' }}>
-              You have received UBTC. Download your proof file now — it will be deleted from our servers after download. Your proof file + KEY 3 = your Bitcoin.
+            <p style={{ color: 'hsl(0 0% 45%)', fontSize: '11px', ...mono, margin: '0 0 16px', lineHeight: '1.7' }}>
+              You have received UBTC. Download your proof file — it will be deleted from our servers after download. Your proof file + KEY 3 = your Bitcoin.
             </p>
             {pendingProofs.map((proof: any) => (
               <div key={proof.proof_id} style={{ background: 'hsl(220 15% 5%)', borderRadius: '10px', padding: '14px', marginBottom: '10px', border: '1px solid hsl(220 10% 14%)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                   <div>
-                    <p style={{ color: 'hsl(0 0% 75%)', fontSize: '13px', fontFamily: 'var(--font-mono)', margin: '0 0 2px', fontWeight: 700 }}>
-                      {proof.proof_data?.ownership?.ubtc_amount || '?'} UBTC
-                    </p>
-                    <p style={{ color: 'hsl(0 0% 30%)', fontSize: '10px', fontFamily: 'var(--font-mono)', margin: 0 }}>
-                      from {proof.sender_vault_id} · {new Date(proof.created_at).toLocaleString()}
-                    </p>
+                    <p style={{ color: 'hsl(0 0% 75%)', fontSize: '13px', ...mono, margin: '0 0 2px', fontWeight: 700 }}>{proof.proof_data?.ownership?.ubtc_amount || '?'} UBTC</p>
+                    <p style={{ color: 'hsl(0 0% 30%)', fontSize: '10px', ...mono, margin: 0 }}>from {proof.sender_vault_id} · {new Date(proof.created_at).toLocaleString()}</p>
                   </div>
-                  <button onClick={() => setProofModal({ type: 'warning', proof })} style={{ background: 'hsl(38 92% 50%)', color: '#000', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, padding: '10px 16px', border: 'none', borderRadius: '8px', cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
+                  <button onClick={() => setProofModal({ type: 'warning', proof })} style={{ background: 'hsl(38 92% 50%)', color: '#000', ...mono, fontSize: '11px', fontWeight: 700, padding: '10px 16px', border: 'none', borderRadius: '8px', cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
                     ⬇ Download Proof
                   </button>
                 </div>
-                <p style={{ color: 'hsl(0 0% 22%)', fontSize: '9px', fontFamily: 'var(--font-mono)', margin: 0 }}>ID: {proof.proof_id}</p>
+                <p style={{ color: 'hsl(0 0% 22%)', fontSize: '9px', ...mono, margin: 0 }}>ID: {proof.proof_id}</p>
               </div>
             ))}
           </div>
         )}
 
-        {/* Proof Wallet Section */}
-        <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(205 85% 55% / 0.2)', borderRadius: '16px', padding: '20px', margin: '16px 0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-            {Icons.shield(14, 'hsl(205 85% 55%)')}
-            <p style={{ color: 'hsl(205 85% 55%)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: 0 }}>Proof Wallet — On-Chain UBTC</p>
-          </div>
-          <p style={{ color: 'hsl(0 0% 30%)', fontSize: '11px', ...mono, margin: '0 0 14px', lineHeight: '1.7' }}>
-            A Proof Wallet holds cryptographic proof files — each file IS your UBTC, redeemable directly on Bitcoin without any server.
-          </p>
-          <label style={{ flex: 1, background: 'hsl(220 12% 12%)', color: 'hsl(0 0% 55%)', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, padding: '10px', border: '1px solid hsl(220 10% 18%)', borderRadius: '8px', cursor: 'pointer', textAlign: 'center' as const, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-            📁 Verify Proof File
-            <input type="file" accept=".ubtc,.json" style={{ display: 'none' }} onChange={e => {
-              const file = e.target.files?.[0]
-              if (!file) return
-              const reader = new FileReader()
-              reader.onload = ev => {
-                try {
-                  const data = JSON.parse(ev.target?.result as string)
-                  if (data.proof_id) {
-                    alert(`✅ Valid UBTC Proof\nProof ID: ${data.proof_id}\nAmount: ${data.ownership?.ubtc_amount || data.amount_sats} UBTC\nVersion: ${data.version || 'UBTCV1'}`)
-                  } else { alert('Invalid proof file') }
-                } catch { alert('Could not read proof file') }
-              }
-              reader.readAsText(file)
-            }} />
-          </label>
-        </div>
-
         {/* Transactions */}
-        <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '16px 0 10px' }}>Transactions</p>
+        <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '16px 0 10px' }}>Transactions</p>
         {walletTxs.length === 0 ? (
           <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 12%)', borderRadius: '14px', padding: '40px', textAlign: 'center' as const }}>
             <p style={{ color: 'hsl(0 0% 25%)', fontSize: '13px', ...mono, margin: 0 }}>No transactions yet</p>
@@ -578,14 +530,12 @@ function WalletContent() {
                 <p style={{ color: 'hsl(0 0% 82%)', fontWeight: '600', fontSize: '13px', margin: '0 0 2px' }}>{tx.description}</p>
                 <p style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', ...mono, margin: 0 }}>{new Date(tx.created_at).toLocaleString()}</p>
               </div>
-              <p style={{ color, fontWeight: '700', fontSize: '14px', ...mono, margin: 0 }}>
-                {isIn ? '+' : '-'}{parseFloat(tx.amount).toLocaleString()} UBTC
-              </p>
+              <p style={{ color, fontWeight: '700', fontSize: '14px', ...mono, margin: 0 }}>{isIn ? '+' : '-'}{parseFloat(tx.amount).toLocaleString()} UBTC</p>
             </div>
           )
         })}
 
-        <button onClick={() => { localStorage.removeItem('ubtc_wallet_address'); setWalletData(null); setView('landing') }} style={{ width: '100%', background: 'none', border: '1px solid hsl(220 10% 12%)', color: 'hsl(0 0% 22%)', borderRadius: '12px', padding: '12px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-mono)', marginTop: '16px' }}>
+        <button onClick={() => { localStorage.removeItem('ubtc_wallet_address'); setWalletData(null); setView('landing') }} style={{ width: '100%', background: 'none', border: '1px solid hsl(220 10% 12%)', color: 'hsl(0 0% 22%)', borderRadius: '12px', padding: '12px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', ...mono, marginTop: '16px' }}>
           Sign out of wallet
         </button>
       </div>

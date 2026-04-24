@@ -1,254 +1,203 @@
-'use client';
-import { useState, useRef } from 'react';
+'use client'
+import { useState } from 'react'
+import { API_URL } from '../../lib/supabase'
 
 export default function RedeemProofPage() {
-  const [proofFile, setProofFile] = useState<any>(null);
-  const [kyberKey, setKyberKey] = useState('');
-  const [decrypted, setDecrypted] = useState<string | null>(null);
-  const [error, setError] = useState('');
-  const [step, setStep] = useState<'upload' | 'decrypt' | 'redeem' | 'done'>('upload');
-  const [method, setMethod] = useState<'onchain' | 'lightning'>('onchain');
-  const [btcAddress, setBtcAddress] = useState('');
-  const [lightningAddress, setLightningAddress] = useState('');
-  const [result, setResult] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const keyInputRef = useRef<HTMLInputElement>(null);
-
-  const s = {
-    page: { minHeight: '100vh', background: '#09090b', color: '#fafafa', padding: '32px 24px', maxWidth: 520, margin: '0 auto', fontFamily: 'inherit' } as React.CSSProperties,
-    title: { fontSize: 24, fontWeight: 700, marginBottom: 6 } as React.CSSProperties,
-    sub: { fontSize: 13, color: '#71717a', marginBottom: 32 } as React.CSSProperties,
-    error: { background: '#450a0a', border: '1px solid #7f1d1d', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#fca5a5' } as React.CSSProperties,
-    card: { background: '#18181b', border: '1px solid #27272a', borderRadius: 12, padding: '20px' } as React.CSSProperties,
-    uploadZone: { background: '#18181b', border: '2px dashed #3f3f46', borderRadius: 12, padding: '40px 24px', textAlign: 'center' as const, cursor: 'pointer' },
-    uploadZoneActive: { background: '#1c1917', border: '2px dashed #f97316', borderRadius: 12, padding: '40px 24px', textAlign: 'center' as const, cursor: 'pointer' },
-    btn: { width: '100%', padding: '13px', borderRadius: 10, border: 'none', background: '#f97316', color: '#000', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' } as React.CSSProperties,
-    btnDisabled: { width: '100%', padding: '13px', borderRadius: 10, border: 'none', background: '#3f3f46', color: '#71717a', fontSize: 14, fontWeight: 700, cursor: 'not-allowed', fontFamily: 'inherit' } as React.CSSProperties,
-    btnSecondary: { flex: 1, padding: '10px', borderRadius: 8, border: '1px solid #3f3f46', background: '#27272a', color: '#a1a1aa', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' } as React.CSSProperties,
-    btnSecondaryActive: { flex: 1, padding: '10px', borderRadius: 8, border: '1px solid #f97316', background: '#431407', color: '#f97316', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' } as React.CSSProperties,
-    btnLightningActive: { flex: 1, padding: '10px', borderRadius: 8, border: '1px solid #eab308', background: '#422006', color: '#eab308', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' } as React.CSSProperties,
-    label: { fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 6 } as React.CSSProperties,
-    input: { width: '100%', boxSizing: 'border-box' as const, background: '#18181b', border: '1px solid #3f3f46', borderRadius: 8, padding: '11px 14px', fontSize: 13, color: '#fafafa', outline: 'none', fontFamily: 'inherit' },
-    textarea: { width: '100%', boxSizing: 'border-box' as const, background: '#18181b', border: '1px solid #3f3f46', borderRadius: 8, padding: '11px 14px', fontSize: 11, color: '#4ade80', outline: 'none', height: 72, resize: 'none' as const, fontFamily: 'monospace' },
-    fileBtn: { display: 'flex', alignItems: 'center', gap: 14, background: '#18181b', border: '1px solid #3f3f46', borderRadius: 10, padding: '16px', cursor: 'pointer', width: '100%', textAlign: 'left' as const },
-    fileBtnActive: { display: 'flex', alignItems: 'center', gap: 14, background: '#14532d22', border: '1px solid #16a34a', borderRadius: 10, padding: '16px', cursor: 'pointer', width: '100%', textAlign: 'left' as const },
-  };
+  const [proofFile, setProofFile] = useState<any>(null)
+  const [password, setPassword] = useState('')
+  const [decrypted, setDecrypted] = useState<string | null>(null)
+  const [error, setError] = useState('')
+  const [step, setStep] = useState<'upload' | 'password' | 'redeem' | 'done'>('upload')
+  const [btcAddress, setBtcAddress] = useState('')
+  const [result, setResult] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
+  const mono: any = { fontFamily: 'var(--font-mono)' }
 
   function handleProofUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => {
       try {
-        const json = JSON.parse(ev.target?.result as string);
-        setProofFile(json);
-        setStep('decrypt');
-        setError('');
-      } catch { setError('Invalid proof file'); }
-    };
-    reader.readAsText(file);
+        const json = JSON.parse(ev.target?.result as string)
+        setProofFile(json); setStep('password'); setError('')
+      } catch { setError('Invalid proof file') }
+    }
+    reader.readAsText(file)
   }
 
-  function handleKeyFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      try {
-        const json = JSON.parse(ev.target?.result as string);
-        const key = json?.key3_kyber_redemption?.key;
-        if (!key) { setError('Key file does not contain KEY 3'); return; }
-        setKyberKey(key);
-        setError('');
-      } catch { setError('Invalid key file'); }
-    };
-    reader.readAsText(file);
-  }
+  async function decryptWithPassword() {
+    setError(''); setLoading(true)
+    try {
+      const { loadWallet, loadPasswordVault } = await import('../../lib/wallet/storage')
+      const { unsealWithPassword } = await import('../../lib/wallet/password')
+      const { decrypt: aesDecrypt, toHex } = await import('../../lib/wallet/encryption')
 
-  const isEncrypted = proofFile?.redemption_template?.encryption === 'kyber1024';
+      const stored = await loadWallet()
+      if (!stored) throw new Error('No wallet found in this browser')
 
-  function decryptLocally() {
-    setError('');
-    if (!proofFile) { setError('Upload proof file first'); return; }
-    if (isEncrypted && !kyberKey) { setError('Upload or paste KEY 3 first'); return; }
-    const enc = proofFile?.redemption_template?.taproot_secret_key_encrypted;
-    if (!enc) { setError('No encrypted key found in proof'); return; }
-    if (!isEncrypted) { setDecrypted(enc); setStep('redeem'); return; }
-    setLoading(true);
-    fetch('/api/decrypt-proof', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ encrypted: enc, kyber_sk: kyberKey })
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (data.error) { setError(data.error); return; }
-        setDecrypted(data.taproot_key);
-        setStep('redeem');
+      const vault = await loadPasswordVault()
+      if (!vault) throw new Error('No password vault found — please set a password first')
+
+      // Unseal localEncKey using password
+      const localEncKey = await unsealWithPassword(vault, password)
+
+      // Decrypt Kyber SK using localEncKey
+      const kyberSk = await aesDecrypt(stored.encrypted.kyber_sk, localEncKey)
+      localEncKey.fill(0)
+
+      // Send Kyber SK to backend for proof decryption
+      const enc = proofFile?.redemption_template?.taproot_secret_key_encrypted
+      if (!enc) throw new Error('No encrypted key found in proof')
+
+      const kyberSkHex = toHex(kyberSk)
+      kyberSk.fill(0)
+
+      const res = await fetch(`${API_URL}/proofs/decrypt`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ encrypted: enc, kyber_sk: kyberSkHex })
       })
-      .catch(() => setError('Decryption failed'))
-      .finally(() => setLoading(false));
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+
+      setDecrypted(data.taproot_key)
+      setStep('redeem')
+    } catch (e: any) {
+      setError(e.message === 'Wrong password' ? 'Incorrect password — try again' : e.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleRedeem() {
-    setLoading(true);
-    setError('');
-    const body: any = {
-      proof_id: proofFile.proof_id,
-      vault_id: proofFile.collateral?.vault_id,
-      ubtc_amount: proofFile.ownership?.ubtc_amount,
-      taproot_key: decrypted,
-    };
-    let endpoint = 'http://localhost:8080/proofs/redeem';
-    if (method === 'lightning') {
-      body.lightning_address = lightningAddress;
-      endpoint = 'http://localhost:8080/proofs/redeem/lightning';
-    } else {
-      body.destination_address = btcAddress;
-    }
+    setLoading(true); setError('')
     try {
-      const r = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      const data = await r.json();
-      if (data.error) { setError(data.error); return; }
-      setResult(data);
-      setStep('done');
-    } catch { setError('Redemption failed'); }
-    finally { setLoading(false); }
+     const body: any = {
+        proof_id: proofFile.proof_id,
+        vault_id: proofFile.collateral?.vault_id,
+        ubtc_amount: proofFile.ownership?.ubtc_amount,
+        destination_address: btcAddress,
+        taproot_key: decrypted,
+      }
+      const res = await fetch(`${API_URL}/proofs/redeem`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setResult(data); setStep('done')
+    } catch (e: any) { setError(e.message) }
+    setLoading(false)
   }
 
   return (
-    <div style={s.page}>
-      <h1 style={s.title}>Redeem UBTC Proof</h1>
-      <p style={s.sub}>Self-sovereign redemption — your KEY 3 never leaves your device</p>
+    <div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+      <div style={{ width: '100%', maxWidth: '480px' }}>
 
-      {error && <div style={s.error}>⚠ {error}</div>}
+        {/* Header */}
+        <div style={{ textAlign: 'center' as const, marginBottom: '32px' }}>
+          <h1 style={{ color: 'hsl(0 0% 92%)', fontSize: '28px', fontWeight: '700', margin: '0 0 8px' }}>Redeem UBTC</h1>
+          <p style={{ color: 'hsl(0 0% 38%)', fontSize: '13px', ...mono, margin: 0 }}>Convert your UBTC proof to Bitcoin</p>
+        </div>
 
-      {/* STEP 1 — Upload proof */}
-      {step === 'upload' && (
-        <label style={s.uploadZone}>
-          <input type="file" accept=".ubtc,.json" style={{ display: 'none' }} onChange={handleProofUpload} />
-          <div style={{ fontSize: 40, marginBottom: 12 }}>📄</div>
-          <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>Upload your .ubtc proof file</div>
-          <div style={{ fontSize: 12, color: '#71717a', marginBottom: 20 }}>Click to browse</div>
-          <div style={{ display: 'inline-block', background: '#f97316', color: '#000', fontWeight: 700, fontSize: 13, padding: '10px 24px', borderRadius: 8 }}>
-            Choose File
-          </div>
-        </label>
-      )}
-
-      {/* STEP 2 — Load key + decrypt */}
-      {step === 'decrypt' && proofFile && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={s.card}>
-            <div style={{ fontSize: 11, color: '#71717a', marginBottom: 4 }}>Proof loaded</div>
-            <div style={{ fontSize: 13, color: '#f97316', fontFamily: 'monospace', marginBottom: 4 }}>{proofFile.proof_id}</div>
-            <div style={{ fontSize: 13, color: '#d4d4d8' }}>
-              {proofFile.ownership?.ubtc_amount} UBTC &nbsp;·&nbsp; {isEncrypted ? '🔐 Kyber1024 encrypted' : '🔓 Unencrypted'}
-            </div>
-          </div>
-
-          {isEncrypted && (
-            <>
-              <div style={{ fontSize: 12, color: '#a1a1aa', fontWeight: 600 }}>KEY 3 — Kyber Redemption Key</div>
-
-              <button style={kyberKey ? s.fileBtnActive : s.fileBtn} onClick={() => keyInputRef.current?.click()}>
-                <input ref={keyInputRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleKeyFileUpload} />
-                <span style={{ fontSize: 24 }}>🔑</span>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: kyberKey ? '#4ade80' : '#d4d4d8' }}>
-                    {kyberKey ? '✅ Key file loaded — KEY 3 extracted' : 'Upload key file'}
-                  </div>
-                  <div style={{ fontSize: 11, color: '#71717a', marginTop: 2 }}>
-                    {kyberKey ? 'Ready to decrypt' : 'Your downloaded key file (.json)'}
-                  </div>
+        {/* Steps */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '32px', justifyContent: 'center' }}>
+          {['Upload Proof', 'Unlock', 'Redeem', 'Done'].map((s, i) => {
+            const current = ['upload', 'password', 'redeem', 'done'].indexOf(step)
+            return (
+              <div key={s} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: i <= current ? 'hsl(142 76% 36%)' : 'hsl(220 12% 12%)', border: `1px solid ${i <= current ? 'hsl(142 76% 36%)' : 'hsl(220 10% 18%)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ color: i <= current ? 'white' : 'hsl(0 0% 30%)', fontSize: '11px', fontWeight: 700 }}>{i + 1}</span>
                 </div>
-              </button>
-
-              <div style={{ textAlign: 'center', fontSize: 11, color: '#3f3f46' }}>— or paste KEY 3 manually —</div>
-
-              <textarea
-                style={s.textarea}
-                placeholder="Paste KEY 3 here..."
-                value={kyberKey}
-                onChange={e => setKyberKey(e.target.value)}
-              />
-            </>
-          )}
-
-          <button
-            onClick={decryptLocally}
-            disabled={loading || (isEncrypted && !kyberKey)}
-            style={loading || (isEncrypted && !kyberKey) ? s.btnDisabled : s.btn}
-          >
-            {loading ? 'Decrypting...' : isEncrypted ? '🔓  Decrypt with KEY 3' : 'Continue →'}
-          </button>
-        </div>
-      )}
-
-      {/* STEP 3 — Redeem */}
-      {step === 'redeem' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ background: '#052e16', border: '1px solid #16a34a', borderRadius: 10, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 20 }}>✅</span>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#4ade80' }}>Decryption successful</div>
-              <div style={{ fontSize: 11, color: '#71717a', marginTop: 2, fontFamily: 'monospace' }}>
-                {decrypted?.slice(0, 20)}...{decrypted?.slice(-8)}
+                {i < 3 && <div style={{ width: '24px', height: '1px', background: i < current ? 'hsl(142 76% 36%)' : 'hsl(220 10% 18%)' }} />}
               </div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button style={method === 'onchain' ? s.btnSecondaryActive : s.btnSecondary} onClick={() => setMethod('onchain')}>₿ On-chain</button>
-            <button style={method === 'lightning' ? s.btnLightningActive : s.btnSecondary} onClick={() => setMethod('lightning')}>⚡ Lightning</button>
-          </div>
-
-          {method === 'onchain' && (
-            <div>
-              <label style={s.label}>Bitcoin Address</label>
-              <input style={s.input} placeholder="tb1q..." value={btcAddress} onChange={e => setBtcAddress(e.target.value)} />
-            </div>
-          )}
-
-          {method === 'lightning' && (
-            <div>
-              <label style={s.label}>Lightning Address</label>
-              <input style={s.input} placeholder="you@walletofsatoshi.com" value={lightningAddress} onChange={e => setLightningAddress(e.target.value)} />
-              <div style={{ fontSize: 11, color: '#52525b', marginTop: 6 }}>WLB routes via LND · 1% fee applies</div>
-            </div>
-          )}
-
-          <button
-            onClick={handleRedeem}
-            disabled={loading || (method === 'onchain' && !btcAddress) || (method === 'lightning' && !lightningAddress)}
-            style={(method === 'onchain' && !btcAddress) || (method === 'lightning' && !lightningAddress) ? s.btnDisabled : { ...s.btn, background: method === 'lightning' ? '#eab308' : '#f97316' }}
-          >
-            {loading ? 'Broadcasting...' : `Redeem ${proofFile?.ownership?.ubtc_amount} UBTC`}
-          </button>
+            )
+          })}
         </div>
-      )}
 
-      {/* STEP 4 — Done */}
-      {step === 'done' && result && (
-        <div style={{ ...s.card, textAlign: 'center', padding: '40px 24px' }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: '#4ade80', marginBottom: 8 }}>Redeemed!</div>
-          <div style={{ fontSize: 13, color: '#a1a1aa', marginBottom: 20 }}>{result.message}</div>
-          {result.txid && (
-            <a href={`https://mempool.space/testnet4/tx/${result.txid}`} target="_blank" rel="noopener noreferrer"
-              style={{ fontSize: 11, color: '#f97316', wordBreak: 'break-all', fontFamily: 'monospace' }}>
-              {result.txid}
-            </a>
+        <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 13%)', borderRadius: '20px', padding: '28px' }}>
+
+          {/* Step 1 — Upload proof */}
+          {step === 'upload' && (
+            <div>
+              <p style={{ color: 'hsl(0 0% 88%)', fontSize: '16px', fontWeight: 600, margin: '0 0 8px' }}>Upload your proof file</p>
+              <p style={{ color: 'hsl(0 0% 38%)', fontSize: '12px', ...mono, margin: '0 0 20px', lineHeight: '1.7' }}>Download your .ubtc proof file from your wallet, then upload it here.</p>
+              <label style={{ display: 'block', border: '2px dashed hsl(220 10% 18%)', borderRadius: '12px', padding: '32px', textAlign: 'center' as const, cursor: 'pointer' }}>
+                <p style={{ color: 'hsl(0 0% 45%)', fontSize: '13px', ...mono, margin: '0 0 8px' }}>Click to upload .ubtc file</p>
+                <p style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', ...mono, margin: 0 }}>Your proof file from the wallet page</p>
+                <input type="file" accept=".ubtc,.json" onChange={handleProofUpload} style={{ display: 'none' }} />
+              </label>
+            </div>
           )}
-          {result.payment_hash && (
-            <div style={{ fontSize: 11, color: '#eab308', wordBreak: 'break-all', fontFamily: 'monospace', marginTop: 8 }}>{result.payment_hash}</div>
+
+          {/* Step 2 — Password unlock */}
+          {step === 'password' && (
+            <div>
+              <p style={{ color: 'hsl(0 0% 88%)', fontSize: '16px', fontWeight: 600, margin: '0 0 8px' }}>Enter your wallet password</p>
+              <p style={{ color: 'hsl(0 0% 38%)', fontSize: '12px', ...mono, margin: '0 0 8px', lineHeight: '1.7' }}>
+                Proof: <span style={{ color: 'hsl(142 76% 36%)' }}>{proofFile?.proof_id}</span>
+              </p>
+              <p style={{ color: 'hsl(0 0% 38%)', fontSize: '12px', ...mono, margin: '0 0 20px', lineHeight: '1.7' }}>
+                Amount: <span style={{ color: 'hsl(38 92% 50%)' }}>{proofFile?.ownership?.ubtc_amount} UBTC</span>
+              </p>
+              <input
+                type="password"
+                placeholder="Your wallet password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && decryptWithPassword()}
+                style={{ width: '100%', padding: '14px', background: 'hsl(220 15% 5%)', border: '1px solid hsl(220 10% 18%)', borderRadius: '10px', color: 'hsl(0 0% 88%)', fontSize: '14px', fontFamily: 'monospace', marginBottom: '12px', boxSizing: 'border-box' as const, outline: 'none' }}
+              />
+              {error && <p style={{ color: 'hsl(0 84% 60%)', fontSize: '12px', ...mono, margin: '0 0 12px' }}>{error}</p>}
+              <button onClick={decryptWithPassword} disabled={loading || !password} style={{ width: '100%', background: loading ? 'hsl(220 10% 14%)' : 'hsl(142 76% 36%)', color: 'white', border: 'none', borderRadius: '10px', padding: '14px', fontSize: '14px', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-display)' }}>
+                {loading ? 'Unlocking...' : 'Unlock Proof →'}
+              </button>
+              <p style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', ...mono, margin: '12px 0 0', textAlign: 'center' as const }}>Forgot password? Use your 24-word recovery phrase to reset.</p>
+            </div>
           )}
-          <button onClick={() => { setStep('upload'); setProofFile(null); setKyberKey(''); setDecrypted(null); setResult(null); setError(''); }}
-            style={{ ...s.btnSecondary, marginTop: 24, width: '100%', flex: 'none' }}>
-            Redeem another proof
-          </button>
+
+          {/* Step 3 — Redeem */}
+          {step === 'redeem' && (
+            <div>
+              <p style={{ color: 'hsl(0 0% 88%)', fontSize: '16px', fontWeight: 600, margin: '0 0 8px' }}>Enter your Bitcoin address</p>
+              <p style={{ color: 'hsl(0 0% 38%)', fontSize: '12px', ...mono, margin: '0 0 20px', lineHeight: '1.7' }}>
+                Redeeming <span style={{ color: 'hsl(38 92% 50%)' }}>{proofFile?.ownership?.ubtc_amount} UBTC</span> — BTC will be sent to this address.
+              </p>
+              <input
+                type="text"
+                placeholder="tb1q... or bc1q..."
+                value={btcAddress}
+                onChange={e => setBtcAddress(e.target.value)}
+                style={{ width: '100%', padding: '14px', background: 'hsl(220 15% 5%)', border: '1px solid hsl(220 10% 18%)', borderRadius: '10px', color: 'hsl(0 0% 88%)', fontSize: '13px', fontFamily: 'monospace', marginBottom: '12px', boxSizing: 'border-box' as const, outline: 'none' }}
+              />
+              {error && <p style={{ color: 'hsl(0 84% 60%)', fontSize: '12px', ...mono, margin: '0 0 12px' }}>{error}</p>}
+              <button onClick={handleRedeem} disabled={loading || !btcAddress} style={{ width: '100%', background: loading ? 'hsl(220 10% 14%)' : 'hsl(38 92% 50%)', color: '#000', border: 'none', borderRadius: '10px', padding: '14px', fontSize: '14px', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-display)' }}>
+                {loading ? 'Broadcasting...' : 'Redeem to Bitcoin →'}
+              </button>
+            </div>
+          )}
+
+          {/* Step 4 — Done */}
+          {step === 'done' && result && (
+            <div style={{ textAlign: 'center' as const }}>
+              <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
+              <p style={{ color: 'hsl(0 0% 92%)', fontSize: '20px', fontWeight: 700, margin: '0 0 8px' }}>Redemption Complete</p>
+              <p style={{ color: 'hsl(0 0% 38%)', fontSize: '12px', ...mono, margin: '0 0 24px' }}>BTC is on its way to your address</p>
+              <div style={{ background: 'hsl(220 15% 5%)', borderRadius: '10px', padding: '16px', textAlign: 'left' as const }}>
+                <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 4px' }}>Bitcoin Transaction</p>
+                <p style={{ color: 'hsl(205 85% 55%)', fontSize: '11px', ...mono, margin: '0 0 12px', wordBreak: 'break-all' as const }}>{result.txid}</p>
+                <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 4px' }}>Amount</p>
+                <p style={{ color: 'hsl(142 76% 36%)', fontSize: '14px', fontWeight: 700, ...mono, margin: 0 }}>{result.amount_sats?.toLocaleString()} sats</p>
+              </div>
+              <a href={`https://mempool.space/testnet4/tx/${result.txid}`} target="_blank" rel="noopener noreferrer" style={{ display: 'block', marginTop: '16px', color: 'hsl(205 85% 55%)', fontSize: '12px', ...mono }}>
+                View on mempool.space →
+              </a>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
-  );
+  )
 }

@@ -12,7 +12,10 @@ export default function VaultPage() {
   const [accountType, setAccountType] = useState<AccountType | null>(null)
   const [custodyPreference, setCustodyPreference] = useState<'ubtc' | 'bitgo' | 'komainu'>('ubtc')
   const [existingTypes, setExistingTypes] = useState<string[]>([])
-  const [loading, setLoading] = useState(false)
+const [loading, setLoading] = useState(false)
+  const [walletPassword, setWalletPassword] = useState('')
+  const [walletPasswordConfirm, setWalletPasswordConfirm] = useState('')
+  const [passwordSet, setPasswordSet] = useState(false)
   const [result, setResult] = useState<any>(null)
   const [error, setError] = useState('')
   const [username, setUsername] = useState('')
@@ -32,6 +35,10 @@ export default function VaultPage() {
   const createAccount = async () => {
     setLoading(true); setError('')
     try {
+     // Generate wallet client-side BEFORE calling server
+      const { createWallet: generateWallet, persistWallet } = await import('../lib/wallet/wallet')
+      const wallet = await generateWallet()
+
       const res = await fetch(`${API_URL}/vaults`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -40,31 +47,21 @@ export default function VaultPage() {
           username: username || 'user',
           custody_type: isSelfCustody ? 'taproot' : custodyPreference,
           yield_strategy: accountType === 'yield' ? 'babylon' : accountType === 'custody_yield' ? 'treasury' : accountType === 'managed_yield' ? 'managed' : accountType === 'prime' ? 'prime' : 'none',
+          client_kyber_pk: wallet.publicKeys.kyber,
+          client_wallet_address: wallet.address,
         })
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      setResult(data); setStep('done')
-      if (data.qsk_private) sessionStorage.setItem('ubtc_qsk', data.qsk_private)
-      if (data.kyber_sk) sessionStorage.setItem('ubtc_kyber_sk', data.kyber_sk)
-      if (data.sphincs_sk) sessionStorage.setItem('ubtc_sphincs_sk', data.sphincs_sk)
-      const keyData = {
-        vault_id: data.vault_id,
-        wallet_address: data.wallet_address,
-        username: username || data.vault_id,
-        created_at: new Date().toISOString(),
-        warning: 'STORE THIS FILE SECURELY OFFLINE. NEVER SHARE IT.',
-        protocol_second_key: { purpose: 'Authorises minting and withdrawals', key: data.protocol_second_key },
-        key1_dilithium3_qsk: { purpose: 'Signs every UBTC transfer — your quantum identity', key: data.qsk_private },
-        key2_sphincs_backup: { purpose: 'Backup quantum signing — different algorithm to KEY 1', key: data.sphincs_sk },
-        key3_kyber_redemption: { purpose: 'Decrypts embedded BTC redemption — self-sovereign Bitcoin claim', key: data.kyber_sk }
-      }
-      const blob = new Blob([JSON.stringify(keyData, null, 2)], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url; a.download = `ubtc-keys-${username || data.vault_id}-${Date.now()}.json`
-      document.body.appendChild(a); a.click()
-      document.body.removeChild(a); URL.revokeObjectURL(url)
+
+      // Persist wallet locally after server confirms vault creation
+      await persistWallet(wallet)
+      localStorage.setItem('ubtc_wallet_address', wallet.address)
+
+      // Attach mnemonic to result so UI can show it
+      setResult({ ...data, mnemonic: wallet.mnemonic, wallet_address: wallet.address })
+      setStep('done')
+     
     } catch (e: any) { setError(e.message) }
     setLoading(false)
   }
@@ -426,18 +423,117 @@ export default function VaultPage() {
             </div>
 
             <div style={{ background: 'hsl(220 15% 5%)', border: '1px solid hsl(0 84% 60% / 0.4)', borderRadius: '16px', padding: '24px', textAlign: 'left' as const, marginBottom: '20px' }}>
-              <p style={{ color: 'hsl(0 84% 60%)', fontSize: '11px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.2em', margin: '0 0 4px' }}>⚠️ Your Quantum Keys — Save Now</p>
-              <p style={{ color: 'hsl(0 0% 30%)', fontSize: '11px', ...mono, margin: '0 0 16px' }}>A key file has been downloaded automatically. Store it securely offline. These keys are never stored on our servers.</p>
+            <p style={{ color: 'hsl(38 92% 50%)', fontSize: '11px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.2em', margin: '0 0 8px' }}>⚠️ Your 24-Word Recovery Phrase</p>
+              <div style={{ background: 'hsl(220 15% 7%)', borderRadius: '8px', padding: '12px', marginBottom: '16px', borderLeft: '3px solid hsl(38 92% 50%)' }}>
+                <p style={{ color: 'hsl(0 0% 78%)', fontSize: '12px', fontFamily: 'monospace', margin: '0 0 8px', lineHeight: '1.7', fontWeight: 600 }}>What is this?</p>
+                <p style={{ color: 'hsl(0 0% 50%)', fontSize: '12px', fontFamily: 'monospace', margin: '0 0 8px', lineHeight: '1.7' }}>These 24 words ARE your wallet. They are the master key to everything — your UBTC balance, your Bitcoin collateral, your ability to send and receive. No words = no access.</p>
+                <p style={{ color: 'hsl(0 0% 78%)', fontSize: '12px', fontFamily: 'monospace', margin: '0 0 8px', lineHeight: '1.7', fontWeight: 600 }}>What should I do?</p>
+                <p style={{ color: 'hsl(0 0% 50%)', fontSize: '12px', fontFamily: 'monospace', margin: '0 0 8px', lineHeight: '1.7' }}>Write them on paper — right now — in the exact order shown. Store the paper somewhere safe offline. Do not photograph them. Do not email them. Do not save them in Notes or Google Drive.</p>
+                <p style={{ color: 'hsl(0 0% 78%)', fontSize: '12px', fontFamily: 'monospace', margin: '0 0 4px', lineHeight: '1.7', fontWeight: 600 }}>What if I lose them?</p>
+                <p style={{ color: 'hsl(0 84% 60%)', fontSize: '12px', fontFamily: 'monospace', margin: 0, lineHeight: '1.7' }}>Your funds cannot be recovered. Not by us. Not by anyone. These words are shown exactly once.</p>
+              </div>
+             {result.mnemonic && (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '12px' }}>
+                    {result.mnemonic.split(' ').map((word: string, i: number) => (
+                      <div key={i} style={{ background: 'hsl(220 15% 5%)', border: '1px solid hsl(220 10% 14%)', borderRadius: '6px', padding: '6px 8px', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        <span style={{ color: 'hsl(0 0% 28%)', fontSize: '9px', fontFamily: 'monospace', minWidth: '16px' }}>{i + 1}.</span>
+                        <span style={{ color: 'hsl(0 0% 88%)', fontSize: '12px', fontFamily: 'monospace', fontWeight: 600 }}>{word}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                    <button onClick={() => navigator.clipboard.writeText(result.mnemonic)} style={{ flex: 1, background: 'hsl(220 12% 12%)', color: 'hsl(0 0% 55%)', border: '1px solid hsl(220 10% 18%)', borderRadius: '8px', padding: '10px', fontSize: '11px', fontFamily: 'monospace', cursor: 'pointer' }}>
+                      Copy to clipboard
+                    </button>
+                    <button onClick={() => {
+                      const text = `QAP WALLET RECOVERY PHRASE\nCreated: ${new Date().toISOString()}\nVault: ${result.vault_id}\nWallet: ${result.wallet_address}\n\nWARNING: Store this offline. Never share it. Anyone with these words controls your funds.\n\n${result.mnemonic.split(' ').map((w: string, i: number) => `${i+1}. ${w}`).join('\n')}`
+                      const blob = new Blob([text], { type: 'text/plain' })
+                      const url = URL.createObjectURL(blob)
+                      const a = document.createElement('a')
+                      a.href = url; a.download = `qap-recovery-phrase-${result.vault_id}.txt`
+                      document.body.appendChild(a); a.click()
+                      document.body.removeChild(a); URL.revokeObjectURL(url)
+                    }} style={{ flex: 1, background: 'hsl(38 92% 50%)', color: '#000', border: 'none', borderRadius: '8px', padding: '10px', fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, cursor: 'pointer' }}>
+                      ⬇ Download as text file
+                    </button>
+                  </div>
+                </>
+              )}
+           {!passwordSet ? (
+                <div style={{ background: 'hsl(220 15% 5%)', border: '1px solid hsl(142 76% 36% / 0.4)', borderRadius: '12px', padding: '20px', marginBottom: '16px' }}>
+                  <p style={{ color: 'hsl(142 76% 36%)', fontSize: '11px', fontFamily: 'monospace', textTransform: 'uppercase' as const, letterSpacing: '0.2em', margin: '0 0 8px', fontWeight: 700 }}>Set Your Wallet Password</p>
+                  <p style={{ color: 'hsl(0 0% 45%)', fontSize: '12px', fontFamily: 'monospace', margin: '0 0 16px', lineHeight: '1.7' }}>This password protects your wallet on this device. You will enter it every time you send or redeem UBTC. If you forget it, use your 24-word recovery phrase to reset it.</p>
+                  <input
+                    type="password"
+                    placeholder="Choose a strong password (min 8 characters)"
+                    value={walletPassword}
+                    onChange={e => setWalletPassword(e.target.value)}
+                    style={{ width: '100%', padding: '12px', background: 'hsl(220 15% 7%)', border: '1px solid hsl(220 10% 18%)', borderRadius: '8px', color: 'hsl(0 0% 88%)', fontSize: '13px', fontFamily: 'monospace', marginBottom: '8px', boxSizing: 'border-box' as const }}
+                  />
+                  <input
+                    type="password"
+                    placeholder="Confirm password"
+                    value={walletPasswordConfirm}
+                    onChange={e => setWalletPasswordConfirm(e.target.value)}
+                    style={{ width: '100%', padding: '12px', background: 'hsl(220 15% 7%)', border: '1px solid hsl(220 10% 18%)', borderRadius: '8px', color: 'hsl(0 0% 88%)', fontSize: '13px', fontFamily: 'monospace', marginBottom: '12px', boxSizing: 'border-box' as const }}
+                  />
+                  <button onClick={async () => {
+                    if (walletPassword.length < 8) { alert('Password must be at least 8 characters'); return }
+                    if (walletPassword !== walletPasswordConfirm) { alert('Passwords do not match'); return }
+                    try {
+                      const { loadWallet, savePasswordVault } = await import('../lib/wallet/storage')
+                      const { sealWithPassword } = await import('../lib/wallet/password')
+                      const { deriveKeySeeds } = await import('../lib/wallet/hkdf')
+                      const { mnemonicToSeedSync } = await import('@scure/bip39')
+                      const stored = await loadWallet()
+                      if (!stored) { alert('Wallet not found'); return }
+                      const bip39Seed = mnemonicToSeedSync(result.mnemonic)
+                      const seeds = await deriveKeySeeds(bip39Seed)
+                      const vault = await sealWithPassword(seeds.localEncKey, walletPassword)
+                      seeds.localEncKey.fill(0)
+                      await savePasswordVault(vault)
+                      setPasswordSet(true)
+                    } catch (e: any) { alert('Failed to set password: ' + e.message) }
+                  }} style={{ width: '100%', background: 'hsl(142 76% 36%)', color: 'white', border: 'none', borderRadius: '8px', padding: '12px', fontSize: '13px', fontFamily: 'monospace', fontWeight: 700, cursor: 'pointer' }}>
+                    Set Password & Secure Wallet
+                  </button>
+                </div>
+              ) : (
+                <div style={{ background: 'hsl(142 76% 36% / 0.1)', border: '1px solid hsl(142 76% 36% / 0.3)', borderRadius: '12px', padding: '16px', marginBottom: '16px', textAlign: 'center' as const }}>
+                  <p style={{ color: 'hsl(142 76% 36%)', fontSize: '14px', fontFamily: 'monospace', fontWeight: 700, margin: 0 }}>✅ Wallet password set — your keys are protected</p>
+                </div>
+              )}
+
+              <div style={{ background: 'hsl(220 15% 7%)', borderRadius: '8px', padding: '12px', marginBottom: '16px', borderLeft: '3px solid hsl(205 85% 55%)' }}>
+                <p style={{ color: 'hsl(0 0% 78%)', fontSize: '12px', fontFamily: 'monospace', margin: '0 0 8px', lineHeight: '1.7', fontWeight: 600 }}>What is the Protocol Second Key?</p>
+                <p style={{ color: 'hsl(0 0% 50%)', fontSize: '12px', fontFamily: 'monospace', margin: '0 0 8px', lineHeight: '1.7' }}>This key authorises minting UBTC from your vault and moving UBTC to your wallet. It is separate from your recovery phrase — a second layer of security. You will need it every time you mint.</p>
+                <p style={{ color: 'hsl(0 0% 78%)', fontSize: '12px', fontFamily: 'monospace', margin: '0 0 4px', lineHeight: '1.7', fontWeight: 600 }}>How do I use it?</p>
+                <p style={{ color: 'hsl(0 0% 50%)', fontSize: '12px', fontFamily: 'monospace', margin: 0, lineHeight: '1.7' }}>Download it as a file and save it securely. When minting UBTC, you will upload this file. It never leaves your device — the server only checks a hash of it.</p>
+              </div>
               {[
-                { label: 'Protocol Second Key', desc: 'Authorises minting and withdrawals', color: 'hsl(38 92% 50%)', value: result.protocol_second_key },
-                { label: 'KEY 1 — Quantum Signing Key (QSK)', desc: 'Signs every UBTC transfer — your quantum identity', color: 'hsl(205 85% 55%)', value: result.qsk_private },
-                { label: 'KEY 2 — SPHINCS+ Backup', desc: 'Backup quantum signing — different algorithm to KEY 1', color: 'hsl(142 70% 45%)', value: result.sphincs_sk },
-                { label: 'KEY 3 — Kyber Redemption Key', desc: 'Decrypts embedded BTC redemption — self-sovereign Bitcoin claim', color: 'hsl(270 85% 65%)', value: result.kyber_sk },
+                { label: 'Protocol Second Key', desc: 'Authorises minting and vault withdrawals — keep this safe', color: 'hsl(38 92% 50%)', value: result.protocol_second_key },
               ].map((k, i) => (
                 <div key={i} style={{ marginBottom: '12px', padding: '12px', background: 'hsl(220 15% 7%)', borderRadius: '8px', borderLeft: `3px solid ${k.color}` }}>
                   <p style={{ color: k.color, fontSize: '10px', ...mono, fontWeight: 700, margin: '0 0 2px' }}>{k.label}</p>
                   <p style={{ color: 'hsl(0 0% 35%)', fontSize: '10px', ...mono, margin: '0 0 6px' }}>{k.desc}</p>
-                  <p style={{ color: 'hsl(0 0% 25%)', fontSize: '9px', ...mono, margin: 0, wordBreak: 'break-all' as const }}>{k.value?.substring(0, 60)}...</p>
+                 <p style={{ color: 'hsl(0 0% 25%)', fontSize: '9px', ...mono, margin: '0 0 10px', wordBreak: 'break-all' as const }}>{k.value?.substring(0, 60)}...</p>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={() => navigator.clipboard.writeText(k.value || '')} style={{ flex: 1, background: 'hsl(220 12% 12%)', color: 'hsl(0 0% 55%)', border: '1px solid hsl(220 10% 18%)', borderRadius: '8px', padding: '8px', fontSize: '11px', fontFamily: 'monospace', cursor: 'pointer' }}>
+                      Copy
+                    </button>
+                    <button onClick={() => {
+                      const text = `QAP PROTOCOL SECOND KEY\nVault: ${result.vault_id}\nCreated: ${new Date().toISOString()}\n\nWARNING: This key authorises minting and vault withdrawals.\nStore it securely. Upload it when minting UBTC.\nNever share it.\n\n${k.value}`
+                      const blob = new Blob([text], { type: 'text/plain' })
+                      const url = URL.createObjectURL(blob)
+                      const a = document.createElement('a')
+                      a.href = url; a.download = `protocol-second-key-${result.vault_id}.txt`
+                      document.body.appendChild(a); a.click()
+                      document.body.removeChild(a); URL.revokeObjectURL(url)
+                    }} style={{ flex: 1, background: 'hsl(38 92% 50%)', color: '#000', border: 'none', borderRadius: '8px', padding: '8px', fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, cursor: 'pointer' }}>
+                      ⬇ Download Key File
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
