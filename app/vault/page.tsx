@@ -103,7 +103,7 @@ export default function VaultPage() {
     try {
       const res = await fetch(`${API_URL}/wallet/username`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wallet_address: result.wallet_address, quantum_username: quantumUsername })
+       body: JSON.stringify({ wallet_address: result.wallet_address, vault_id: result.vault_id, quantum_username: quantumUsername })
       })
       if (res.ok) { setQuantumUsernameSet(true) }
       else { setQuantumUsernameSet(true) } // proceed even if endpoint not yet built

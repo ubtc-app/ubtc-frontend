@@ -83,20 +83,7 @@ export default function Home() {
           </div>
         </button>
 
-        <button
-          onClick={() => router.push('/wallet')}
-          style={{ flex: '1 1 180px', minWidth: '170px', background: 'hsl(220 12% 8%)', color: 'white', border: '1px solid hsl(220 10% 14%)', borderRadius: '18px', padding: '22px 16px', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: '12px', cursor: 'pointer', fontFamily: 'var(--font-display)', transition: 'border-color 0.15s' }}
-          onMouseEnter={e => (e.currentTarget.style.borderColor = 'hsl(220 10% 25%)')}
-          onMouseLeave={e => (e.currentTarget.style.borderColor = 'hsl(220 10% 14%)')}
-        >
-          <div style={{ width: '46px', height: '46px', borderRadius: '14px', background: 'hsl(220 12% 13%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {Icons.wallet(24, 'hsl(142 76% 36%)')}
-          </div>
-          <div style={{ textAlign: 'center' as const }}>
-            <p style={{ color: 'hsl(0 0% 88%)', fontWeight: '700', fontSize: '14px', margin: '0 0 4px' }}>Create Wallet</p>
-            <p style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', ...mono, margin: 0, lineHeight: '1.5' }}>Send and receive<br />instantly</p>
-          </div>
-        </button>
+        
 
       </div>
 

@@ -358,7 +358,7 @@ function AccountContent() {
                   <input
                     ref={movePskInputRef}
                     type="file"
-                    accept=".json"
+                    accept=".json,.txt,.key"
                     style={{ display: 'none' }}
                     onChange={e => {
                       const file = e.target.files?.[0]
@@ -366,14 +366,20 @@ function AccountContent() {
                       const reader = new FileReader()
                       reader.onload = ev => {
                         try {
-                          const json = JSON.parse(ev.target?.result as string)
-                      const raw = json?.protocol_second_key || json?.second_key || json?.psk
-                          const key = raw?.key || raw
+                          const content = ev.target?.result as string
+                          let key = ''
+                          try {
+                            const json = JSON.parse(content)
+                            const raw = json?.protocol_second_key || json?.second_key || json?.psk
+                            key = raw?.key || raw || ''
+                          } catch {
+                            const match = content.match(/[a-f0-9]{64,}/)
+                            key = match ? match[0] : ''
+                          }
                           if (key && typeof key === 'string') { setMovePsk(key); setMoveError('') }
-                          if (key) { setMovePsk(key); setMoveError('') }
-                          else setMoveError('Key file does not contain a protocol second key')
+                          else setMoveError('Key not found in file')
                         } catch { setMoveError('Invalid key file') }
-                      }
+						}
                       reader.readAsText(file)
                     }}
                   />

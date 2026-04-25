@@ -185,7 +185,8 @@ export default function Dashboard() {
               const uusdcBal = getScBal(vault.account_type, 'UUSDC')
               const uusdtDep = getScDep(vault.account_type, 'UUSDT')
               const uusdcDep = getScDep(vault.account_type, 'UUSDC')
-              const total = ubtcBal + uusdtBal + uusdcBal
+           const total = btcValue
+              const availableToMint = Math.max(0, (btcValue / 1.5) - ubtcBal)
               const ratio = ubtcBal > 0 ? (btcValue / ubtcBal * 100) : 0
               const ratioColor = ratio >= 200 ? 'hsl(142 76% 36%)' : ratio >= 150 ? 'hsl(38 92% 50%)' : ratio > 0 ? 'hsl(0 84% 60%)' : 'hsl(0 0% 35%)'
               const isPending = vault.status === 'pending_deposit'
@@ -245,10 +246,12 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' as const }}>
-                      <p style={{ color: 'hsl(0 0% 92%)', fontWeight: '700', fontSize: '22px', ...mono, margin: '0 0 2px', lineHeight: '1' }}>
-                        ${total.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    <p style={{ color: 'hsl(0 0% 92%)', fontWeight: '700', fontSize: '22px', ...mono, margin: '0 0 2px', lineHeight: '1' }}>
+                        ${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </p>
-                      <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, margin: 0 }}>total balance</p>
+                      <p style={{ color: 'hsl(142 76% 36%)', fontSize: '10px', ...mono, margin: '0 0 1px' }}>BTC collateral · live price</p>
+                      <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, margin: '0 0 1px' }}>{ubtcBal > 0 ? ubtcBal.toFixed(2) + ' UBTC minted' : 'No UBTC minted'}</p>
+                      <p style={{ color: 'hsl(38 92% 50%)', fontSize: '10px', ...mono, margin: 0 }}>${availableToMint.toFixed(2)} available to mint</p>
                     </div>
                   </div>
 
