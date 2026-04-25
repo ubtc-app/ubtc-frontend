@@ -3,7 +3,8 @@ import { useState } from 'react'
 import { API_URL } from '../../lib/supabase'
 
 export default function RedeemProofPage() {
-  const [proofFile, setProofFile] = useState<any>(null)
+ const [proofFile, setProofFile] = useState<any>(null)
+  const [autoLoading, setAutoLoading] = useState(false)
   const [password, setPassword] = useState('')
   const [decrypted, setDecrypted] = useState<string | null>(null)
   const [error, setError] = useState('')
@@ -12,6 +13,27 @@ export default function RedeemProofPage() {
   const [result, setResult] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const mono: any = { fontFamily: 'var(--font-mono)' }
+
+// Auto-load proof from URL params (coming from wallet page)
+  if (typeof window !== 'undefined' && !proofFile && !autoLoading) {
+    const params = new URLSearchParams(window.location.search)
+    const proofId = params.get('proof_id')
+    const vaultId = params.get('vault_id')
+    const amount = params.get('amount')
+    if (proofId && vaultId) {
+      setAutoLoading(true)
+      fetch(`${API_URL}/proofs/${proofId}/download`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+          if (data.proof) {
+            setProofFile(data.proof)
+            setStep('password')
+          }
+        })
+        .catch(() => {})
+        .finally(() => setAutoLoading(false))
+    }
+  }
 
   function handleProofUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -154,7 +176,9 @@ export default function RedeemProofPage() {
               <button onClick={decryptWithPassword} disabled={loading || !password} style={{ width: '100%', background: loading ? 'hsl(220 10% 14%)' : 'hsl(142 76% 36%)', color: 'white', border: 'none', borderRadius: '10px', padding: '14px', fontSize: '14px', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-display)' }}>
                 {loading ? 'Unlocking...' : 'Unlock Proof →'}
               </button>
-              <p style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', ...mono, margin: '12px 0 0', textAlign: 'center' as const }}>Forgot password? Use your 24-word recovery phrase to reset.</p>
+             <p style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', ...mono, margin: '12px 0 0', textAlign: 'center' as const }}>
+  Forgot password? <a href="/reset-password" style={{ color: 'hsl(205 85% 55%)', textDecoration: 'none' }}>Reset using recovery phrase →</a>
+</p>
             </div>
           )}
 

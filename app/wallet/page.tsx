@@ -492,8 +492,8 @@ function WalletContent() {
                 {pendingProofs.length} Incoming Proof File{pendingProofs.length > 1 ? 's' : ''} — Action Required
               </p>
             </div>
-            <p style={{ color: 'hsl(0 0% 45%)', fontSize: '11px', ...mono, margin: '0 0 16px', lineHeight: '1.7' }}>
-              You have received UBTC. Download your proof file — it will be deleted from our servers after download. Your proof file + KEY 3 = your Bitcoin.
+<p style={{ color: 'hsl(0 0% 45%)', fontSize: '11px', ...mono, margin: '0 0 16px', lineHeight: '1.7' }}>
+              You have received UBTC. Enter your wallet password to redeem directly to Bitcoin — no file download needed.
             </p>
             {pendingProofs.map((proof: any) => (
               <div key={proof.proof_id} style={{ background: 'hsl(220 15% 5%)', borderRadius: '10px', padding: '14px', marginBottom: '10px', border: '1px solid hsl(220 10% 14%)' }}>
@@ -502,8 +502,8 @@ function WalletContent() {
                     <p style={{ color: 'hsl(0 0% 75%)', fontSize: '13px', ...mono, margin: '0 0 2px', fontWeight: 700 }}>{proof.proof_data?.ownership?.ubtc_amount || '?'} UBTC</p>
                     <p style={{ color: 'hsl(0 0% 30%)', fontSize: '10px', ...mono, margin: 0 }}>from {proof.sender_vault_id} · {new Date(proof.created_at).toLocaleString()}</p>
                   </div>
-                  <button onClick={() => setProofModal({ type: 'warning', proof })} style={{ background: 'hsl(38 92% 50%)', color: '#000', ...mono, fontSize: '11px', fontWeight: 700, padding: '10px 16px', border: 'none', borderRadius: '8px', cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
-                    ⬇ Download Proof
+                <button onClick={() => window.location.href = `/redeem/proof?proof_id=${proof.proof_id}&vault_id=${proof.sender_vault_id}&amount=${proof.proof_data?.ownership?.ubtc_amount}`} style={{ background: 'hsl(142 76% 36%)', color: 'white', ...mono, fontSize: '11px', fontWeight: 700, padding: '10px 16px', border: 'none', borderRadius: '8px', cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
+                    ⚡ Redeem to Bitcoin
                   </button>
                 </div>
                 <p style={{ color: 'hsl(0 0% 22%)', fontSize: '9px', ...mono, margin: 0 }}>ID: {proof.proof_id}</p>
