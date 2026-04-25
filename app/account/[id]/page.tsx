@@ -271,10 +271,10 @@ function AccountContent() {
     const depColor = currency === 'ubtc' ? 'hsl(38 92% 50%)' : color
     const mintBg = currency === 'ubtc' ? 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))' : currency === 'uusdt' ? 'linear-gradient(135deg, hsl(142,76%,36%), hsl(142,76%,28%))' : 'linear-gradient(135deg, hsl(220,85%,60%), hsl(220,85%,45%))'
     const btns = [
-      { label: 'Deposit', icon: Icons.deposit(22, depColor), href: `/deposit?vault=${vaultId}&currency=${currency}`, style: { background: depColor + '10', border: `1px solid ${depColor}30`, color: depColor } },
+     { label: 'Deposit', icon: Icons.deposit(22, 'white'), href: `/deposit?vault=${vaultId}&currency=${currency}`, style: { background: 'hsl(38 92% 50%)', border: '1px solid transparent', color: 'white' } },
       { label: 'Mint', icon: Icons.mint(22, 'white'), href: `/mint?vault=${vaultId}&currency=${currency}`, style: { background: mintBg, border: '1px solid transparent', color: 'white', boxShadow: `0 0 20px ${color}30` } },
-{ label: 'To Wallet', icon: Icons.wallet(22, color), href: '#', onClick: (e: any) => { e.preventDefault(); setShowMoveModal(true); setMoveAmount(''); setMoveError(''); setMoveDone(false) }, style: { background: color + '10', border: `1px solid ${color}30`, color } },
-      { label: 'Redeem', icon: Icons.redeem(22, 'hsl(0 0% 55%)'), href: `/redeem?vault=${vaultId}&currency=${currency}`, style: { background: 'hsl(220 12% 10%)', border: '1px solid hsl(220 10% 17%)', color: 'hsl(0 0% 55%)' } },
+{ label: 'Move UBTC To Wallet', icon: Icons.send(22, 'white'), href: '#', onClick: (e: any) => { e.preventDefault(); setShowMoveModal(true); setMoveAmount(''); setMoveError(''); setMoveDone(false) }, style: { background: 'hsl(142 76% 36%)', border: '1px solid transparent', color: 'white' } },
+   
     ]
     return (
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '16px' }}>
@@ -603,12 +603,12 @@ function AccountContent() {
                     </div>
 
                     {/* Smart banner */}
-                 {ubtcBalance > 0 && walletBalance > 0 && walletBalance === ubtcBalance && (
+                 {ubtcBalance > 0 && ubtcCirculation < ubtcBalance && Math.max(0, ubtcBalance - ubtcCirculation) > 0 && (
                       <div style={{ background: 'hsl(38 92% 50% / 0.07)', border: '1px solid hsl(38 92% 50% / 0.25)', borderRadius: '12px', padding: '14px 18px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           {Icons.wallet(18, 'hsl(38 92% 50%)')}
                           <div>
-                            <p style={{ color: 'hsl(38 92% 50%)', fontWeight: 700, fontSize: 13, margin: '0 0 2px', ...mono }}>{ubtcBalance} UBTC is sitting in this account</p>
+                           <p style={{ color: 'hsl(38 92% 50%)', fontWeight: 700, fontSize: 13, margin: '0 0 2px', ...mono }}>{Math.max(0, ubtcBalance - ubtcCirculation).toFixed(2)} UBTC ready to move to wallet</p>
                             <p style={{ color: 'hsl(0 0% 38%)', fontSize: 11, margin: 0, ...mono }}>Use <strong>To Wallet</strong> above to move it to your wallet — then you can send it to others</p>
                           </div>
                         </div>
