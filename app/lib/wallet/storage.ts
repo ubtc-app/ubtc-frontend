@@ -134,16 +134,17 @@ export function toServerPayload(wallet: StoredWallet): {
   address: string;
   kyber_pk: string;
   dilithium_pk: string;
+  sphincs_pk: string;
   taproot_pk: string;
 } {
   return {
     address: wallet.address,
     kyber_pk: wallet.publicKeys.kyber,
     dilithium_pk: wallet.publicKeys.dilithium,
+    sphincs_pk: wallet.publicKeys.sphincs,
     taproot_pk: wallet.publicKeys.taproot,
   };
-}
-export async function savePasswordVault(vault: import("./password").PasswordVault): Promise<void> {
+}export async function savePasswordVault(vault: import("./password").PasswordVault): Promise<void> {
   const serialised = JSON.stringify(vault);
   try {
     const db = await openDB();
