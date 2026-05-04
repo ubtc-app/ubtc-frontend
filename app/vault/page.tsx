@@ -44,32 +44,50 @@ export default function VaultPage() {
   const selfCustodyTypes: AccountType[] = ['current', 'savings', 'yield']
   const isSelfCustody = accountType ? selfCustodyTypes.includes(accountType) : false
 
-  const createAccount = async () => {
-    setLoading(true); setError('')
-    try {
-      const { createWallet: generateWallet, persistWallet } = await import('../lib/wallet/wallet')
-      const wallet = await generateWallet()
-      const res = await fetch(`${API_URL}/vaults`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_pubkey: PUBKEY, network: 'testnet4', recovery_blocks: 6,
-          account_type: accountType,
-          username: `user_${Math.random().toString(36).slice(2, 8)}`,
-          custody_type: isSelfCustody ? 'taproot' : custodyPreference,
-          yield_strategy: accountType === 'yield' ? 'babylon' : accountType === 'custody_yield' ? 'treasury' : accountType === 'managed_yield' ? 'managed' : accountType === 'prime' ? 'prime' : 'none',
-          client_kyber_pk: wallet.publicKeys.kyber,
-          client_wallet_address: wallet.address,
+ const createAccount = async () => {
+      setLoading(true); setError('')
+      try {
+        // Step 1 — generate wallet (mnemonic + ML-DSA + SPHINCS+ + Kyber + wallet Taproot)
+        const { createWallet: generateWallet, persistWallet } = await import('../lib/wallet/wallet')
+        const { deriveVaultTaproot } = await import('../lib/wallet/wallet')
+        const { wrapTaprootSk } = await import('../lib/wallet/vault-wrap')
+        const { fromHex } = await import('../lib/wallet/encryption')
+        const wallet = await generateWallet()
+
+        // Step 2 — derive vault-specific Taproot, wrap SK against the user's own Kyber PK
+        const { taprootSk, taprootPubKey } = await deriveVaultTaproot(wallet.mnemonic, 0)
+        const kyberPubKeyBytes = fromHex(wallet.publicKeys.kyber)
+        const taprootSkKyberWrapped = await wrapTaprootSk(taprootSk, kyberPubKeyBytes)
+        taprootSk.fill(0)
+
+        // Step 3 — POST only public material + opaque ciphertext envelope
+        const res = await fetch(`${API_URL}/vaults`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            dilithium_pk: wallet.publicKeys.dilithium,
+            sphincs_pk: wallet.publicKeys.sphincs,
+            kyber_pk: wallet.publicKeys.kyber,
+            taproot_pubkey: Array.from(taprootPubKey).map(b => b.toString(16).padStart(2, '0')).join(''),
+            taproot_sk_kyber_wrapped: taprootSkKyberWrapped,
+            network: 'testnet4',
+            recovery_blocks: 6,
+            account_type: accountType,
+            username: `user_${Math.random().toString(36).slice(2, 8)}`,
+          })
         })
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
-      await persistWallet(wallet)
-      localStorage.setItem('ubtc_wallet_address', wallet.address)
-      setResult({ ...data, mnemonic: wallet.mnemonic, wallet_address: wallet.address })
-      setStep('done')
-    } catch (e: any) { setError(e.message) }
-    setLoading(false)
-  }
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error)
+
+        // Step 4 — persist encrypted wallet locally; server has no secret keys
+        await persistWallet(wallet)
+        localStorage.setItem('ubtc_wallet_address', wallet.address)
+
+        // Step 5 — show mnemonic to user (only time it's ever shown)
+        setResult({ ...data, mnemonic: wallet.mnemonic, wallet_address: wallet.address })
+        setStep('done')
+      } catch (e: any) { setError(e.message) }
+      setLoading(false)
+    }
 
   const checkQuantumUsername = async (name: string) => {
     if (name.length < 3) { setQuantumUsernameAvailable(null); return }
