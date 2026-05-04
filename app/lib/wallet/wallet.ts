@@ -37,9 +37,11 @@ import type {
   PartialSignature,
 } from "./types";
 
-// BIP32 derivation path for QAP Taproot key
-// m/44'/0'/0'/0/0
+// BIP32 derivation paths
+// Wallet root: m/44'/0'/0'/0/0 (single key per wallet)
+// Vault path:  m/44'/0'/1'/0/<vaultIndex> (one BTC custody key per vault)
 const TAPROOT_DERIVATION_PATH = "m/44'/0'/0'/0/0";
+const VAULT_TAPROOT_BASE_PATH = "m/44'/0'/1'/0";
 
 // ─── Wallet Creation ──────────────────────────────────────────────────────────
 
@@ -79,6 +81,7 @@ export async function createWallet(): Promise<QAPWallet> {
   seeds.dilithiumSeed.fill(0);
   seeds.sphincsSeed.fill(0);
   seeds.taprootSeed.fill(0);
+  seeds.vaultTaprootSeed.fill(0);
   seeds.localEncKey.fill(0);
 
   return {
@@ -121,6 +124,7 @@ export async function restoreWallet(mnemonic: string): Promise<WalletRestoreResu
       if (derivedAddress !== stored.address) {
         seeds.localEncKey.fill(0);
         seeds.taprootSeed.fill(0);
+        seeds.vaultTaprootSeed.fill(0);
         return { success: false, error: "Mnemonic does not match stored wallet" };
       }
 
@@ -132,6 +136,7 @@ export async function restoreWallet(mnemonic: string): Promise<WalletRestoreResu
       }
 
       seeds.taprootSeed.fill(0);
+      seeds.vaultTaprootSeed.fill(0);
       seeds.localEncKey.fill(0);
 
       return {
@@ -164,6 +169,7 @@ export async function restoreWallet(mnemonic: string): Promise<WalletRestoreResu
     seeds.dilithiumSeed.fill(0);
     seeds.sphincsSeed.fill(0);
     seeds.taprootSeed.fill(0);
+    seeds.vaultTaprootSeed.fill(0);
     seeds.localEncKey.fill(0);
 
     const wallet: QAPWallet = {
@@ -191,6 +197,57 @@ export async function restoreWallet(mnemonic: string): Promise<WalletRestoreResu
       success: false,
       error: `Restoration failed: ${err instanceof Error ? err.message : "unknown error"}`,
     };
+  }
+}
+
+// ─── Per-Vault Taproot Derivation ─────────────────────────────────────────────
+
+/**
+ * Derives a deterministic Taproot keypair for a specific vault.
+ *
+ * Same mnemonic + same vaultIndex → same keypair, every time, on any device.
+ * Different vaultIndex → different vault custody keys.
+ *
+ * Path: m/44'/0'/1'/0/<vaultIndex>
+ *
+ * @param mnemonic - User's BIP39 mnemonic
+ * @param vaultIndex - Zero-based vault number (0 for first vault, 1 for second, etc.)
+ * @returns 32-byte SK and 33-byte compressed PK
+ */
+export async function deriveVaultTaproot(
+  mnemonic: string,
+  vaultIndex: number
+): Promise<{ taprootSk: Uint8Array; taprootPubKey: Uint8Array }> {
+  if (!Number.isInteger(vaultIndex) || vaultIndex < 0) {
+    throw new Error(`Invalid vaultIndex: must be non-negative integer, got ${vaultIndex}`);
+  }
+  if (!validateMnemonic(mnemonic, wordlist)) {
+    throw new Error("Invalid mnemonic — cannot derive vault Taproot");
+  }
+
+  const bip39Seed = mnemonicToSeedSync(mnemonic.trim());
+  const seeds = await deriveKeySeeds(bip39Seed);
+
+  try {
+    const root = HDKey.fromMasterSeed(seeds.vaultTaprootSeed);
+    const path = `${VAULT_TAPROOT_BASE_PATH}/${vaultIndex}`;
+    const child = root.derive(path);
+
+    if (!child.privateKey || !child.publicKey) {
+      throw new Error("BIP32 derivation failed for vault Taproot");
+    }
+
+    return {
+      taprootSk: new Uint8Array(child.privateKey),
+      taprootPubKey: new Uint8Array(child.publicKey),
+    };
+  } finally {
+    seeds.kyberSeed.fill(0);
+    seeds.dilithiumSeed.fill(0);
+    seeds.sphincsSeed.fill(0);
+    seeds.taprootSeed.fill(0);
+    seeds.vaultTaprootSeed.fill(0);
+    seeds.localEncKey.fill(0);
   }
 }
 

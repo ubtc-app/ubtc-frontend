@@ -29,11 +29,12 @@ export interface QAPEncryptedSecrets {
 
 /** Derived key seeds — intermediate material, never stored */
 export interface QAPKeySeeds {
-  kyberSeed: Uint8Array;      // 64 bytes — used as RNG for Kyber keypair
-  dilithiumSeed: Uint8Array;  // 64 bytes — used as RNG for ML-DSA keypair
-  sphincsSeed: Uint8Array;    // 96 bytes — used as RNG for SLH-DSA keypair
-  taprootSeed: Uint8Array;    // 32 bytes — fed into BIP32
-  localEncKey: Uint8Array;    // 32 bytes — AES-256-GCM master encryption key
+  kyberSeed: Uint8Array;        // 64 bytes — used as RNG for Kyber keypair
+  dilithiumSeed: Uint8Array;    // 64 bytes — used as RNG for ML-DSA keypair
+  sphincsSeed: Uint8Array;      // 96 bytes — used as RNG for SLH-DSA keypair
+  taprootSeed: Uint8Array;      // 32 bytes — fed into BIP32 (wallet root)
+  vaultTaprootSeed: Uint8Array; // 32 bytes — base for BIP32 vault Taproot derivation
+  localEncKey: Uint8Array;      // 32 bytes — AES-256-GCM master encryption key
 }
 
 /** Full wallet object — mnemonic only shown at creation */

@@ -12,6 +12,7 @@ const INFO = {
   DILITHIUM: "QAP-DILITHIUM3-V1",
   SPHINCS: "QAP-SPHINCS-SHAKE256s-V1",
   TAPROOT: "QAP-TAPROOT-V1",
+  VAULT_TAPROOT: "QAP-VAULT-TAPROOT-V1",
   LOCAL_ENC: "QAP-LOCAL-ENC-V1",
 } as const;
 
@@ -49,15 +50,16 @@ export async function deriveKeySeeds(bip39Seed: Uint8Array): Promise<QAPKeySeeds
 
   const prk = await hkdfExtract(QAP_HKDF_SALT, bip39Seed);
 
-  const [kyberSeed, dilithiumSeed, sphincsSeed, taprootSeed, localEncKey] = await Promise.all([
+  const [kyberSeed, dilithiumSeed, sphincsSeed, taprootSeed, vaultTaprootSeed, localEncKey] = await Promise.all([
     hkdfExpand(prk, INFO.KYBER, 64),
     hkdfExpand(prk, INFO.DILITHIUM, 64),
     hkdfExpand(prk, INFO.SPHINCS, 96),
     hkdfExpand(prk, INFO.TAPROOT, 32),
+    hkdfExpand(prk, INFO.VAULT_TAPROOT, 32),
     hkdfExpand(prk, INFO.LOCAL_ENC, 32),
   ]);
 
-  return { kyberSeed, dilithiumSeed, sphincsSeed, taprootSeed, localEncKey };
+  return { kyberSeed, dilithiumSeed, sphincsSeed, taprootSeed, vaultTaprootSeed, localEncKey };
 }
 
 export function keyFingerprint(seeds: QAPKeySeeds): string {
