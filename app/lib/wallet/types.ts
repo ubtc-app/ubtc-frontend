@@ -15,27 +15,30 @@ export interface EncryptedBlob {
 export interface QAPPublicKeys {
   taproot: string;    // hex compressed secp256k1 public key (33 bytes)
   kyber: string;      // hex Kyber1024 public key (1568 bytes = 3136 hex chars)
-  dilithium: string;  // hex Dilithium3 public key
+  dilithium: string;  // hex ML-DSA-65 public key (1952 bytes)
+  sphincs: string;    // hex SLH-DSA-SHAKE-256s public key (64 bytes)
 }
 
 /** Encrypted secret keys — stored locally, never leave device */
 export interface QAPEncryptedSecrets {
   kyber_sk: EncryptedBlob;     // Kyber1024 secret key encrypted with localEncKey
-  dilithium_sk: EncryptedBlob; // Dilithium3 secret key encrypted with localEncKey
+  dilithium_sk: EncryptedBlob; // ML-DSA-65 secret key encrypted with localEncKey
+  sphincs_sk: EncryptedBlob;   // SLH-DSA-SHAKE-256s secret key encrypted with localEncKey
   taproot_sk: EncryptedBlob;   // Taproot private key encrypted with localEncKey
 }
 
 /** Derived key seeds — intermediate material, never stored */
 export interface QAPKeySeeds {
   kyberSeed: Uint8Array;      // 64 bytes — used as RNG for Kyber keypair
-  dilithiumSeed: Uint8Array;  // 64 bytes — used as RNG for Dilithium keypair
+  dilithiumSeed: Uint8Array;  // 64 bytes — used as RNG for ML-DSA keypair
+  sphincsSeed: Uint8Array;    // 96 bytes — used as RNG for SLH-DSA keypair
   taprootSeed: Uint8Array;    // 32 bytes — fed into BIP32
   localEncKey: Uint8Array;    // 32 bytes — AES-256-GCM master encryption key
 }
 
 /** Full wallet object — mnemonic only shown at creation */
 export interface QAPWallet {
-  /** 
+  /**
    * BIP39 mnemonic — shown ONCE at creation, never stored by this module.
    * User must back this up. Loss = permanent loss of access.
    */
@@ -75,7 +78,7 @@ export interface WalletRestoreResult {
 
 /** Key Share B stub — interface for future MPC/node integration */
 export interface KeyShareB {
-  /** 
+  /**
    * Signs a transaction request using Key Share B.
    * Currently stubbed as local signing.
    * Future: routes to QAP node network via FROST threshold signing.

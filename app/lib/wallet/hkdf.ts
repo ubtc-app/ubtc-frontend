@@ -10,12 +10,13 @@ const QAP_HKDF_SALT = new TextEncoder().encode("QAP-V1");
 const INFO = {
   KYBER: "QAP-KYBER1024-V1",
   DILITHIUM: "QAP-DILITHIUM3-V1",
+  SPHINCS: "QAP-SPHINCS-SHAKE256s-V1",
   TAPROOT: "QAP-TAPROOT-V1",
   LOCAL_ENC: "QAP-LOCAL-ENC-V1",
 } as const;
 
 async function hkdfExtract(salt: Uint8Array, ikm: Uint8Array): Promise<CryptoKey> {
- const saltKey = await crypto.subtle.importKey("raw", salt.buffer as ArrayBuffer, { name: "HMAC", hash: "SHA-512" }, false, ["sign"]);
+  const saltKey = await crypto.subtle.importKey("raw", salt.buffer as ArrayBuffer, { name: "HMAC", hash: "SHA-512" }, false, ["sign"]);
   const prk = await crypto.subtle.sign("HMAC", saltKey, ikm.buffer as ArrayBuffer);
   return crypto.subtle.importKey("raw", prk, { name: "HMAC", hash: "SHA-512" }, false, ["sign"]);
 }
@@ -32,7 +33,7 @@ async function hkdfExpand(prk: CryptoKey, info: string, length: number): Promise
     input.set(t, 0);
     input.set(infoBytes, t.length);
     input[t.length + infoBytes.length] = counter++;
-  t = new Uint8Array(await crypto.subtle.sign("HMAC", prk, input.buffer as ArrayBuffer));
+    t = new Uint8Array(await crypto.subtle.sign("HMAC", prk, input.buffer as ArrayBuffer));
     const toCopy = Math.min(t.length, length - offset);
     output.set(t.slice(0, toCopy), offset);
     offset += toCopy;
@@ -48,14 +49,15 @@ export async function deriveKeySeeds(bip39Seed: Uint8Array): Promise<QAPKeySeeds
 
   const prk = await hkdfExtract(QAP_HKDF_SALT, bip39Seed);
 
-  const [kyberSeed, dilithiumSeed, taprootSeed, localEncKey] = await Promise.all([
+  const [kyberSeed, dilithiumSeed, sphincsSeed, taprootSeed, localEncKey] = await Promise.all([
     hkdfExpand(prk, INFO.KYBER, 64),
     hkdfExpand(prk, INFO.DILITHIUM, 64),
+    hkdfExpand(prk, INFO.SPHINCS, 96),
     hkdfExpand(prk, INFO.TAPROOT, 32),
     hkdfExpand(prk, INFO.LOCAL_ENC, 32),
   ]);
 
-  return { kyberSeed, dilithiumSeed, taprootSeed, localEncKey };
+  return { kyberSeed, dilithiumSeed, sphincsSeed, taprootSeed, localEncKey };
 }
 
 export function keyFingerprint(seeds: QAPKeySeeds): string {

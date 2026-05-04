@@ -20,6 +20,7 @@ import { wordlist } from "@scure/bip39/wordlists/english.js";
 import { HDKey } from "@scure/bip32";
 import { MlKem1024 } from "mlkem";
 import { ml_dsa65 } from "@noble/post-quantum/ml-dsa.js";
+import { slh_dsa_shake_256s } from "@noble/post-quantum/slh-dsa.js";
 import * as secp256k1 from "@noble/secp256k1";
 
 import { deriveKeySeeds, keyFingerprint } from "./hkdf";
@@ -49,10 +50,12 @@ export async function createWallet(): Promise<QAPWallet> {
   const { taprootPrivKey, taprootPubKey } = deriveTaprootKey(seeds.taprootSeed);
   const { kyberPubKey, kyberSecKey } = await generateKyberKeypair();
   const { dilithiumPubKey, dilithiumSecKey } = generateDilithiumKeypair(seeds.dilithiumSeed);
+  const { sphincsPubKey, sphincsSecKey } = generateSphincsKeypair(seeds.sphincsSeed);
 
-  const [kyber_sk_enc, dilithium_sk_enc, taproot_sk_enc] = await Promise.all([
+  const [kyber_sk_enc, dilithium_sk_enc, sphincs_sk_enc, taproot_sk_enc] = await Promise.all([
     encrypt(kyberSecKey, seeds.localEncKey),
     encrypt(dilithiumSecKey, seeds.localEncKey),
+    encrypt(sphincsSecKey, seeds.localEncKey),
     encrypt(taprootPrivKey, seeds.localEncKey),
   ]);
 
@@ -62,16 +65,19 @@ export async function createWallet(): Promise<QAPWallet> {
     taproot: toHex(taprootPubKey),
     kyber: toHex(kyberPubKey),
     dilithium: toHex(dilithiumPubKey),
+    sphincs: toHex(sphincsPubKey),
   };
 
   const encrypted: QAPEncryptedSecrets = {
     kyber_sk: kyber_sk_enc,
     dilithium_sk: dilithium_sk_enc,
+    sphincs_sk: sphincs_sk_enc,
     taproot_sk: taproot_sk_enc,
   };
 
   seeds.kyberSeed.fill(0);
   seeds.dilithiumSeed.fill(0);
+  seeds.sphincsSeed.fill(0);
   seeds.taprootSeed.fill(0);
   seeds.localEncKey.fill(0);
 
@@ -145,15 +151,18 @@ export async function restoreWallet(mnemonic: string): Promise<WalletRestoreResu
     const address = await taprootPubKeyToAddress(taprootPubKey);
     const { kyberPubKey, kyberSecKey } = await generateKyberKeypair();
     const { dilithiumPubKey, dilithiumSecKey } = generateDilithiumKeypair(seeds.dilithiumSeed);
+    const { sphincsPubKey, sphincsSecKey } = generateSphincsKeypair(seeds.sphincsSeed);
 
-    const [kyber_sk_enc, dilithium_sk_enc, taproot_sk_enc] = await Promise.all([
+    const [kyber_sk_enc, dilithium_sk_enc, sphincs_sk_enc, taproot_sk_enc] = await Promise.all([
       encrypt(kyberSecKey, seeds.localEncKey),
       encrypt(dilithiumSecKey, seeds.localEncKey),
+      encrypt(sphincsSecKey, seeds.localEncKey),
       encrypt(taprootPrivKey, seeds.localEncKey),
     ]);
 
     seeds.kyberSeed.fill(0);
     seeds.dilithiumSeed.fill(0);
+    seeds.sphincsSeed.fill(0);
     seeds.taprootSeed.fill(0);
     seeds.localEncKey.fill(0);
 
@@ -164,10 +173,12 @@ export async function restoreWallet(mnemonic: string): Promise<WalletRestoreResu
         taproot: toHex(taprootPubKey),
         kyber: toHex(kyberPubKey),
         dilithium: toHex(dilithiumPubKey),
+        sphincs: toHex(sphincsPubKey),
       },
       encrypted: {
         kyber_sk: kyber_sk_enc,
         dilithium_sk: dilithium_sk_enc,
+        sphincs_sk: sphincs_sk_enc,
         taproot_sk: taproot_sk_enc,
       },
       version: "QAP-WALLET-V1",
@@ -196,6 +207,28 @@ export async function getKyberSecretKey(
   return kyberSk;
 }
 
+export async function getDilithiumSecretKey(
+  wallet: QAPWallet | StoredWallet,
+  mnemonic: string
+): Promise<Uint8Array> {
+  const bip39Seed = mnemonicToSeedSync(mnemonic);
+  const seeds = await deriveKeySeeds(bip39Seed);
+  const sk = await decrypt(wallet.encrypted.dilithium_sk, seeds.localEncKey);
+  seeds.localEncKey.fill(0);
+  return sk;
+}
+
+export async function getSphincsSecretKey(
+  wallet: QAPWallet | StoredWallet,
+  mnemonic: string
+): Promise<Uint8Array> {
+  const bip39Seed = mnemonicToSeedSync(mnemonic);
+  const seeds = await deriveKeySeeds(bip39Seed);
+  const sk = await decrypt(wallet.encrypted.sphincs_sk, seeds.localEncKey);
+  seeds.localEncKey.fill(0);
+  return sk;
+}
+
 export async function getTaprootPrivKey(
   wallet: QAPWallet | StoredWallet,
   mnemonic: string
@@ -205,6 +238,39 @@ export async function getTaprootPrivKey(
   const taprootSk = await decrypt(wallet.encrypted.taproot_sk, seeds.localEncKey);
   seeds.localEncKey.fill(0);
   return taprootSk;
+}
+
+// ─── Hybrid PQ Signing ────────────────────────────────────────────────────────
+
+/**
+ * Signs a message with both ML-DSA-65 AND SLH-DSA-SHAKE-256s.
+ * Returns both signatures — the backend's verify_quantum_challenge requires both.
+ *
+ * Used for /auth/challenge → spend flow:
+ *   1. Client requests challenge from server
+ *   2. Client signs `op:params:nonce` with this function
+ *   3. Client submits {challenge_id, signature, sphincs_signature} to spend endpoint
+ */
+export async function signHybrid(
+  wallet: QAPWallet | StoredWallet,
+  mnemonic: string,
+  message: Uint8Array
+): Promise<{ dilithiumSig: string; sphincsSig: string }> {
+  const dilithiumSk = await getDilithiumSecretKey(wallet, mnemonic);
+  const sphincsSk = await getSphincsSecretKey(wallet, mnemonic);
+
+  try {
+    const dilithiumSigBytes = ml_dsa65.sign(dilithiumSk, message);
+    const sphincsSigBytes = slh_dsa_shake_256s.sign(sphincsSk, message);
+
+    return {
+      dilithiumSig: btoa(String.fromCharCode(...dilithiumSigBytes)),
+      sphincsSig: toHex(sphincsSigBytes),
+    };
+  } finally {
+    dilithiumSk.fill(0);
+    sphincsSk.fill(0);
+  }
 }
 
 // ─── Key Share B Stub ─────────────────────────────────────────────────────────
@@ -278,6 +344,22 @@ function generateDilithiumKeypair(dilithiumSeed: Uint8Array): {
   return {
     dilithiumPubKey: new Uint8Array(publicKey),
     dilithiumSecKey: new Uint8Array(secretKey),
+  };
+}
+
+function generateSphincsKeypair(sphincsSeed: Uint8Array): {
+  sphincsPubKey: Uint8Array;
+  sphincsSecKey: Uint8Array;
+} {
+  // Real SLH-DSA-SHAKE-256s (FIPS 205, formerly SPHINCS+) via @noble/post-quantum.
+  // Matches backend's pqcrypto_sphincsplus::sphincsshake256ssimple.
+  // PK: 64 bytes, SK: 128 bytes, signature: ~29KB.
+  // Deterministic: same 96-byte seed always produces the same keypair.
+  const seed96 = sphincsSeed.slice(0, 96);
+  const { publicKey, secretKey } = slh_dsa_shake_256s.keygen(seed96);
+  return {
+    sphincsPubKey: new Uint8Array(publicKey),
+    sphincsSecKey: new Uint8Array(secretKey),
   };
 }
 
