@@ -1,7 +1,10 @@
 'use client'
+
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { API_URL } from '../lib/supabase'
+import { MnemonicModal } from '../components/MnemonicModal'
+import { signedSpend } from '../lib/wallet/challenge'
 
 function RedeemContent() {
   const searchParams = useSearchParams()
@@ -14,11 +17,11 @@ function RedeemContent() {
   const [activeCurrency, setActiveCurrency] = useState(currencyParam)
   const [amount, setAmount] = useState('')
   const [destination, setDestination] = useState('')
-  const [qsk, setQsk] = useState('')
-  const [qskLoaded, setQskLoaded] = useState(false)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
   const [error, setError] = useState('')
+  const [mnemonicModalOpen, setMnemonicModalOpen] = useState(false)
+  const [signingStage, setSigningStage] = useState<'' | 'signing' | 'broadcasting'>('')
 
   const mono: any = { fontFamily: 'var(--font-mono)' }
   const inputBase: any = { display: 'block', width: '100%', padding: '14px 16px', background: 'hsl(220 15% 5%)', border: '1px solid hsl(220 10% 16%)', borderRadius: '12px', color: 'hsl(0 0% 92%)', fontSize: '14px', fontFamily: 'var(--font-mono)', boxSizing: 'border-box' as const, outline: 'none' }
@@ -57,63 +60,92 @@ function RedeemContent() {
     return `${btcBack} BTC ($${(parseFloat(btcBack) * btcPrice).toLocaleString(undefined, { maximumFractionDigits: 0 })})`
   }
 
-  const loadKeyFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = (ev) => {
-      try {
-        const data = JSON.parse(ev.target?.result as string)
-        if (data.key1_dilithium3_qsk?.key) {
-          setQsk(data.key1_dilithium3_qsk.key)
-          setQskLoaded(true)
-          setError('')
-        } else {
-          setError('Invalid key file — could not find KEY 1')
-        }
-      } catch { setError('Could not read key file') }
-    }
-    reader.readAsText(file)
-  }
-
-  const handleRedeem = async () => {
-    if (!amount || !destination) return
-    if (!isStable && !qsk) { setError('Please load your key file to sign the redemption'); return }
+  // Stablecoin redeem path — unchanged from previous, no PQ challenge gate yet on backend
+  const redeemStable = async () => {
     setLoading(true); setError('')
     try {
-      if (isStable) {
-        const scVault = scVaults.find(s => s.currency === utokenName)
-        if (!scVault) throw new Error(`No ${utokenName} vault found`)
-        const res = await fetch(`${API_URL}/stablecoin/burn`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ vault_id: scVault.vault_id, amount })
-        })
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error)
-        setResult({ ...data, destination })
-      } else {
-        const res = await fetch(`${API_URL}/ubtc/redeem`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            vault_id: vaultId,
-            ubtc_amount: parseFloat(amount),
-            destination_address: destination,
-            qsk
-          })
-        })
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error)
-        setResult(data)
-      }
+      const scVault = scVaults.find(s => s.currency === utokenName)
+      if (!scVault) throw new Error(`No ${utokenName} vault found`)
+      const res = await fetch(`${API_URL}/stablecoin/burn`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vault_id: scVault.vault_id, amount })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setResult({ ...data, destination })
     } catch (e: any) { setError(e.message) }
     setLoading(false)
   }
 
+  // UBTC redeem entry point — opens mnemonic modal
+  const handleRedeem = async () => {
+    if (!amount || !destination) return
+    setError('')
+    if (isStable) {
+      await redeemStable()
+      return
+    }
+    // UBTC path: open mnemonic modal, actual signing happens on submit
+    setMnemonicModalOpen(true)
+  }
+
+  // Called when user submits the 24-word phrase in the modal
+  const handleMnemonicSubmit = async (mnemonic: string) => {
+    setMnemonicModalOpen(false)
+    setLoading(true); setError(''); setSigningStage('signing')
+    try {
+      const walletAddress = localStorage.getItem('ubtc_wallet_address')
+      if (!walletAddress) throw new Error('No wallet found in this browser. Restore your wallet first.')
+
+      // Backend params format (main.rs:3127): "{vault_id}|{destination}|{ubtc_amount}"
+      // ubtc_amount is sent as the original string (no f64 conversion) so frontend
+      // and backend produce the same params_hash.
+      const ubtcAmountStr = amount.trim()
+      const paramsString = `${vaultId}|${destination}|${ubtcAmountStr}`
+
+      const { challenge_id, signature, sphincs_signature } = await signedSpend(
+        walletAddress,
+        'redeem_ubtc',
+        paramsString,
+        mnemonic
+      )
+
+      setSigningStage('broadcasting')
+      const res = await fetch(`${API_URL}/ubtc/redeem`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vault_id: vaultId,
+          ubtc_amount: ubtcAmountStr,
+          destination_address: destination,
+          challenge_id,
+          signature,
+          sphincs_signature,
+        })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || `Redeem failed (${res.status})`)
+      setResult(data)
+    } catch (e: any) {
+      setError(e?.message || 'Redemption failed')
+    } finally {
+      setLoading(false)
+      setSigningStage('')
+    }
+  }
+
   const canRedeem = !!amount && !!destination && parseFloat(amount) > 0 &&
-    parseFloat(amount) <= activeBalance && !loading && (isStable || qskLoaded)
+    parseFloat(amount) <= activeBalance && !loading
 
   return (
     <div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', fontFamily: 'var(--font-display)' }}>
+
+      <MnemonicModal
+        isOpen={mnemonicModalOpen}
+        onCancel={() => setMnemonicModalOpen(false)}
+        onSubmit={handleMnemonicSubmit}
+        title={`Authorize ${utokenName} Redemption`}
+        subtitle={`Sign the redemption of ${amount} ${utokenName} to ${destination.slice(0, 16)}... with your 24-word recovery phrase.`}
+      />
 
       {/* Nav */}
       <div style={{ background: 'hsl(220 15% 5%)', borderBottom: '1px solid hsl(220 10% 10%)', padding: '16px 28px', display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -158,7 +190,7 @@ function RedeemContent() {
               </a>
             )}
             <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
-              <button onClick={() => { setResult(null); setAmount(''); setDestination(''); setQsk(''); setQskLoaded(false) }}
+              <button onClick={() => { setResult(null); setAmount(''); setDestination('') }}
                 style={{ flex: 1, background: 'hsl(220 12% 10%)', border: '1px solid hsl(220 10% 16%)', color: 'hsl(0 0% 60%)', borderRadius: '12px', padding: '14px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
                 Redeem More
               </button>
@@ -263,35 +295,12 @@ function RedeemContent() {
               </p>
             </div>
 
-            {/* QSK Key File — UBTC only */}
+            {/* PQ auth notice — UBTC only */}
             {!isStable && (
-              <div style={{ background: 'hsl(220 12% 8%)', border: `1px solid ${qskLoaded ? 'hsl(142 76% 36% / 0.4)' : 'hsl(205 85% 55% / 0.2)'}`, borderRadius: '18px', padding: '20px' }}>
-                <p style={{ color: 'hsl(0 0% 35%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 10px' }}>
-                  Quantum Signing Key — Required
+              <div style={{ background: 'hsl(205 85% 55% / 0.06)', border: '1px solid hsl(205 85% 55% / 0.25)', borderRadius: '14px', padding: '14px 16px' }}>
+                <p style={{ color: 'hsl(205 85% 65%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.6' }}>
+                  🔐 You will be asked for your 24-word recovery phrase to sign this redemption with hybrid post-quantum signatures (ML-DSA-65 + SLH-DSA-SHAKE-256s). Your phrase never leaves this browser.
                 </p>
-                {qskLoaded ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'hsl(142 76% 36% / 0.08)', borderRadius: '10px', padding: '12px 14px' }}>
-                    <span style={{ color: 'hsl(142 76% 36%)', fontSize: '18px' }}>✓</span>
-                    <div>
-                      <p style={{ color: 'hsl(142 76% 36%)', fontWeight: '700', fontSize: '13px', margin: '0 0 2px' }}>KEY 1 loaded successfully</p>
-                      <p style={{ color: 'hsl(0 0% 35%)', fontSize: '11px', ...mono, margin: 0 }}>Dilithium3 signing key ready</p>
-                    </div>
-                    <button onClick={() => { setQsk(''); setQskLoaded(false) }}
-                      style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'hsl(0 0% 35%)', cursor: 'pointer', fontSize: '12px', ...mono }}>
-                      Remove
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <label style={{ display: 'block', width: '100%', background: 'hsl(205 85% 55%)', color: '#000', fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 700, padding: '12px 14px', borderRadius: '10px', cursor: 'pointer', textAlign: 'center' as const, marginBottom: '8px', boxSizing: 'border-box' as const }}>
-                      📁 Load Key File (ubtc-keys-*.json)
-                      <input type="file" accept=".json" style={{ display: 'none' }} onChange={loadKeyFile} />
-                    </label>
-                    <p style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', ...mono, margin: 0, lineHeight: '1.5' }}>
-                      Load your vault key file. KEY 1 (Dilithium3) is required to authorize this redemption. Your key is never transmitted — only used to sign locally.
-                    </p>
-                  </>
-                )}
               </div>
             )}
 
@@ -316,7 +325,9 @@ function RedeemContent() {
 
             <button onClick={handleRedeem} disabled={!canRedeem}
               style={{ width: '100%', background: canRedeem ? `linear-gradient(135deg, ${tokenColor}, ${tokenColor}bb)` : 'hsl(220 10% 11%)', color: canRedeem ? 'white' : 'hsl(0 0% 28%)', border: 'none', borderRadius: '14px', padding: '18px', fontSize: '16px', fontWeight: '700', cursor: canRedeem ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', boxShadow: canRedeem ? `0 0 40px ${tokenColor}45` : 'none', transition: 'all 0.2s' }}>
-              {loading ? 'Processing on Bitcoin...' : !qskLoaded && !isStable ? 'Load your key file first' : canRedeem ? `Burn ${parseFloat(amount || '0').toLocaleString()} ${utokenName} → Receive ${tokenName}` : 'Enter amount and destination'}
+              {loading
+                ? signingStage === 'signing' ? 'Signing locally...' : signingStage === 'broadcasting' ? 'Broadcasting on Bitcoin...' : 'Processing...'
+                : canRedeem ? `Burn ${parseFloat(amount || '0').toLocaleString()} ${utokenName} → Receive ${tokenName}` : 'Enter amount and destination'}
             </button>
 
           </div>
