@@ -1,4 +1,5 @@
 'use client'
+
 import { useState, useEffect, Suspense } from 'react'
 import { API_URL, supabase } from '../lib/supabase'
 import { Icons } from '../components/Icons'
@@ -27,7 +28,7 @@ function WalletContent() {
 
   const mono: any = { fontFamily: 'var(--font-mono)' }
 
- useEffect(() => {
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const urlAddress = params.get('address')
     const addr = urlAddress || localStorage.getItem('ubtc_wallet_address') || ''
@@ -41,7 +42,6 @@ function WalletContent() {
     }
     loadVaults()
 
-    // Realtime subscriptions
     if (addr) {
       const walletSub = supabase
         .channel('wallet-changes')
@@ -107,7 +107,7 @@ function WalletContent() {
     } catch (e: any) { alert('Download failed: ' + e.message) }
   }
 
- const createWallet = async () => {
+  const createWallet = async () => {
     if (!username || !email) return
     setLoading(true); setError('')
     try {
@@ -115,7 +115,7 @@ function WalletContent() {
       const { createWallet: generateWallet, persistWallet } = await import('../lib/wallet/wallet')
       const wallet = await generateWallet()
 
-      // Step 2 — send ONLY public keys to server for registration
+      // Step 2 — send ONLY public keys to server (no secrets, ever)
       const res = await fetch(`${API_URL}/wallet/create`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -123,10 +123,9 @@ function WalletContent() {
           email,
           wallet_name: walletName || 'My Wallet',
           linked_vault_id: linkedVaultId,
-          wallet_address: wallet.address,
           kyber_pk: wallet.publicKeys.kyber,
-          taproot_pk: wallet.publicKeys.taproot,
           dilithium_pk: wallet.publicKeys.dilithium,
+          sphincs_pk: wallet.publicKeys.sphincs,
         })
       })
       const data = await res.json()
@@ -134,10 +133,10 @@ function WalletContent() {
 
       // Step 3 — persist encrypted wallet locally (no secrets on server)
       await persistWallet(wallet)
-      localStorage.setItem('ubtc_wallet_address', wallet.address)
+      localStorage.setItem('ubtc_wallet_address', data.wallet_address)
 
       // Step 4 — show mnemonic to user (only time it's ever shown)
-      setCreateResult({ ...data, mnemonic: wallet.mnemonic, wallet_address: wallet.address })
+      setCreateResult({ ...data, mnemonic: wallet.mnemonic })
 
       // NO sessionStorage of private keys — they live encrypted in IndexedDB
     } catch (e: any) { setError(e.message) }
@@ -213,29 +212,13 @@ function WalletContent() {
           <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '14px' }}>
             <div style={{ textAlign: 'center' as const, marginBottom: '8px' }}>
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>{Icons.key(52, 'hsl(205 85% 55%)')}</div>
-              <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '24px', fontWeight: '700', margin: '0 0 6px' }}>Save Your Keys</h2>
+              <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '24px', fontWeight: '700', margin: '0 0 6px' }}>Save Your Recovery Phrase</h2>
               <p style={{ color: 'hsl(0 0% 38%)', fontSize: '14px', ...mono, margin: 0 }}>@{createResult.username} · Wallet created</p>
-            </div>
-            <div style={{ background: 'hsl(220 15% 5%)', border: '1px solid hsl(38 92% 50% / 0.4)', borderRadius: '12px', padding: '20px' }}>
-              <p style={{ color: 'hsl(38 92% 50%)', fontSize: '11px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.2em', margin: '0 0 12px' }}>⚠️ You have 3 Quantum Keys — Understand Each One</p>
-              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '12px' }}>
-                {[
-                  { color: 'hsl(205 85% 55%)', label: 'KEY 1 — Dilithium3 Quantum Signing Key (QSK)', desc: 'Used to SIGN every UBTC transfer. Without this key you cannot send UBTC. Store it securely offline.', note: 'Post-quantum secure · Dilithium3 lattice-based · NIST standard' },
-                  { color: 'hsl(142 70% 45%)', label: 'KEY 2 — SPHINCS+ Backup Signing Key', desc: 'A second quantum signature using a completely different algorithm. Store separately from KEY 1.', note: 'Post-quantum secure · Hash-based · Different mathematical family to KEY 1' },
-                  { color: 'hsl(38 92% 50%)', label: 'KEY 3 — Kyber Redemption Key', desc: 'Decrypts your embedded Bitcoin redemption transaction. Lets you claim BTC directly with NO server needed. Guard this with your life.', note: 'Post-quantum secure · Kyber KEM · Self-sovereign redemption' },
-                ].map(k => (
-                  <div key={k.label} style={{ background: 'hsl(220 15% 7%)', borderRadius: '8px', padding: '12px', borderLeft: `3px solid ${k.color}` }}>
-                    <p style={{ color: k.color, fontSize: '11px', ...mono, fontWeight: 700, margin: '0 0 4px' }}>{k.label}</p>
-                    <p style={{ color: 'hsl(0 0% 50%)', fontSize: '11px', ...mono, margin: '0 0 4px', lineHeight: '1.7' }}>{k.desc}</p>
-                    <p style={{ color: 'hsl(0 0% 30%)', fontSize: '10px', ...mono, margin: 0 }}>{k.note}</p>
-                  </div>
-                ))}
-              </div>
             </div>
             {createResult.mnemonic && (
               <div style={{ background: 'hsl(220 15% 5%)', border: '1px solid hsl(38 92% 50% / 0.5)', borderRadius: '12px', padding: '20px' }}>
-                <p style={{ color: 'hsl(38 92% 50%)', fontSize: '11px', fontFamily: 'monospace', textTransform: 'uppercase' as const, letterSpacing: '0.2em', margin: '0 0 16px', fontWeight: 700 }}>⚠️ Your Recovery Phrase — Write This Down Now</p>
-                <p style={{ color: 'hsl(0 0% 45%)', fontSize: '12px', fontFamily: 'monospace', margin: '0 0 16px', lineHeight: '1.6' }}>These 24 words are the ONLY way to recover your wallet. Never share them. Never store them digitally. Write them on paper and store safely offline.</p>
+                <p style={{ color: 'hsl(38 92% 50%)', fontSize: '11px', fontFamily: 'monospace', textTransform: 'uppercase' as const, letterSpacing: '0.2em', margin: '0 0 16px', fontWeight: 700 }}>⚠️ Your 24-Word Recovery Phrase</p>
+                <p style={{ color: 'hsl(0 0% 45%)', fontSize: '12px', fontFamily: 'monospace', margin: '0 0 16px', lineHeight: '1.6' }}>These 24 words are the ONLY way to recover your wallet and the ONLY way to authorise spending. Never share them. Never store them digitally. Write them on paper and store safely offline.</p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '16px' }}>
                   {createResult.mnemonic.split(' ').map((word: string, i: number) => (
                     <div key={i} style={{ background: 'hsl(220 15% 8%)', border: '1px solid hsl(220 10% 16%)', borderRadius: '8px', padding: '8px 10px', display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -334,7 +317,7 @@ function WalletContent() {
                 <div style={{ background: 'hsl(220 15% 5%)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
                   <p style={{ color: 'hsl(0 0% 75%)', fontSize: '13px', ...mono, margin: '0 0 16px', lineHeight: '1.7' }}>This proof file is <strong style={{ color: 'hsl(38 92% 50%)' }}>digital cash</strong>. Anyone with both of these can redeem your Bitcoin:</p>
                   <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '8px', marginBottom: '16px' }}>
-                    {[{ icon: '📄', label: 'This .ubtc proof file' }, { icon: '🔑', label: 'Your KEY 3 (Kyber key)' }].map(item => (
+                    {[{ icon: '📄', label: 'This .ubtc proof file' }, { icon: '🔑', label: 'Your 24-word recovery phrase' }].map(item => (
                       <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'hsl(0 84% 60% / 0.08)', border: '1px solid hsl(0 84% 60% / 0.2)', borderRadius: '8px', padding: '12px 14px' }}>
                         <span style={{ fontSize: '18px' }}>{item.icon}</span>
                         <p style={{ color: 'hsl(0 0% 82%)', fontSize: '13px', ...mono, margin: 0, fontWeight: 600 }}>{item.label}</p>
@@ -342,7 +325,7 @@ function WalletContent() {
                     ))}
                   </div>
                   <div style={{ borderTop: '1px solid hsl(220 10% 12%)', paddingTop: '14px', display: 'flex', flexDirection: 'column' as const, gap: '8px' }}>
-                    {['Store proof file and KEY 3 in separate secure locations', 'Never store them together on the same device', 'Never send them in the same email or message', 'Treat this file like physical cash'].map((rule, i) => (
+                    {['Store proof file and recovery phrase in separate secure locations', 'Never store them together on the same device', 'Never send them in the same email or message', 'Treat this file like physical cash'].map((rule, i) => (
                       <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                         <span style={{ color: 'hsl(38 92% 50%)', fontSize: '12px', marginTop: '1px', flexShrink: 0 }}>→</span>
                         <p style={{ color: 'hsl(0 0% 55%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.5' }}>{rule}</p>
@@ -367,9 +350,9 @@ function WalletContent() {
                   <p style={{ color: 'hsl(0 0% 55%)', fontSize: '12px', ...mono, margin: '0 0 14px', lineHeight: '1.7' }}>Server copy marked for deletion. Store your proof file now:</p>
                   {[
                     { icon: '💾', text: 'Save the .ubtc file to a USB drive or secure offline storage' },
-                    { icon: '🔑', text: 'Store KEY 3 separately — different device or location' },
-                    { icon: '🔴', text: 'Never put both files on the same cloud storage or device' },
-                    { icon: '₿', text: 'To redeem: tap Redeem in your wallet and upload your proof file + KEY 3' },
+                    { icon: '🔑', text: 'Store recovery phrase separately — different device or location' },
+                    { icon: '🔴', text: 'Never put both on the same cloud storage or device' },
+                    { icon: '₿', text: 'To redeem: tap Redeem in your wallet and upload your proof file + enter recovery phrase' },
                   ].map((item, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '10px' }}>
                       <span style={{ fontSize: '16px', flexShrink: 0 }}>{item.icon}</span>
@@ -492,8 +475,8 @@ function WalletContent() {
                 {pendingProofs.length} Incoming Proof File{pendingProofs.length > 1 ? 's' : ''} — Action Required
               </p>
             </div>
-<p style={{ color: 'hsl(0 0% 45%)', fontSize: '11px', ...mono, margin: '0 0 16px', lineHeight: '1.7' }}>
-              You have received UBTC. Enter your wallet password to redeem directly to Bitcoin — no file download needed.
+            <p style={{ color: 'hsl(0 0% 45%)', fontSize: '11px', ...mono, margin: '0 0 16px', lineHeight: '1.7' }}>
+              You have received UBTC. Enter your recovery phrase to redeem directly to Bitcoin.
             </p>
             {pendingProofs.map((proof: any) => (
               <div key={proof.proof_id} style={{ background: 'hsl(220 15% 5%)', borderRadius: '10px', padding: '14px', marginBottom: '10px', border: '1px solid hsl(220 10% 14%)' }}>
@@ -502,7 +485,7 @@ function WalletContent() {
                     <p style={{ color: 'hsl(0 0% 75%)', fontSize: '13px', ...mono, margin: '0 0 2px', fontWeight: 700 }}>{proof.proof_data?.ownership?.ubtc_amount || '?'} UBTC</p>
                     <p style={{ color: 'hsl(0 0% 30%)', fontSize: '10px', ...mono, margin: 0 }}>from {proof.sender_vault_id} · {new Date(proof.created_at).toLocaleString()}</p>
                   </div>
-                <button onClick={() => window.location.href = `/redeem/proof?proof_id=${proof.proof_id}&vault_id=${proof.sender_vault_id}&amount=${proof.proof_data?.ownership?.ubtc_amount}`} style={{ background: 'hsl(142 76% 36%)', color: 'white', ...mono, fontSize: '11px', fontWeight: 700, padding: '10px 16px', border: 'none', borderRadius: '8px', cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
+                  <button onClick={() => window.location.href = `/redeem/proof?proof_id=${proof.proof_id}&vault_id=${proof.sender_vault_id}&amount=${proof.proof_data?.ownership?.ubtc_amount}`} style={{ background: 'hsl(142 76% 36%)', color: 'white', ...mono, fontSize: '11px', fontWeight: 700, padding: '10px 16px', border: 'none', borderRadius: '8px', cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
                     ⚡ Redeem to Bitcoin
                   </button>
                 </div>
