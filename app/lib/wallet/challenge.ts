@@ -82,3 +82,62 @@ export async function signedSpend(
     sphincs_signature: sphincsSig,
   };
 }
+// --- Password-Unlock Spend Flow ---
+
+/**
+ * Same as signedSpend but uses password instead of mnemonic.
+ * Password is used once to unwrap localEncKey, then localEncKey decrypts the PQ keys.
+ *
+ * Requires: a PasswordVault to exist in storage (set during wallet creation).
+ */
+export async function signedSpendWithPassword(
+  walletAddress: string,
+  operation: string,
+  paramsString: string,
+  password: string
+): Promise<SignedSpend> {
+  const { loadWallet, loadPasswordVault } = await import('./storage')
+  const { unsealWithPassword } = await import('./password')
+  const { signHybridWithLocalEncKey } = await import('./wallet')
+
+  const wallet = await loadWallet()
+  if (!wallet) throw new Error('No wallet found in browser storage. Restore from mnemonic first.')
+
+  const pwdVault = await loadPasswordVault()
+  if (!pwdVault) throw new Error('No password set for this wallet. Please set a password first.')
+
+  // Unwrap the localEncKey using the password
+  const localEncKey = await unsealWithPassword(pwdVault, password)
+
+  try {
+    // Request a challenge from the server
+    const challengeRes = await fetch(`${API_URL}/auth/challenge`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        wallet_address: walletAddress,
+        operation,
+        params: paramsString,
+      }),
+    })
+    if (!challengeRes.ok) {
+      const errText = await challengeRes.text()
+      throw new Error(`Challenge request failed: ${errText}`)
+    }
+    const challenge: ChallengeResponse = await challengeRes.json()
+
+    // Build canonical message
+    const message = new TextEncoder().encode(`${operation}:${paramsString}:${challenge.nonce}`)
+
+    // Sign with both PQ schemes using the unwrapped localEncKey
+    const { dilithiumSig, sphincsSig } = await signHybridWithLocalEncKey(wallet, localEncKey, message)
+
+    return {
+      challenge_id: challenge.challenge_id,
+      signature: dilithiumSig,
+      sphincs_signature: sphincsSig,
+    }
+  } finally {
+    localEncKey.fill(0)
+  }
+}

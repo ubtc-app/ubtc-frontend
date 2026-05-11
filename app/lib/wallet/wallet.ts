@@ -61,7 +61,7 @@ export async function createWallet(): Promise<QAPWallet> {
     encrypt(taprootPrivKey, seeds.localEncKey),
   ]);
 
-  const address = await taprootPubKeyToAddress(taprootPubKey);
+  const address = await dilithiumPubKeyToAddress(dilithiumPubKey);
 
   const publicKeys: QAPPublicKeys = {
     taproot: toHex(taprootPubKey),
@@ -153,9 +153,9 @@ export async function restoreWallet(mnemonic: string): Promise<WalletRestoreResu
     }
 
     const { taprootPrivKey, taprootPubKey } = deriveTaprootKey(seeds.taprootSeed);
-    const address = await taprootPubKeyToAddress(taprootPubKey);
-    const { kyberPubKey, kyberSecKey } = await generateKyberKeypair();
+ const { kyberPubKey, kyberSecKey } = await generateKyberKeypair();
     const { dilithiumPubKey, dilithiumSecKey } = generateDilithiumKeypair(seeds.dilithiumSeed);
+    const address = await dilithiumPubKeyToAddress(dilithiumPubKey);
     const { sphincsPubKey, sphincsSecKey } = generateSphincsKeypair(seeds.sphincsSeed);
 
     const [kyber_sk_enc, dilithium_sk_enc, sphincs_sk_enc, taproot_sk_enc] = await Promise.all([
@@ -316,9 +316,14 @@ export async function signHybrid(
   const dilithiumSk = await getDilithiumSecretKey(wallet, mnemonic);
   const sphincsSk = await getSphincsSecretKey(wallet, mnemonic);
 
+  console.log('[signHybrid] dilithiumSk length:', dilithiumSk.length, 'expected 4032');
+    console.log('[signHybrid] sphincsSk length:', sphincsSk.length, 'expected 128');
+    console.log('[signHybrid] wallet address:', wallet.address);
+    console.log('[signHybrid] dilithium_sk.ciphertext length:', wallet.encrypted.dilithium_sk.ciphertext?.length);
+	
   try {
-    const dilithiumSigBytes = ml_dsa65.sign(dilithiumSk, message);
-    const sphincsSigBytes = slh_dsa_shake_256s.sign(sphincsSk, message);
+    const dilithiumSigBytes = ml_dsa65.sign(message, dilithiumSk)
+    const sphincsSigBytes = slh_dsa_shake_256s.sign(message, sphincsSk)
 
     return {
       dilithiumSig: btoa(String.fromCharCode(...dilithiumSigBytes)),
@@ -425,4 +430,36 @@ async function taprootPubKeyToAddress(pubKey: Uint8Array): Promise<string> {
   const hash = new Uint8Array(hashBuf);
   const hashHex = toHex(hash);
   return `ubtc${hashHex.slice(0, 24)}`;
+}
+async function dilithiumPubKeyToAddress(pubKey: Uint8Array): Promise<string> {
+  const hashBuf = await crypto.subtle.digest('SHA-256', pubKey.buffer as ArrayBuffer);
+  const hash = new Uint8Array(hashBuf);
+  const hashHex = toHex(hash);
+  return `ubtc${hashHex.slice(0, 24)}`;
+}
+// --- Password-Unlock Hybrid Signing ---
+
+/**
+ * Signs with both ML-DSA-65 and SLH-DSA-SHAKE-256s using a pre-unwrapped localEncKey.
+ * Used by the password-unlock flow - localEncKey is already decrypted from the password vault.
+ */
+export async function signHybridWithLocalEncKey(
+  wallet: StoredWallet,
+  localEncKey: Uint8Array,
+  message: Uint8Array
+): Promise<{ dilithiumSig: string; sphincsSig: string }> {
+  const { decrypt } = await import('./encryption')
+  const dilithiumSk = await decrypt(wallet.encrypted.dilithium_sk, localEncKey)
+  const sphincsSk = await decrypt(wallet.encrypted.sphincs_sk, localEncKey)
+  try {
+    const dilithiumSigBytes = ml_dsa65.sign(message, dilithiumSk)
+    const sphincsSigBytes = slh_dsa_shake_256s.sign(message, sphincsSk)
+    return {
+      dilithiumSig: btoa(String.fromCharCode(...dilithiumSigBytes)),
+      sphincsSig: Array.from(sphincsSigBytes).map(b => b.toString(16).padStart(2, '0')).join(''),
+    }
+  } finally {
+    dilithiumSk.fill(0)
+    sphincsSk.fill(0)
+  }
 }
