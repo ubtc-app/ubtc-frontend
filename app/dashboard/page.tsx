@@ -116,11 +116,11 @@ export default function Dashboard() {
     <div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', fontFamily: 'var(--font-display)' }}>
 
       {/* Summary bar */}
-      <div style={{ background: 'hsl(220 15% 4%)', borderBottom: '1px solid hsl(220 10% 9%)', padding: '28px 32px' }}>
-        <div style={{ maxWidth: '1060px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+      <div style={{ background: 'hsl(220 15% 4%)', borderBottom: '1px solid hsl(220 10% 9%)', padding: isMobile ? '20px 16px' : '28px 32px' }}>
+        <div style={{ maxWidth: '1060px', margin: '0 auto', display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'flex-end', gap: isMobile ? '20px' : '0' }}>
           <div>
             <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.2em', margin: '0 0 6px' }}>Total Collateral · BTC locked in USD</p>
-            <p style={{ color: 'hsl(0 0% 92%)', fontSize: '42px', fontWeight: '700', ...mono, margin: '0 0 4px', lineHeight: '1' }}>
+            <p style={{ color: 'hsl(0 0% 92%)', fontSize: isMobile ? '32px' : '42px', fontWeight: '700', ...mono, margin: '0 0 4px', lineHeight: '1' }}>
               ${(totalBtcLocked * btcPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
             <p style={{ color: 'hsl(142 76% 36%)', fontSize: '12px', fontWeight: '600', ...mono, margin: '0 0 2px' }}>
@@ -130,14 +130,14 @@ export default function Dashboard() {
               {totalBtcLocked.toFixed(6)} BTC locked · {totalUbtc.toLocaleString()} UBTC debt outstanding
             </p>
           </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
+         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: isMobile ? 'space-between' : 'flex-start' }}>
             {[
               { icon: Icons.bitcoin(16, 'hsl(38 92% 50%)'), label: 'UBTC', val: '$' + totalUbtc.toLocaleString(undefined, { maximumFractionDigits: 0 }), color: 'hsl(38 92% 50%)' },
               { icon: Icons.savings(16, 'hsl(142 76% 36%)'), label: 'UUSDT', val: '$' + totalUusdt.toLocaleString(undefined, { maximumFractionDigits: 0 }), color: 'hsl(142 76% 36%)' },
               { icon: Icons.savings(16, 'hsl(220 85% 60%)'), label: 'UUSDC', val: '$' + totalUusdc.toLocaleString(undefined, { maximumFractionDigits: 0 }), color: 'hsl(220 85% 60%)' },
               { icon: Icons.chart(16, 'hsl(0 0% 45%)'), label: 'BTC', val: '$' + btcPrice.toLocaleString(), color: 'hsl(0 0% 45%)' },
             ].map(item => (
-              <div key={item.label} style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 13%)', borderRadius: '12px', padding: '12px 16px', textAlign: 'center' as const, minWidth: '90px' }}>
+              <div key={item.label} style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 13%)', borderRadius: '12px', padding: '12px 16px', textAlign: 'center' as const, minWidth: '90px', flex: isMobile ? '1 1 calc(50% - 5px)' : '0 0 auto' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px', justifyContent: 'center', marginBottom: '5px' }}>
                   {item.icon}
                   <p style={{ color: 'hsl(0 0% 32%)', fontSize: '9px', ...mono, textTransform: 'uppercase' as const, margin: 0 }}>{item.label}</p>
