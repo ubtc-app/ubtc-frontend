@@ -253,7 +253,7 @@ function WithdrawContent() {
                   <label style={{ display: 'block', fontSize: '11px', ...mono, color: 'hsl(0 0% 65%)', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '8px' }}>Destination Bitcoin Address</label>
                   <input value={destination} onChange={e => setDestination(e.target.value)} placeholder="bcrt1q..." style={inputStyle} />
                   <div style={{ background: 'hsl(38 92% 50% / 0.05)', border: '1px solid hsl(38 92% 50% / 0.2)', borderRadius: '10px', padding: '12px 14px', marginBottom: '20px' }}>
-                    <p style={{ color: 'hsl(38 92% 50%)', fontSize: '12px', ...mono, margin: 0 }}>⚠ Burns UBTC and releases BTC. Requires OTP + quantum approval. Irreversible.</p>
+                    <p style={{ color: 'hsl(38 92% 50%)', fontSize: '12px', ...mono, margin: 0 }}>⚠ Burns UBTC and releases BTC. Requires OTP + Protocol Second Key. Irreversible.</p>
                   </div>
                 </>
               )}
@@ -357,7 +357,7 @@ function WithdrawContent() {
               <div style={{ background: 'hsl(205 85% 55% / 0.05)', border: '1px solid hsl(205 85% 55% / 0.2)', borderRadius: '10px', padding: '14px', marginBottom: '20px', display: 'flex', gap: '10px' }}>
                 <span style={{ fontSize: '16px', flexShrink: 0 }}>⚛️</span>
                 <p style={{ color: 'hsl(205 85% 55%)', fontSize: '11px', ...mono, margin: 0, lineHeight: '1.6' }}>
-                  Protected by post-quantum cryptography. OTP + protocol key generates a quantum signature before BTC is released.
+                  Authorized by your one-time OTP and per-vault Protocol Second Key.
                 </p>
               </div>
 
@@ -368,7 +368,7 @@ function WithdrawContent() {
               <input value={secondKey} onChange={e => setSecondKey(e.target.value)} placeholder="Protocol authorization key" type="password" style={inputStyle} />
 
               <button onClick={verifyWithdraw} disabled={loading || !otp || !secondKey} style={loading || !otp || !secondKey ? btnDisabled : btnPrimary}>
-                {loading ? 'Signing...' : 'Authorize Withdrawal'}
+                {loading ? 'Authorizing...' : 'Authorize Withdrawal'}
               </button>
               <button onClick={() => setStep('form')} style={{ ...btnGhost, marginTop: '12px' }}>Cancel</button>
             </>
@@ -395,7 +395,7 @@ function WithdrawContent() {
                   {[
                     { label: 'BTC Sent', value: `${result.btc_sent} BTC` },
                     { label: 'Transaction ID', value: result.txid },
-                    { label: 'Security', value: 'OTP ✓ Second Key ✓ Quantum ✓' },
+                    { label: 'Authorization', value: 'OTP ✓ Second Key ✓ Quantum ✓' },
                   ].map(item => (
                     <div key={item.label} style={{ padding: '8px 0', borderBottom: '1px solid hsl(220 10% 14%)' }}>
                       <p style={{ color: 'hsl(0 0% 55%)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 4px' }}>{item.label}</p>

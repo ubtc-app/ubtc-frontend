@@ -129,8 +129,20 @@ export async function signedSpendWithPassword(
     // Build canonical message
     const message = new TextEncoder().encode(`${operation}:${paramsString}:${challenge.nonce}`)
 
-    // Sign with both PQ schemes using the unwrapped localEncKey
-    const { dilithiumSig, sphincsSig } = await signHybridWithLocalEncKey(wallet, localEncKey, message)
+ // Sign with both PQ schemes using the unwrapped localEncKey
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('quantum-signing-start'))
+      // Give the browser a paint cycle to render the overlay BEFORE we block the main thread with PQ signing
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    }
+    let dilithiumSig: string, sphincsSig: string
+    try {
+      const sigs = await signHybridWithLocalEncKey(wallet, localEncKey, message)
+      dilithiumSig = sigs.dilithiumSig
+      sphincsSig = sigs.sphincsSig
+    } finally {
+      if (typeof window !== 'undefined') window.dispatchEvent(new Event('quantum-signing-end'))
+    }
 
     return {
       challenge_id: challenge.challenge_id,

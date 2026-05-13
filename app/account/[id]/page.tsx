@@ -3,6 +3,8 @@ import { useState, useEffect, useRef, Suspense } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import { API_URL, supabase } from '../../lib/supabase'
 import { Icons } from '../../components/Icons'
+import { PasswordModal } from '../../components/PasswordModal'
+import { signedSpendWithPassword } from '../../lib/wallet/challenge'
 
 function AccountContent() {
   const params = useParams()
@@ -22,6 +24,7 @@ function AccountContent() {
   const [movePsk, setMovePsk] = useState('')
  const movePskInputRef = useRef<HTMLInputElement>(null)
   const moveInProgress = useRef(false)
+  const [movePasswordOpen, setMovePasswordOpen] = useState(false)
   const [stablecoins, setStablecoins] = useState<any[]>([])
   const [scTransactions, setScTransactions] = useState<any[]>([])
   const [btcPrice, setBtcPrice] = useState(0)
@@ -190,15 +193,35 @@ function AccountContent() {
     setAddLoading(false)
   }
 
- const handleMoveToWallet = async () => {
+ const handleMoveToWallet = () => {
     if (!moveAmount || !vault.linked_wallet) return
-    if (moveInProgress.current) return
+    if (parseFloat(moveAmount) <= 0 || parseFloat(moveAmount) > ubtcBalance) return
+    setMoveError('')
+    setMovePasswordOpen(true)
+  }
+
+  const submitMoveToWallet = async (password: string) => {
+   if (moveInProgress.current) return
     moveInProgress.current = true
+    setMovePasswordOpen(false)
     setMoveLoading(true); setMoveError('')
     try {
-   const res = await fetch(`${API_URL}/vaults/${vaultId}/send-to-wallet`, {
+      const walletAddress = localStorage.getItem('ubtc_wallet_address') || ''
+      const { challenge_id, signature, sphincs_signature } = await signedSpendWithPassword(
+        walletAddress,
+        'vault_to_wallet',
+        `${vaultId}|${vault.linked_wallet}|${moveAmount}`,
+        password
+      )
+      const res = await fetch(`${API_URL}/vaults/${vaultId}/send-to-wallet`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vault_id: vaultId, wallet_address: vault.linked_wallet, ubtc_amount: moveAmount, second_key: String(movePsk).trim() })
+        body: JSON.stringify({
+          vault_id: vaultId,
+          wallet_address: vault.linked_wallet,
+          ubtc_amount: moveAmount,
+          second_key: String(movePsk).trim(),
+          challenge_id, signature, sphincs_signature
+        })
       })
       const text = await res.text()
       let data: any = {}
@@ -425,9 +448,16 @@ function AccountContent() {
              <button onClick={() => { setShowMoveModal(false); setMovePsk(''); window.location.href = '/wallet?address=' + (vault.linked_wallet || '') }} style={{ background: 'hsl(38 92% 50%)', color: '#000', border: 'none', borderRadius: '12px', padding: '13px 32px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>Open Wallet →</button>
               </div>
             )}
-          </div>
+         </div>
         </div>
       )}
+    <PasswordModal
+        isOpen={movePasswordOpen}
+        onCancel={() => setMovePasswordOpen(false)}
+        onSubmit={submitMoveToWallet}
+        title="Move UBTC to Wallet"
+        subtitle="Enter your wallet password to authorize this PQ-signed move"
+      />
 
       {/* ── MODAL ── */}
       {showAddModal && (

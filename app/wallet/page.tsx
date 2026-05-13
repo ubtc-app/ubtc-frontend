@@ -102,7 +102,8 @@ function WalletContent() {
       a.href = url; a.download = `${proof.proof_id}.ubtc`
       document.body.appendChild(a); a.click()
       document.body.removeChild(a); URL.revokeObjectURL(url)
-      setPendingProofs(prev => prev.filter((p: any) => p.proof_id !== proof.proof_id))
+    // Mark as downloaded locally so the UI badge updates immediately
+      setPendingProofs(prev => prev.map((p: any) => p.proof_id === proof.proof_id ? { ...p, downloaded: true, downloaded_at: new Date().toISOString() } : p))
       setProofModal({ type: 'success', proof })
     } catch (e: any) { alert('Download failed: ' + e.message) }
   }
@@ -478,21 +479,42 @@ function WalletContent() {
             <p style={{ color: 'hsl(0 0% 45%)', fontSize: '11px', ...mono, margin: '0 0 16px', lineHeight: '1.7' }}>
               You have received UBTC. Enter your recovery phrase to redeem directly to Bitcoin.
             </p>
-            {pendingProofs.map((proof: any) => (
-              <div key={proof.proof_id} style={{ background: 'hsl(220 15% 5%)', borderRadius: '10px', padding: '14px', marginBottom: '10px', border: '1px solid hsl(220 10% 14%)' }}>
+            {pendingProofs.map((proof: any) => {
+              const isDownloaded = !!proof.downloaded
+              const accentColor = isDownloaded ? 'hsl(0 0% 30%)' : 'hsl(190 80% 50%)'
+              const borderColor = isDownloaded ? 'hsl(220 10% 14%)' : 'hsl(190 80% 50% / 0.35)'
+              return (
+              <div key={proof.proof_id} style={{ background: 'hsl(220 15% 5%)', borderRadius: '10px', padding: '14px', marginBottom: '10px', border: `1px solid ${borderColor}` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                   <div>
-                    <p style={{ color: 'hsl(0 0% 75%)', fontSize: '13px', ...mono, margin: '0 0 2px', fontWeight: 700 }}>{proof.proof_data?.ownership?.ubtc_amount || '?'} UBTC</p>
-                    <p style={{ color: 'hsl(0 0% 30%)', fontSize: '10px', ...mono, margin: 0 }}>from {proof.sender_vault_id} · {new Date(proof.created_at).toLocaleString()}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+                      <p style={{ color: 'hsl(0 0% 75%)', fontSize: '13px', ...mono, margin: 0, fontWeight: 700 }}>{proof.proof_data?.ownership?.ubtc_amount || '?'} UBTC</p>
+                      {!isDownloaded && (
+                        <span style={{ background: 'hsl(190 80% 50% / 0.15)', color: 'hsl(190 80% 65%)', fontSize: '9px', ...mono, fontWeight: 700, letterSpacing: '0.08em', padding: '3px 7px', borderRadius: '999px', textTransform: 'uppercase' }}>New</span>
+                      )}
+                      {isDownloaded && (
+                        <span style={{ background: 'hsl(220 10% 10%)', color: 'hsl(0 0% 45%)', fontSize: '9px', ...mono, fontWeight: 700, letterSpacing: '0.08em', padding: '3px 7px', borderRadius: '999px', textTransform: 'uppercase' }}>Saved</span>
+                      )}
+                    </div>
+                    <p style={{ color: accentColor, fontSize: '10px', ...mono, margin: 0 }}>from {proof.sender_vault_id} · {new Date(proof.created_at).toLocaleString()}</p>
+                    {isDownloaded && proof.downloaded_at && (
+                      <p style={{ color: 'hsl(0 0% 25%)', fontSize: '9px', ...mono, margin: '2px 0 0' }}>Saved to your device · {new Date(proof.downloaded_at).toLocaleString()}</p>
+                    )}
                   </div>
-                  <button onClick={() => window.location.href = `/redeem/proof?proof_id=${proof.proof_id}&vault_id=${proof.sender_vault_id}&amount=${proof.proof_data?.ownership?.ubtc_amount}`} style={{ background: 'hsl(142 76% 36%)', color: 'white', ...mono, fontSize: '11px', fontWeight: 700, padding: '10px 16px', border: 'none', borderRadius: '8px', cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
-                    ⚡ Redeem to Bitcoin
-                  </button>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button onClick={() => downloadProof(proof)} title={isDownloaded ? 'Re-download proof file' : 'Download proof file'} style={{ background: 'transparent', color: 'hsl(0 0% 55%)', ...mono, fontSize: '11px', fontWeight: 600, padding: '10px 12px', border: '1px solid hsl(220 10% 18%)', borderRadius: '8px', cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
+                      {isDownloaded ? '↻ Re-download' : '↓ Download'}
+                    </button>
+                    <button onClick={() => window.location.href = `/redeem/proof?proof_id=${proof.proof_id}&vault_id=${proof.sender_vault_id}&amount=${proof.proof_data?.ownership?.ubtc_amount}`} style={{ background: 'hsl(142 76% 36%)', color: 'white', ...mono, fontSize: '11px', fontWeight: 700, padding: '10px 16px', border: 'none', borderRadius: '8px', cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
+                      ⚡ Redeem to Bitcoin
+                    </button>
+                  </div>
                 </div>
                 <p style={{ color: 'hsl(0 0% 22%)', fontSize: '9px', ...mono, margin: 0 }}>ID: {proof.proof_id}</p>
               </div>
-            ))}
-          </div>
+              )
+            })}
+			</div>
         )}
 
         {/* Transactions */}

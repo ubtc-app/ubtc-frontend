@@ -92,15 +92,34 @@ export default function RedeemProofPage() {
     }
   }
 
-  async function handleRedeem() {
+ async function handleRedeem() {
     setLoading(true); setError('')
     try {
-     const body: any = {
-        proof_id: proofFile.proof_id,
+      // Reuse the same wallet password the user entered earlier to PQ-sign the redeem.
+      const { signedSpendWithPassword } = await import('../../lib/wallet/challenge')
+      const proofId = proofFile.proof_id
+      const destination = btcAddress
+      const ubtcAmount = String(proofFile.ownership?.ubtc_amount)
+
+      // Resolve recipient wallet_address from localStorage (must match the stored proof recipient)
+      const recipientWalletAddress = localStorage.getItem('ubtc_wallet_address') || ''
+
+      const { challenge_id, signature, sphincs_signature } = await signedSpendWithPassword(
+        recipientWalletAddress,
+        'redeem_proof',
+        `${proofId}|${destination}|${ubtcAmount}`,
+        password
+      )
+
+      const body: any = {
+        proof_id: proofId,
         vault_id: proofFile.collateral?.vault_id,
-        ubtc_amount: proofFile.ownership?.ubtc_amount,
-        destination_address: btcAddress,
+        ubtc_amount: ubtcAmount,
+        destination_address: destination,
         taproot_key: decrypted,
+        challenge_id,
+        signature,
+        sphincs_signature,
       }
       const res = await fetch(`${API_URL}/proofs/redeem`, {
         method: 'POST',
@@ -110,10 +129,11 @@ export default function RedeemProofPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       setResult(data); setStep('done')
+      // Clear sensitive in-memory state
+      setPassword('')
     } catch (e: any) { setError(e.message) }
     setLoading(false)
   }
-
   return (
     <div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
       <div style={{ width: '100%', maxWidth: '480px' }}>

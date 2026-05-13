@@ -3,6 +3,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { API_URL } from '../lib/supabase'
 import { Icons } from '../components/Icons'
+import { signedSpendWithPassword } from '../lib/wallet/challenge'
 
 const toHex = (bytes: Uint8Array) => Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
 const fromHex = (hex: string) => new Uint8Array(hex.match(/.{1,2}/g)!.map(b => parseInt(b, 16)))
@@ -27,9 +28,11 @@ function TransferContent() {
   const walletUbtc = parseFloat(searchParams.get('ubtc') || '0')
   const walletUusdt = parseFloat(searchParams.get('uusdt') || '0')
   const walletUusdc = parseFloat(searchParams.get('uusdc') || '0')
- const isWalletSend = !!fromWallet
+  const isWalletSend = !!fromWallet
   const [walletPassword, setWalletPassword] = useState('')
   const [passwordError, setPasswordError] = useState('')
+  const [userPassword, setUserPassword] = useState('')
+  const [showUserPassword, setShowUserPassword] = useState(false)
 
   const [vaults, setVaults] = useState<any[]>([])
   const [wallets, setWallets] = useState<any[]>([])
@@ -161,7 +164,6 @@ function TransferContent() {
     setSelectedWallet(null)
     setSearchError('')
     if (!val) return
-    // Block non-ubtc addresses (looks like a bitcoin/eth address but wrong prefix)
     if (val.length > 20 && !val.startsWith('ubtc') && !val.startsWith('@')) {
       setSearchError('Can only send UBTC to another UBTC Wallet — address must start with ubtc')
     }
@@ -178,7 +180,11 @@ function TransferContent() {
   const isManualUbtcAddress = searchQuery.startsWith('ubtc') && searchQuery.length > 20 && !searchError
   const recipient = selectedWallet?.wallet_address || (isManualUbtcAddress ? searchQuery : '')
   const recipientValid = recipient.startsWith('ubtc') && recipient.length > 10
+
+  // Send is enabled only when amount, recipient, PSK (wallet send), AND password (wallet send) are all filled
   const canSend = !!amount && parseFloat(amount) > 0 && parseFloat(amount) <= activeBalance && recipientValid && !loading
+    && (!isWalletSend || (!!walletPassword && !!userPassword))
+
   const btcRelease = activeCurrency === 'ubtc'
     ? ((parseFloat(amount || '0') / (ubtcTotal || 1)) * btcLocked).toFixed(6)
     : parseFloat(amount || '0').toLocaleString()
@@ -216,19 +222,36 @@ function TransferContent() {
         setQsk('')
       }
 
-     if (isWalletSend) {
-       // Verify Protocol Second Key before sending
-        if (!walletPassword) { setPasswordError('Upload your Protocol Second Key to authorise this transfer'); setLoading(false); return }
+      if (isWalletSend) {
+        if (!walletPassword) { setPasswordError('Upload your Protocol Second Key first'); setLoading(false); return }
+        if (!userPassword) { setError('Enter your wallet password'); setLoading(false); return }
         setPasswordError('')
+
+        // Build challenge-bound PQ signature for wallet_send
+        const { challenge_id, signature, sphincs_signature } = await signedSpendWithPassword(
+          fromWallet,
+          'wallet_send',
+          `${fromWallet}|${to}|${amount}`,
+          userPassword
+        )
 
         const res = await fetch(`${API_URL}/wallet/${fromWallet}/send`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-       body: JSON.stringify({ from_address: fromWallet, to_username_or_address: to, amount, send_type: 'internal', second_key: walletPassword })
+          body: JSON.stringify({
+            from_address: fromWallet,
+            to_username_or_address: to,
+            amount,
+            send_type: 'internal',
+            second_key: walletPassword,
+            challenge_id, signature, sphincs_signature
+          })
         })
         const data = await res.json()
         if (!res.ok) throw new Error(data.error)
-      console.log('Transfer response:', JSON.stringify(data))
+        console.log('Transfer response:', JSON.stringify(data))
         setResult({ transfer_id: data.transaction_id, to, amount, currency: utokenName, bitcoin_txid: data.bitcoin_txid })
+        // Clear sensitive fields
+        setUserPassword('')
       } else if (isStable) {
         const scVault = getScVaultForActive()
         if (!scVault) throw new Error(`No ${utokenName} found.`)
@@ -423,7 +446,7 @@ function TransferContent() {
                 </div>
               ))}
             </div>
-          {result.bitcoin_txid && (
+            {result.bitcoin_txid && (
               <div style={{ background: 'hsl(220 15% 5%)', border: '1px solid hsl(205 85% 55% / 0.2)', borderRadius: '12px', padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
                 <div>
                   <p style={{ color: 'hsl(0 0% 35%)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.1em', margin: '0 0 4px' }}>QUANTUM:TRANSFER on Bitcoin</p>
@@ -432,7 +455,6 @@ function TransferContent() {
                 <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
                   <button onClick={() => {
                     const url = `https://mempool.space/testnet4/tx/${result.bitcoin_txid}`
-                   console.log('Copying:', url)
                     setCopied(true); setTimeout(() => setCopied(false), 2000)
                     if (navigator.clipboard) {
                       navigator.clipboard.writeText(url).catch(() => {
@@ -446,7 +468,7 @@ function TransferContent() {
                       document.execCommand('copy'); document.body.removeChild(el)
                     }
                   }} style={{ background: 'hsl(220 12% 12%)', color: 'hsl(0 0% 55%)', border: '1px solid hsl(220 10% 18%)', borderRadius: '8px', padding: '8px 12px', fontSize: '11px', ...mono, cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
-                   {copied ? '✅ Copied!' : 'Copy URL'}
+                    {copied ? '✅ Copied!' : 'Copy URL'}
                   </button>
                   <a href={`https://mempool.space/testnet4/tx/${result.bitcoin_txid}`} target="_blank" rel="noopener noreferrer" style={{ background: 'hsl(205 85% 55%)', color: '#000', borderRadius: '8px', padding: '8px 12px', fontSize: '11px', ...mono, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' as const }}>
                     View →
@@ -455,7 +477,7 @@ function TransferContent() {
               </div>
             )}
             <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
-              <button onClick={() => { setResult(null); setAmount(''); setSelectedWallet(null); setSearchQuery('') }} style={{ flex: 1, background: 'hsl(220 12% 10%)', border: '1px solid hsl(220 10% 16%)', color: 'hsl(0 0% 55%)', borderRadius: '14px', padding: '16px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
+              <button onClick={() => { setResult(null); setAmount(''); setSelectedWallet(null); setSearchQuery(''); setUserPassword('') }} style={{ flex: 1, background: 'hsl(220 12% 10%)', border: '1px solid hsl(220 10% 16%)', color: 'hsl(0 0% 55%)', borderRadius: '14px', padding: '16px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
                 Send More
               </button>
               <a href={backHref} style={{ flex: 1, background: 'linear-gradient(135deg, hsl(205,85%,55%),hsl(190,80%,50%))', color: 'white', textDecoration: 'none', borderRadius: '14px', padding: '16px', fontSize: '15px', fontWeight: '600', fontFamily: 'var(--font-display)', textAlign: 'center' as const, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
@@ -633,21 +655,20 @@ function TransferContent() {
               </div>
             )}
 
-           {/* Protocol Second Key for wallet sends */}
+            {/* Protocol Second Key for wallet sends */}
             {isWalletSend && (
               <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(205 85% 55% / 0.2)', borderRadius: '16px', padding: '18px 20px' }}>
                 <p style={{ color: 'hsl(205 85% 55%)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.2em', margin: '0 0 4px' }}>🔒 Authorise Transfer</p>
                 <p style={{ color: 'hsl(0 0% 35%)', fontSize: '11px', ...mono, margin: '0 0 12px', lineHeight: '1.6' }}>Upload your Protocol Second Key to authorise this transfer. This proves you are the vault owner.</p>
                 <label style={{ display: 'block', width: '100%', background: walletPassword ? 'hsl(142 76% 36% / 0.1)' : 'hsl(205 85% 55%)', color: walletPassword ? 'hsl(142 76% 36%)' : '#000', fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 700, padding: '12px 14px', borderRadius: '8px', cursor: 'pointer', textAlign: 'center' as const, boxSizing: 'border-box' as const, border: `1px solid ${walletPassword ? 'hsl(142 76% 36% / 0.3)' : 'transparent'}` }}>
                   {walletPassword ? '✅ Protocol Key Loaded' : '🔑 Upload Protocol Second Key'}
-                 <input type="file" accept=".txt,.json,.key" style={{ display: 'none' }} onChange={async e => {
+                  <input type="file" accept=".txt,.json,.key" style={{ display: 'none' }} onChange={async e => {
                     const f = e.target.files?.[0]
                     if (!f) return
                     const text = await f.text()
                     const match = text.match(/[a-f0-9]{64,}/)
                     if (!match) { setPasswordError('Protocol Second Key not found in file'); return }
                     const key = match[0]
-                    // Verify key against backend immediately
                     setPasswordError('Verifying key...')
                     try {
                       const res = await fetch(`${API_URL}/wallet/verify-psk`, {
@@ -661,8 +682,33 @@ function TransferContent() {
                   }} />
                 </label>
                 {passwordError && <p style={{ color: 'hsl(0 84% 60%)', fontSize: '12px', ...mono, margin: '8px 0 0' }}>{passwordError}</p>}
+
+                {/* Wallet password field — only shows after PSK loaded */}
+                {walletPassword && (
+                  <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid hsl(220 10% 14%)' }}>
+                    <p style={{ color: 'hsl(205 85% 55%)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.2em', margin: '0 0 4px' }}>🔐 Wallet Password</p>
+                    <p style={{ color: 'hsl(0 0% 35%)', fontSize: '11px', ...mono, margin: '0 0 10px', lineHeight: '1.6' }}>Enter your wallet password to PQ-sign this transfer.</p>
+                    <div style={{ position: 'relative' as const }}>
+                      <input
+                        type={showUserPassword ? 'text' : 'password'}
+                        value={userPassword}
+                        onChange={e => setUserPassword(e.target.value)}
+                        placeholder="Your wallet password"
+                        style={{ width: '100%', padding: '12px 44px 12px 14px', background: 'hsl(220 15% 5%)', border: `1px solid ${userPassword ? 'hsl(142 76% 36% / 0.4)' : 'hsl(220 10% 14%)'}`, borderRadius: '10px', color: 'hsl(0 0% 88%)', fontSize: '13px', fontFamily: 'var(--font-mono)', outline: 'none', boxSizing: 'border-box' as const }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowUserPassword(!showUserPassword)}
+                        style={{ position: 'absolute' as const, right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'hsl(0 0% 40%)', fontSize: '11px', cursor: 'pointer', padding: '6px 10px', ...mono }}
+                      >
+                        {showUserPassword ? 'Hide' : 'Show'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
+
             {error && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'hsl(0 84% 60% / 0.08)', border: '1px solid hsl(0 84% 60% / 0.25)', borderRadius: '14px', padding: '14px 16px' }}>
                 {Icons.warning(14, 'hsl(0 84% 60%)')}
@@ -672,7 +718,7 @@ function TransferContent() {
 
             <button onClick={handleSendClick} disabled={!canSend} style={{ width: '100%', background: canSend ? `linear-gradient(135deg, ${tokenColor}, ${tokenColor}bb)` : 'hsl(220 10% 11%)', color: canSend ? 'white' : 'hsl(0 0% 25%)', border: 'none', borderRadius: '16px', padding: '18px', fontSize: '17px', fontWeight: '700', cursor: canSend ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', boxShadow: canSend ? `0 0 40px ${tokenColor}35` : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
               {Icons.send(20, canSend ? 'white' : 'hsl(0 0% 25%)')}
-              {canSend ? `Send ${parseFloat(amount).toLocaleString()} ${utokenName}` : 'Enter amount and recipient'}
+              {canSend ? `Send ${parseFloat(amount).toLocaleString()} ${utokenName}` : (isWalletSend && walletPassword && !userPassword ? 'Enter wallet password' : 'Enter amount and recipient')}
             </button>
 
             <p style={{ color: 'hsl(0 0% 20%)', fontSize: '11px', ...mono, textAlign: 'center' as const, margin: 0 }}>

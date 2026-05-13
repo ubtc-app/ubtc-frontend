@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { API_URL } from '../lib/supabase'
 import { MnemonicModal } from '../components/MnemonicModal'
+import { SigningOverlay } from '../components/SigningOverlay'
 import { signedSpend } from '../lib/wallet/challenge'
 
 function RedeemContent() {
@@ -145,6 +146,14 @@ function RedeemContent() {
         onSubmit={handleMnemonicSubmit}
         title={`Authorize ${utokenName} Redemption`}
         subtitle={`Sign the redemption of ${amount} ${utokenName} to ${destination.slice(0, 16)}... with your 24-word recovery phrase.`}
+      />
+
+      <SigningOverlay
+        stage={signingStage}
+        tokenColor={tokenColor}
+        tokenName={utokenName}
+        amount={amount}
+        context={`Authorizing ${utokenName} redemption`}
       />
 
       {/* Nav */}

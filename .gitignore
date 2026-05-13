@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Backup files
+*.bak
+*.backup
+*.stage1-backup
+setup-signing-overlay.ps1
