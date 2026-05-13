@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { API_URL } from '../lib/supabase'
 import { Icons } from '../components/Icons'
+import { useIsMobile } from '../lib/useIsMobile'
 
 export default function Dashboard() {
   const [vaults, setVaults] = useState<any[]>([])
@@ -12,6 +13,7 @@ export default function Dashboard() {
   const [scanning, setScanning] = useState<string | null>(null)
   const [scanResult, setScanResult] = useState<Record<string, string>>({})
   const pollRef = useRef<NodeJS.Timeout | null>(null)
+  const isMobile = useIsMobile()
 
   const mono: any = { fontFamily: 'var(--font-mono)' }
 
