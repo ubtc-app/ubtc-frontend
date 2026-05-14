@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import './globals.css'
 import Header from './components/Header'
 import { QuantumSigningOverlay } from './components/QuantumSigningOverlay'
@@ -11,8 +12,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+   <html lang="en">
       <body>
+        <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
         <QuantumSigningOverlay />
         <Header />
         <div style={{ paddingTop: '60px' }}>
@@ -20,5 +22,5 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </div>
       </body>
     </html>
-  )
+	)
 }
