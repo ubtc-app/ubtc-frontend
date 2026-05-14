@@ -200,8 +200,8 @@ export default function Dashboard() {
 
                   {/* Pending deposit banner */}
                   {isPending && (
-                    <div style={{ background: 'hsl(38 92% 50% / 0.08)', borderBottom: '1px solid hsl(38 92% 50% / 0.2)', padding: '12px 18px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                   <div style={{ background: 'hsl(38 92% 50% / 0.08)', borderBottom: '1px solid hsl(38 92% 50% / 0.2)', padding: isMobile ? '12px 14px' : '12px 18px' }}>
+                      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, alignItems: isMobile ? 'stretch' as const : 'center' as const, justifyContent: 'space-between', gap: '12px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'hsl(38 92% 50%)', animation: 'pulse 2s infinite' }} />
                           <p style={{ color: 'hsl(38 92% 55%)', fontSize: '12px', ...mono, margin: 0 }}>
@@ -232,7 +232,7 @@ export default function Dashboard() {
                   )}
 
                   {/* Card header */}
-                  <div style={{ padding: '20px 22px', borderBottom: '1px solid hsl(220 10% 11%)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                 <div style={{ padding: isMobile ? '16px 16px' : '20px 22px', borderBottom: '1px solid hsl(220 10% 11%)', display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center', gap: isMobile ? '14px' : '0' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <div style={{ width: '44px', height: '44px', borderRadius: '13px', background: meta.color + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         {meta.icon}
@@ -247,8 +247,8 @@ export default function Dashboard() {
                         </div>
                       </div>
                     </div>
-                    <div style={{ textAlign: 'right' as const }}>
-                    <p style={{ color: 'hsl(0 0% 92%)', fontWeight: '700', fontSize: '22px', ...mono, margin: '0 0 2px', lineHeight: '1' }}>
+                   <div style={{ textAlign: isMobile ? 'left' as const : 'right' as const }}>
+                    <p style={{ color: 'hsl(0 0% 92%)', fontWeight: '700', fontSize: isMobile ? '26px' : '22px', ...mono, margin: '0 0 2px', lineHeight: '1' }}>
                         ${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </p>
                       <p style={{ color: 'hsl(142 76% 36%)', fontSize: '10px', ...mono, margin: '0 0 1px' }}>BTC collateral · live price</p>
