@@ -1,16 +1,20 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { API_URL } from '../lib/supabase'
 import { isInTelegram } from '../lib/telegram'
 import { TelegramSafeDisplay } from '../components/TelegramSafeDisplay'
-
 const PUBKEY = '032bb4a115bddb717274ba34d757338d309865e632232f31c874a0707c2c566ef5'
-
 type Step = 'account' | 'custody' | 'confirm' | 'done'
 type AccountType = 'current' | 'savings' | 'yield' | 'custody_yield' | 'prime' | 'managed_yield'
-
 export default function VaultPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: 'hsl(0 0% 30%)', fontSize: '14px', fontFamily: 'var(--font-mono)' }}>Loading...</p></div>}>
+      <VaultPageInner />
+    </Suspense>
+  )
+}
+function VaultPageInner() {
   const [step, setStep] = useState<Step>('account')
   const [accountType, setAccountType] = useState<AccountType | null>(null)
   const [custodyPreference, setCustodyPreference] = useState<'ubtc' | 'bitgo' | 'komainu'>('ubtc')
