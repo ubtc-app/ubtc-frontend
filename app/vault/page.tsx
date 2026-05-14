@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { API_URL } from '../lib/supabase'
 
 const PUBKEY = '032bb4a115bddb717274ba34d757338d309865e632232f31c874a0707c2c566ef5'
@@ -20,6 +21,15 @@ export default function VaultPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const mono: any = { fontFamily: 'var(--font-mono)' }
 
+// Telegram identity (passed from /telegram landing page)
+  const searchParams = useSearchParams()
+  const tgId = searchParams.get('tg_id')
+  const tgHandle = searchParams.get('tg_handle') || ''
+  const tgName = searchParams.get('tg_name') || ''
+  // Pre-fill username from Telegram handle on first render
+  useEffect(() => {
+    if (tgHandle && !username) setUsername(tgHandle)
+  }, [tgHandle])
   // Onboarding wizard state
   const [onboardStep, setOnboardStep] = useState(1)
   const [mnemonicConfirmed, setMnemonicConfirmed] = useState(false)
@@ -71,8 +81,10 @@ export default function VaultPage() {
             taproot_sk_kyber_wrapped: taprootSkKyberWrapped,
             network: 'testnet4',
             recovery_blocks: 6,
-            account_type: accountType,
-            username: `user_${Math.random().toString(36).slice(2, 8)}`,
+          account_type: accountType,
+            username: tgHandle || `user_${Math.random().toString(36).slice(2, 8)}`,
+            telegram_id: tgId ? Number(tgId) : undefined,
+            telegram_handle: tgHandle || undefined,
           })
         })
         const data = await res.json()
