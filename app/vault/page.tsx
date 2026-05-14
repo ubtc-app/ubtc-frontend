@@ -2,6 +2,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { API_URL } from '../lib/supabase'
+import { isInTelegram } from '../lib/telegram'
+import { TelegramSafeDisplay } from '../components/TelegramSafeDisplay'
 
 const PUBKEY = '032bb4a115bddb717274ba34d757338d309865e632232f31c874a0707c2c566ef5'
 
@@ -39,6 +41,7 @@ export default function VaultPage() {
   const [pskDownloaded, setPskDownloaded] = useState(false)
   const [pskVerified, setPskVerified] = useState(false)
   const [pskVerifyError, setPskVerifyError] = useState('')
+  const [pskPasteInput, setPskPasteInput] = useState('')
   const [quantumUsername, setQuantumUsername] = useState('')
   const [quantumUsernameAvailable, setQuantumUsernameAvailable] = useState<boolean | null>(null)
   const [checkingUsername, setCheckingUsername] = useState(false)
@@ -126,6 +129,19 @@ export default function VaultPage() {
       }
       setPskVerified(true)
     } catch { setPskVerifyError('Could not read file. Please try again.') }
+  }
+  const verifyProtocolKeyText = (text: string) => {
+    setPskVerifyError('')
+    const trimmed = (text || '').trim()
+    if (!trimmed) {
+      setPskVerifyError('Paste your Protocol Second Key to verify')
+      return
+    }
+    if (!trimmed.includes(result.protocol_second_key) && trimmed !== result.protocol_second_key) {
+      setPskVerifyError('This is not your Protocol Second Key. Check your password manager and try again.')
+      return
+    }
+    setPskVerified(true)
   }
 
   const setQuantumWalletUsername = async () => {
@@ -416,7 +432,17 @@ export default function VaultPage() {
                     {qa('What if I lose them?', '<span style="color:hsl(0 84% 60%)">Your funds cannot be recovered. Not by us. Not by anyone. These words are shown exactly once.</span>')}
                   </>, 'hsl(38 92% 50%)')}
 
-                  {result.mnemonic && (
+                 {result.mnemonic && isInTelegram() && (
+                    <TelegramSafeDisplay
+                      title="24-Word Recovery Phrase"
+                      content={result.mnemonic}
+                      description="Tap Copy to save into your password manager (1Password, Bitwarden, Apple Passwords). Or tap Show QR to scan with another device. This phrase will not be shown again."
+                      confirmed={mnemonicConfirmed}
+                      onConfirmedChange={setMnemonicConfirmed}
+                      confirmLabel="I have copied my 24 words into a secure password manager or written them down offline. I understand losing them means losing my wallet."
+                    />
+                  )}
+                  {result.mnemonic && !isInTelegram() && (
                     <>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '12px' }}>
                         {result.mnemonic.split(' ').map((word: string, i: number) => (
@@ -438,7 +464,7 @@ export default function VaultPage() {
                       </div>
                     </>
                   )}
-                  {checkBox(mnemonicConfirmed, () => setMnemonicConfirmed(!mnemonicConfirmed), 'I have written down all 24 words in order and stored them safely offline. I understand these cannot be recovered if lost.')}
+                 {!isInTelegram() && checkBox(mnemonicConfirmed, () => setMnemonicConfirmed(!mnemonicConfirmed), 'I have written down all 24 words in order and stored them safely offline. I understand these cannot be recovered if lost.')}
                   {nextBtn('Saved my phrase — Next: Set Password →', () => setOnboardStep(2), mnemonicConfirmed)}
                 </div>
               )}
@@ -525,6 +551,18 @@ export default function VaultPage() {
                   </>, 'hsl(205 85% 55%)')}
 
                   <div style={{ background: 'hsl(220 15% 5%)', border: '1px solid hsl(205 85% 55% / 0.3)', borderRadius: '10px', padding: '14px', marginBottom: '16px' }}>
+                    {isInTelegram() && result.protocol_second_key && (
+                      <TelegramSafeDisplay
+                        title="Protocol Second Key"
+                        content={result.protocol_second_key}
+                        description="Tap Copy to save into your password manager. Or tap Show QR to scan with another device. You will need this to mint UBTC and move UBTC out of your vault."
+                        confirmed={pskDownloaded}
+                        onConfirmedChange={setPskDownloaded}
+                        confirmLabel="I have copied my Protocol Second Key into a secure password manager. I understand I will need this to mint UBTC."
+                        accentColor="hsl(205 85% 55%)"
+                      />
+                    )}
+                    {!isInTelegram() && <>
                     <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 6px' }}>Protocol Second Key</p>
                     <p style={{ color: 'hsl(205 85% 55%)', fontSize: '11px', fontFamily: 'monospace', margin: '0 0 12px', wordBreak: 'break-all' as const }}>{result.protocol_second_key?.substring(0, 64)}...</p>
                     <div style={{ display: 'flex', gap: '8px' }}>
@@ -536,11 +574,13 @@ export default function VaultPage() {
                         const a = document.createElement('a'); a.href = url; a.download = `protocol-key-${result.vault_id}.txt`
                         document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url)
                         setPskDownloaded(true)
-                      }} style={{ flex: 1, background: 'hsl(205 85% 55%)', color: '#000', border: 'none', borderRadius: '8px', padding: '10px', fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, cursor: 'pointer' }}>⬇ Download Key File</button>
+                     }} style={{ flex: 1, background: 'hsl(205 85% 55%)', color: '#000', border: 'none', borderRadius: '8px', padding: '10px', fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, cursor: 'pointer' }}>⬇ Download Key File</button>
                     </div>
-                  </div>
-                  {nextBtn('Downloaded — Next: Verify My Key →', () => setOnboardStep(4), pskDownloaded)}
-                  {!pskDownloaded && <p style={{ color: 'hsl(0 0% 35%)', fontSize: '11px', fontFamily: 'monospace', textAlign: 'center' as const, marginTop: '8px' }}>Download your key file to continue</p>}
+                    </>}
+                    </div>
+              
+                  {nextBtn(isInTelegram() ? 'Saved — Next: Verify My Key →' : 'Downloaded — Next: Verify My Key →', () => setOnboardStep(4), pskDownloaded)}
+                  {!pskDownloaded && <p style={{ color: 'hsl(0 0% 35%)', fontSize: '11px', fontFamily: 'monospace', textAlign: 'center' as const, marginTop: '8px' }}>{isInTelegram() ? 'Copy your key and confirm to continue' : 'Download your key file to continue'}</p>}
                 </div>
               )}
 
@@ -561,11 +601,32 @@ export default function VaultPage() {
 
                   {!pskVerified ? (
                     <>
-                      <label style={{ display: 'block', border: `2px dashed ${pskVerifyError ? 'hsl(0 84% 60%)' : 'hsl(220 10% 20%)'}`, borderRadius: '12px', padding: '32px', textAlign: 'center' as const, cursor: 'pointer', marginBottom: '12px', transition: 'border-color 0.2s' }}>
-                        <p style={{ color: 'hsl(0 0% 55%)', fontSize: '13px', fontFamily: 'monospace', margin: '0 0 4px' }}>Click to upload your Protocol Key file</p>
-                        <p style={{ color: 'hsl(0 0% 30%)', fontSize: '11px', fontFamily: 'monospace', margin: 0 }}>protocol-key-{result.vault_id}.txt</p>
-                        <input type="file" accept=".txt,.key,.json" onChange={e => { const f = e.target.files?.[0]; if (f) verifyProtocolKey(f) }} style={{ display: 'none' }} />
-                      </label>
+                      {!isInTelegram() && (
+                        <label style={{ display: 'block', border: `2px dashed ${pskVerifyError ? 'hsl(0 84% 60%)' : 'hsl(220 10% 20%)'}`, borderRadius: '12px', padding: '32px', textAlign: 'center' as const, cursor: 'pointer', marginBottom: '12px', transition: 'border-color 0.2s' }}>
+                          <p style={{ color: 'hsl(0 0% 55%)', fontSize: '13px', fontFamily: 'monospace', margin: '0 0 4px' }}>Click to upload your Protocol Key file</p>
+                          <p style={{ color: 'hsl(0 0% 30%)', fontSize: '11px', fontFamily: 'monospace', margin: 0 }}>protocol-key-{result.vault_id}.txt</p>
+                          <input type="file" accept=".txt,.key,.json" onChange={e => { const f = e.target.files?.[0]; if (f) verifyProtocolKey(f) }} style={{ display: 'none' }} />
+                        </label>
+                      )}
+                      {isInTelegram() && (
+                        <div style={{ marginBottom: '12px' }}>
+                          <label style={{ display: 'block', color: 'hsl(0 0% 55%)', fontSize: '12px', fontFamily: 'monospace', marginBottom: '8px' }}>Paste your Protocol Second Key</label>
+                          <textarea
+                            value={pskPasteInput}
+                            onChange={e => setPskPasteInput(e.target.value)}
+                            placeholder="Paste the key you saved earlier..."
+                            rows={3}
+                            style={{ width: '100%', background: 'hsl(220 15% 4%)', border: `1px solid ${pskVerifyError ? 'hsl(0 84% 60%)' : 'hsl(220 10% 14%)'}`, borderRadius: '10px', padding: '12px 14px', color: 'hsl(0 0% 92%)', fontSize: '12px', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' as const, resize: 'vertical' as const, marginBottom: '10px' }}
+                          />
+                          <button
+                            onClick={() => verifyProtocolKeyText(pskPasteInput)}
+                            disabled={!pskPasteInput.trim()}
+                            style={{ width: '100%', background: pskPasteInput.trim() ? 'hsl(270 85% 65%)' : 'hsl(220 10% 14%)', color: pskPasteInput.trim() ? 'white' : 'hsl(0 0% 28%)', border: 'none', borderRadius: '10px', padding: '12px', fontSize: '13px', fontWeight: 700, fontFamily: 'var(--font-display)', cursor: pskPasteInput.trim() ? 'pointer' : 'not-allowed' }}
+                          >
+                            Verify My Key
+                          </button>
+                        </div>
+                      )}
                       {pskVerifyError && (
                         <div style={{ background: 'hsl(0 84% 60% / 0.1)', border: '1px solid hsl(0 84% 60% / 0.3)', borderRadius: '8px', padding: '12px', marginBottom: '12px' }}>
                           <p style={{ color: 'hsl(0 84% 60%)', fontSize: '12px', fontFamily: 'monospace', margin: 0 }}>❌ {pskVerifyError}</p>
