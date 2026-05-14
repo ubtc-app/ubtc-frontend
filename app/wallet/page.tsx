@@ -3,6 +3,8 @@
 import { useState, useEffect, Suspense } from 'react'
 import { API_URL, supabase } from '../lib/supabase'
 import { Icons } from '../components/Icons'
+import { isInTelegram } from '../lib/telegram'
+
 
 function WalletContent() {
   const [view, setView] = useState<'landing' | 'create' | 'lookup' | 'dashboard'>('landing')
@@ -502,9 +504,11 @@ function WalletContent() {
                     )}
                   </div>
                   <div style={{ display: 'flex', gap: '6px' }}>
+                   {!isInTelegram() && (
                     <button onClick={() => downloadProof(proof)} title={isDownloaded ? 'Re-download proof file' : 'Download proof file'} style={{ background: 'transparent', color: 'hsl(0 0% 55%)', ...mono, fontSize: '11px', fontWeight: 600, padding: '10px 12px', border: '1px solid hsl(220 10% 18%)', borderRadius: '8px', cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
                       {isDownloaded ? '↻ Re-download' : '↓ Download'}
                     </button>
+                    )}
                     <button onClick={() => window.location.href = `/redeem/proof?proof_id=${proof.proof_id}&vault_id=${proof.sender_vault_id}&amount=${proof.proof_data?.ownership?.ubtc_amount}`} style={{ background: 'hsl(142 76% 36%)', color: 'white', ...mono, fontSize: '11px', fontWeight: 700, padding: '10px 16px', border: 'none', borderRadius: '8px', cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
                       ⚡ Redeem to Bitcoin
                     </button>
