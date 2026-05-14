@@ -113,7 +113,7 @@ export default function Dashboard() {
   )
 
   return (
-    <div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', fontFamily: 'var(--font-display)' }}>
+    <div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', fontFamily: 'var(--font-display)', overflowX: 'hidden' }}>
 
       {/* Summary bar */}
       <div style={{ background: 'hsl(220 15% 4%)', borderBottom: '1px solid hsl(220 10% 9%)', padding: isMobile ? '20px 16px' : '28px 32px' }}>
