@@ -45,7 +45,7 @@ export default function Dashboard() {
     setLoading(true)
     try {
       const wallet = await loadWallet()
-      const pubkey = wallet?.dilithium_pk || ''
+     const pubkey = wallet?.publicKeys?.dilithium || ''
       const dashUrl = pubkey
         ? `${API_URL}/dashboard?user_pubkey=${encodeURIComponent(pubkey)}`
         : `${API_URL}/dashboard`
