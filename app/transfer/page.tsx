@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation'
 import { API_URL } from '../lib/supabase'
 import { Icons } from '../components/Icons'
 import { signedSpendWithPassword } from '../lib/wallet/challenge'
+import { isInTelegram } from '../lib/telegram'
 
 const toHex = (bytes: Uint8Array) => Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
 const fromHex = (hex: string) => new Uint8Array(hex.match(/.{1,2}/g)!.map(b => parseInt(b, 16)))
@@ -29,8 +30,9 @@ function TransferContent() {
   const walletUusdt = parseFloat(searchParams.get('uusdt') || '0')
   const walletUusdc = parseFloat(searchParams.get('uusdc') || '0')
   const isWalletSend = !!fromWallet
-  const [walletPassword, setWalletPassword] = useState('')
+ const [walletPassword, setWalletPassword] = useState('')
   const [passwordError, setPasswordError] = useState('')
+  const [pskPasteInput, setPskPasteInput] = useState('')
   const [userPassword, setUserPassword] = useState('')
   const [showUserPassword, setShowUserPassword] = useState(false)
 
@@ -659,7 +661,8 @@ function TransferContent() {
             {isWalletSend && (
               <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(205 85% 55% / 0.2)', borderRadius: '16px', padding: '18px 20px' }}>
                 <p style={{ color: 'hsl(205 85% 55%)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.2em', margin: '0 0 4px' }}>🔒 Authorise Transfer</p>
-                <p style={{ color: 'hsl(0 0% 35%)', fontSize: '11px', ...mono, margin: '0 0 12px', lineHeight: '1.6' }}>Upload your Protocol Second Key to authorise this transfer. This proves you are the vault owner.</p>
+                <p style={{ color: 'hsl(0 0% 35%)', fontSize: '11px', ...mono, margin: '0 0 12px', lineHeight: '1.6' }}>{isInTelegram() ? 'Paste your Protocol Second Key to authorise this transfer. This proves you are the vault owner.' : 'Upload your Protocol Second Key to authorise this transfer. This proves you are the vault owner.'}</p>
+                {!isInTelegram() && (
                 <label style={{ display: 'block', width: '100%', background: walletPassword ? 'hsl(142 76% 36% / 0.1)' : 'hsl(205 85% 55%)', color: walletPassword ? 'hsl(142 76% 36%)' : '#000', fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 700, padding: '12px 14px', borderRadius: '8px', cursor: 'pointer', textAlign: 'center' as const, boxSizing: 'border-box' as const, border: `1px solid ${walletPassword ? 'hsl(142 76% 36% / 0.3)' : 'transparent'}` }}>
                   {walletPassword ? '✅ Protocol Key Loaded' : '🔑 Upload Protocol Second Key'}
                   <input type="file" accept=".txt,.json,.key" style={{ display: 'none' }} onChange={async e => {
@@ -681,6 +684,45 @@ function TransferContent() {
                     } catch { setWalletPassword(key); setPasswordError('') }
                   }} />
                 </label>
+                )}
+                {isInTelegram() && !walletPassword && (
+                  <div>
+                    <textarea
+                      value={pskPasteInput}
+                      onChange={e => { setPskPasteInput(e.target.value); setPasswordError('') }}
+                      placeholder="Paste your Protocol Second Key here..."
+                      rows={3}
+                      style={{ width: '100%', padding: '12px 14px', background: 'hsl(220 15% 5%)', border: `1px solid ${passwordError ? 'hsl(0 84% 60% / 0.5)' : 'hsl(220 10% 14%)'}`, borderRadius: '10px', color: 'hsl(0 0% 88%)', fontSize: '12px', fontFamily: 'var(--font-mono)', outline: 'none', resize: 'none' as const, boxSizing: 'border-box' as const, marginBottom: '10px' }}
+                    />
+                    <button
+                      onClick={async () => {
+                        const text = (pskPasteInput || '').trim()
+                        const match = text.match(/[a-f0-9]{64,}/)
+                        const key = match ? match[0] : text
+                        if (!key) { setPasswordError('Paste your Protocol Second Key to verify'); return }
+                        setPasswordError('Verifying key...')
+                        try {
+                          const res = await fetch(`${API_URL}/wallet/verify-psk`, {
+                            method: 'POST', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ wallet_address: fromWallet, second_key: key })
+                          })
+                          const data = await res.json()
+                          if (!res.ok || data.error) { setPasswordError('❌ Wrong Protocol Second Key — check what you pasted'); setWalletPassword('') }
+                          else { setWalletPassword(key); setPasswordError(''); setPskPasteInput('') }
+                        } catch { setWalletPassword(key); setPasswordError(''); setPskPasteInput('') }
+                      }}
+                      disabled={!pskPasteInput.trim()}
+                      style={{ width: '100%', background: pskPasteInput.trim() ? 'hsl(205 85% 55%)' : 'hsl(220 10% 14%)', color: pskPasteInput.trim() ? '#000' : 'hsl(0 0% 28%)', border: 'none', borderRadius: '8px', padding: '12px', fontSize: '13px', fontWeight: 700, fontFamily: 'var(--font-mono)', cursor: pskPasteInput.trim() ? 'pointer' : 'not-allowed' }}
+                    >
+                      Verify Key
+                    </button>
+                  </div>
+                )}
+                {isInTelegram() && walletPassword && (
+                  <div style={{ width: '100%', background: 'hsl(142 76% 36% / 0.1)', color: 'hsl(142 76% 36%)', fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 700, padding: '12px 14px', borderRadius: '8px', textAlign: 'center' as const, boxSizing: 'border-box' as const, border: '1px solid hsl(142 76% 36% / 0.3)' }}>
+                    ✅ Protocol Key Verified
+                  </div>
+                )}
                 {passwordError && <p style={{ color: 'hsl(0 84% 60%)', fontSize: '12px', ...mono, margin: '8px 0 0' }}>{passwordError}</p>}
 
                 {/* Wallet password field — only shows after PSK loaded */}
