@@ -15,8 +15,8 @@ export default function VaultPage() {
   )
 }
 function VaultPageInner() {
-  const [step, setStep] = useState<Step>('account')
-  const [accountType, setAccountType] = useState<AccountType | null>(null)
+  const [step, setStep] = useState<Step>('confirm')
+  const [accountType, setAccountType] = useState<AccountType | null>('current')
   const [custodyPreference, setCustodyPreference] = useState<'ubtc' | 'bitgo' | 'komainu'>('ubtc')
   const [existingTypes, setExistingTypes] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
@@ -291,7 +291,7 @@ function VaultPageInner() {
             <h1 style={{ color: 'hsl(0 0% 92%)', fontSize: '38px', fontWeight: '700', margin: '0 0 12px' }}>
               {step === 'account' && 'Choose your account type'}
               {step === 'custody' && 'Custody preference'}
-              {step === 'confirm' && 'Review & confirm'}
+              {step === 'confirm' && 'Open your account'}
             </h1>
           </div>
         )}
@@ -368,7 +368,7 @@ function VaultPageInner() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid hsl(220 10% 12%)' }}>
                 <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: accountDetails[accountType].color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>{accountDetails[accountType].icon}</div>
                 <div>
-                  <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '20px', fontWeight: '700', margin: '0 0 4px' }}>{accountDetails[accountType].title}</h2>
+                 <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '20px', fontWeight: '700', margin: '0 0 4px' }}>Self-Custody Account</h2>
                   <p style={{ color: accountDetails[accountType].color, fontSize: '12px', ...mono, margin: 0 }}>{accountDetails[accountType].custodyLabel}</p>
                 </div>
               </div>
@@ -385,9 +385,8 @@ function VaultPageInner() {
               ))}
             </div>
             <div style={{ display: 'flex', gap: '12px' }}>
-              <button onClick={() => setStep('account')} style={btnBack}>← Back</button>
               <button onClick={createAccount} disabled={loading} style={btnNext(!loading)}>
-                {loading ? 'Opening account...' : 'Open Account →'}
+                {loading ? 'Opening account...' : 'Open Self-Custody Account →'}
               </button>
             </div>
             {error && <p style={{ color: 'hsl(0 84% 60%)', fontSize: '13px', ...mono }}>{error}</p>}
