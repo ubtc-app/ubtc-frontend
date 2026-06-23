@@ -34,13 +34,11 @@ export default function ResetPasswordPage() {
       const seeds = await deriveKeySeeds(bip39Seed)
       // Derive taproot address to verify mnemonic matches
       const { HDKey } = await import('@scure/bip32')
-     // @ts-ignore
-      const { sha256 } = await import('@noble/hashes/sha2')
       const root = HDKey.fromMasterSeed(seeds.taprootSeed)
       const child = root.derive("m/44'/0'/0'/0/0")
       if (!child.publicKey) { setError('Key derivation failed'); setLoading(false); return }
-      const hashBuf = sha256(child.publicKey)
-     const hashHex = Array.from(hashBuf as Uint8Array).map((b: number) => b.toString(16).padStart(2, '0')).join('')
+      const hashBuf = await crypto.subtle.digest('SHA-256', new Uint8Array(child.publicKey))
+      const hashHex = Array.from(new Uint8Array(hashBuf)).map((b: number) => b.toString(16).padStart(2, '0')).join('')
       const derivedAddress = `ubtc${hashHex.slice(0, 24)}`
       seeds.taprootSeed.fill(0)
       seeds.localEncKey.fill(0)

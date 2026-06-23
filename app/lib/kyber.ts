@@ -1,8 +1,8 @@
 import { MlKem1024 } from 'mlkem'
 
-function hexToBytes(hex: string): Uint8Array {
+function hexToBytes(hex: string): Uint8Array<ArrayBuffer> {
   if (hex.length % 2 !== 0) throw new Error('Invalid hex string')
-  const out = new Uint8Array(hex.length / 2)
+  const out = new Uint8Array(new ArrayBuffer(hex.length / 2))
   for (let i = 0; i < out.length; i++) {
     out[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16)
   }
@@ -13,7 +13,7 @@ function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
-async function deriveAesKey(sharedSecret: Uint8Array): Promise<CryptoKey> {
+async function deriveAesKey(sharedSecret: Uint8Array<ArrayBuffer>): Promise<CryptoKey> {
   const label = new TextEncoder().encode('UBTC_KYBER_AES_KEY_V1')
   const ikm = await crypto.subtle.importKey('raw', sharedSecret, 'HKDF', false, ['deriveKey'])
   return crypto.subtle.deriveKey(
@@ -33,7 +33,7 @@ export async function kyberEncrypt(plaintext: string, recipientKyberPkHex: strin
   const pkBytes = hexToBytes(recipientKyberPkHex)
   const kem = new MlKem1024()
   const [kemCt, sharedSecret] = await kem.encap(pkBytes)
-  const aesKey = await deriveAesKey(sharedSecret)
+  const aesKey = await deriveAesKey(sharedSecret.buffer instanceof ArrayBuffer ? sharedSecret as unknown as Uint8Array<ArrayBuffer> : new Uint8Array(sharedSecret))
   const iv = crypto.getRandomValues(new Uint8Array(12))
   const plaintextBytes = new TextEncoder().encode(plaintext)
   const ciphertextWithTag = await crypto.subtle.encrypt(
@@ -54,7 +54,7 @@ export async function kyberDecrypt(encrypted: string, holderKyberSkHex: string):
   const skBytes = hexToBytes(holderKyberSkHex)
   const kem = new MlKem1024()
   const sharedSecret = await kem.decap(kemCt, skBytes)
-  const aesKey = await deriveAesKey(sharedSecret)
+  const aesKey = await deriveAesKey(new Uint8Array(sharedSecret))
   let plaintext: ArrayBuffer
   try {
     plaintext = await crypto.subtle.decrypt(

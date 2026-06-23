@@ -8,7 +8,7 @@
  * the main thread.
  */
 
-import type { WorkerRequest, WorkerResponse } from './signing.worker'
+import type { WorkerPayload, WorkerRequest, WorkerResponse } from './signing.worker'
 import type { StoredWallet } from './types'
 
 let worker: Worker | null = null
@@ -22,7 +22,7 @@ function getWorker(): Worker {
   return worker
 }
 
-function call<T>(request: Omit<WorkerRequest, 'id'>): Promise<T> {
+function call<T>(request: WorkerPayload): Promise<T> {
   return new Promise((resolve, reject) => {
     const id = crypto.randomUUID()
     const w = getWorker()

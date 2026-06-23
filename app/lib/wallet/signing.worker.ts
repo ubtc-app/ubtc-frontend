@@ -39,11 +39,13 @@ interface StoredWallet {
 
 // ─── Message types ────────────────────────────────────────────────────────────
 
-export type WorkerRequest =
-  | { id: string; op: 'sign_hybrid'; wallet: StoredWallet; mnemonic: string; message: number[] }
-  | { id: string; op: 'sign_hybrid_with_enc_key'; wallet: StoredWallet; localEncKey: number[]; message: number[] }
-  | { id: string; op: 'create_wallet'; accountIndex: number }
-  | { id: string; op: 'restore_wallet'; mnemonic: string; accountIndex: number }
+export type WorkerPayload =
+  | { op: 'sign_hybrid'; wallet: StoredWallet; mnemonic: string; message: number[] }
+  | { op: 'sign_hybrid_with_enc_key'; wallet: StoredWallet; localEncKey: number[]; message: number[] }
+  | { op: 'create_wallet'; accountIndex: number }
+  | { op: 'restore_wallet'; mnemonic: string; accountIndex: number }
+
+export type WorkerRequest = WorkerPayload & { id: string }
 
 export type WorkerResponse =
   | { id: string; ok: true; result: unknown }
@@ -55,23 +57,27 @@ function toHex(bytes: Uint8Array): string {
   return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
-function fromHex(hex: string): Uint8Array {
+function fromHex(hex: string): Uint8Array<ArrayBuffer> {
   if (hex.length % 2 !== 0) throw new Error('Invalid hex string')
-  const out = new Uint8Array(hex.length / 2)
+  const out = new Uint8Array(new ArrayBuffer(hex.length / 2))
   for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16)
   return out
 }
 
 // ─── AES-256-GCM ─────────────────────────────────────────────────────────────
 
-async function importAesKey(keyMaterial: Uint8Array): Promise<CryptoKey> {
+async function importAesKey(keyMaterial: Uint8Array<ArrayBuffer>): Promise<CryptoKey> {
   return crypto.subtle.importKey('raw', keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt'])
 }
 
+function toArrayBuffer(arr: Uint8Array): Uint8Array<ArrayBuffer> {
+  return new Uint8Array(arr.buffer instanceof ArrayBuffer ? arr.buffer : arr.buffer.slice(arr.byteOffset, arr.byteOffset + arr.byteLength), arr.byteOffset, arr.byteLength) as Uint8Array<ArrayBuffer>
+}
+
 async function aesEncrypt(plaintext: Uint8Array, keyMaterial: Uint8Array): Promise<EncryptedBlob> {
-  const key = await importAesKey(keyMaterial)
+  const key = await importAesKey(toArrayBuffer(keyMaterial))
   const iv = crypto.getRandomValues(new Uint8Array(12))
-  const result = await crypto.subtle.encrypt({ name: 'AES-GCM', iv, tagLength: 128 }, key, plaintext)
+  const result = await crypto.subtle.encrypt({ name: 'AES-GCM', iv, tagLength: 128 }, key, toArrayBuffer(plaintext))
   const bytes = new Uint8Array(result)
   const tagOffset = bytes.length - 16
   return {
@@ -83,7 +89,7 @@ async function aesEncrypt(plaintext: Uint8Array, keyMaterial: Uint8Array): Promi
 }
 
 async function aesDecrypt(blob: EncryptedBlob, keyMaterial: Uint8Array): Promise<Uint8Array> {
-  const key = await importAesKey(keyMaterial)
+  const key = await importAesKey(toArrayBuffer(keyMaterial))
   const iv = fromHex(blob.iv)
   const ciphertext = fromHex(blob.ciphertext)
   const tag = fromHex(blob.tag)
@@ -103,8 +109,8 @@ async function aesDecrypt(blob: EncryptedBlob, keyMaterial: Uint8Array): Promise
 const QAP_HKDF_SALT = new TextEncoder().encode('QAP-V1')
 
 async function hkdfExtract(salt: Uint8Array, ikm: Uint8Array): Promise<CryptoKey> {
-  const saltKey = await crypto.subtle.importKey('raw', salt, { name: 'HMAC', hash: 'SHA-512' }, false, ['sign'])
-  const prk = await crypto.subtle.sign('HMAC', saltKey, ikm)
+  const saltKey = await crypto.subtle.importKey('raw', toArrayBuffer(salt), { name: 'HMAC', hash: 'SHA-512' }, false, ['sign'])
+  const prk = await crypto.subtle.sign('HMAC', saltKey, toArrayBuffer(ikm))
   return crypto.subtle.importKey('raw', prk, { name: 'HMAC', hash: 'SHA-512' }, false, ['sign'])
 }
 
@@ -119,7 +125,7 @@ async function hkdfExpand(prk: CryptoKey, info: string, length: number): Promise
     input.set(t)
     input.set(infoBytes, t.length)
     input[t.length + infoBytes.length] = counter++
-    t = new Uint8Array(await crypto.subtle.sign('HMAC', prk, input))
+    t = new Uint8Array(await crypto.subtle.sign('HMAC', prk, toArrayBuffer(input)))
     const toCopy = Math.min(t.length, length - offset)
     output.set(t.slice(0, toCopy), offset)
     offset += toCopy
@@ -170,7 +176,7 @@ async function generateKyberKeypair() {
 }
 
 async function deriveAddress(pubKey: Uint8Array): Promise<string> {
-  const hash = await crypto.subtle.digest('SHA-256', pubKey)
+  const hash = await crypto.subtle.digest('SHA-256', toArrayBuffer(pubKey))
   return `ubtc${toHex(new Uint8Array(hash)).slice(0, 24)}`
 }
 

@@ -157,6 +157,7 @@ export async function restoreWallet(mnemonic: string): Promise<WalletRestoreResu
           encrypted: stored.encrypted,
           version: stored.version,
           createdAt: stored.createdAt,
+          accountIndex: stored.accountIndex,
         },
       };
     }
@@ -198,6 +199,7 @@ export async function restoreWallet(mnemonic: string): Promise<WalletRestoreResu
       },
       version: "QAP-WALLET-V1",
       createdAt: Date.now(),
+      accountIndex: 0,
     };
 
     return { success: true, wallet };
