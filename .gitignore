@@ -48,3 +48,5 @@ setup-signing-overlay.ps1
 
 # Claude Code session files
 .claude/
+CLAUDE.md
+AGENTS.md
