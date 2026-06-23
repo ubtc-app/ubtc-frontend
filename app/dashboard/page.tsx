@@ -303,7 +303,7 @@ export default function Dashboard() {
                         {Icons.currentAccount(22, 'var(--t-accent)')}
                       </div>
                       <div>
-                        <p style={{ color: 'var(--t-text)', fontWeight: '700', fontSize: '15px', margin: '0 0 4px' }}>Self-Custody Vault</p>
+                        <p style={{ color: 'var(--t-text)', fontWeight: '700', fontSize: '15px', margin: '0 0 4px' }}>{{ current: 'Current Account', savings: 'Savings Account', yield: 'Yield Account', custody_yield: 'Custody Yield', prime: 'Prime Account', managed_yield: 'Managed Yield' }[vault.account_type as string] ?? 'Current Account'}</p>
                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                           <span className="pill" style={{ color: 'var(--t-accent)', borderColor: 'var(--t-accent-border)', background: 'var(--t-accent-bg)' }}>Self-Custody</span>
                           <span className="pill" style={{
