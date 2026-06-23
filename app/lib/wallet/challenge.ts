@@ -8,7 +8,7 @@
  * Backend's verify_quantum_challenge requires BOTH signatures.
  */
 
-import { signHybrid } from "./wallet";
+import { workerSignHybrid, workerSignHybridWithEncKey } from "./worker-client";
 import { loadWallet } from "./storage";
 import type { StoredWallet } from "./types";
 
@@ -22,7 +22,7 @@ interface ChallengeResponse {
 
 export interface SignedSpend {
   challenge_id: string;
-  signature: string;        // ML-DSA-65, base64
+  signature: string;        // ML-DSA-65, hex
   sphincs_signature: string; // SLH-DSA-SHAKE-256s, hex
 }
 
@@ -74,7 +74,7 @@ export async function signedSpend(
   );
 
   // 4. Sign with both ML-DSA-65 and SLH-DSA-SHAKE-256s
-  const { dilithiumSig, sphincsSig } = await signHybrid(wallet, mnemonic, message);
+  const { dilithiumSig, sphincsSig } = await workerSignHybrid(wallet, mnemonic, message);
 
   return {
     challenge_id: challenge.challenge_id,
@@ -96,9 +96,8 @@ export async function signedSpendWithPassword(
   paramsString: string,
   password: string
 ): Promise<SignedSpend> {
-  const { loadWallet, loadPasswordVault } = await import('./storage')
+  const { loadPasswordVault } = await import('./storage')
   const { unsealWithPassword } = await import('./password')
-  const { signHybridWithLocalEncKey } = await import('./wallet')
 
   const wallet = await loadWallet()
   if (!wallet) throw new Error('No wallet found in browser storage. Restore from mnemonic first.')
@@ -137,7 +136,7 @@ export async function signedSpendWithPassword(
     }
     let dilithiumSig: string, sphincsSig: string
     try {
-      const sigs = await signHybridWithLocalEncKey(wallet, localEncKey, message)
+      const sigs = await workerSignHybridWithEncKey(wallet, localEncKey, message)
       dilithiumSig = sigs.dilithiumSig
       sphincsSig = sigs.sphincsSig
     } finally {

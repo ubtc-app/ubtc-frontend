@@ -70,7 +70,7 @@ function WalletContent() {
       const data = await res.json()
       const wData = (data.wallets || []).find((w: any) => w.wallet_address === addr)
       if (wData) { setWalletData(wData); setView('dashboard') }
-      else { localStorage.removeItem('ubtc_wallet_address'); setView('landing') }
+      else { setView('landing') }
       try {
         const txRes = await fetch(`${API_URL}/wallet/${addr}/transactions`)
         if (txRes.ok) { const txData = await txRes.json(); setWalletTxs(txData.transactions || []) }
@@ -87,8 +87,8 @@ function WalletContent() {
   }
 
   const CopyBtn = ({ text, id }: { text: string; id: string }) => (
-    <button onClick={() => copy(text, id)} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: copied === id ? 'hsl(142 76% 36% / 0.15)' : 'hsl(220 12% 12%)', border: `1px solid ${copied === id ? 'hsl(142 76% 36% / 0.4)' : 'hsl(220 10% 20%)'}`, color: copied === id ? 'hsl(142 76% 36%)' : 'hsl(0 0% 50%)', borderRadius: '7px', padding: '6px 12px', fontSize: '11px', cursor: 'pointer', ...mono, whiteSpace: 'nowrap' as const, flexShrink: 0 }}>
-      {copied === id ? Icons.check(13, 'hsl(142 76% 36%)') : Icons.copy(13, 'hsl(0 0% 50%)')}
+    <button onClick={() => copy(text, id)} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: copied === id ? 'var(--t-green-bg)' : 'var(--t-surface2)', border: `1px solid ${copied === id ? 'hsl(142 76% 36% / 0.4)' : 'var(--t-border)'}`, color: copied === id ? 'var(--t-green)' : 'var(--t-muted)', borderRadius: '7px', padding: '6px 12px', fontSize: '11px', cursor: 'pointer', ...mono, whiteSpace: 'nowrap' as const, flexShrink: 0 }}>
+      {copied === id ? Icons.check(13, 'var(--t-green)') : Icons.copy(13, 'var(--t-muted)')}
       {copied === id ? 'Copied' : 'Copy'}
     </button>
   )
@@ -162,7 +162,7 @@ function WalletContent() {
     setLoading(false)
   }
 
-  const inputStyle: any = { display: 'block', width: '100%', padding: '13px 16px', background: 'hsl(220 15% 5%)', border: '1px solid hsl(220 10% 14%)', borderRadius: '12px', color: 'hsl(0 0% 92%)', fontSize: '14px', fontFamily: 'var(--font-mono)', outline: 'none', boxSizing: 'border-box' as const, marginBottom: '12px' }
+  const inputStyle: any = { display: 'block', width: '100%', padding: '13px 16px', background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '12px', color: 'var(--t-text)', fontSize: '14px', fontFamily: 'var(--font-mono)', outline: 'none', boxSizing: 'border-box' as const, marginBottom: '12px' }
 
   const accountMeta: Record<string, { icon: string; title: string }> = {
     current: { icon: '💳', title: 'Current Account' }, savings: { icon: '🔐', title: 'Savings Account' },
@@ -176,27 +176,27 @@ function WalletContent() {
 
   // ── LANDING ──
   if (view === 'landing') return (
-    <div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', fontFamily: 'var(--font-display)', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--t-bg)', fontFamily: 'var(--font-display)', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
       <div style={{ maxWidth: '400px', width: '100%', textAlign: 'center' as const }}>
-        <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'hsl(205 85% 55% / 0.1)', border: '2px solid hsl(205 85% 55% / 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+        <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'var(--t-accent-bg)', border: '2px solid hsl(205 85% 55% / 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
           <img src="/ubtcqwallet-logo.png" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
         </div>
-        <h1 style={{ color: 'hsl(0 0% 92%)', fontSize: '28px', fontWeight: '700', margin: '0 0 8px' }}>UBTC Wallet</h1>
-        <p style={{ color: 'hsl(0 0% 35%)', fontSize: '14px', ...mono, margin: '0 0 32px', lineHeight: '1.7' }}>Send and receive UBTC, UUSDT and UUSDC instantly.</p>
+        <h1 style={{ color: 'var(--t-text)', fontSize: '28px', fontWeight: '700', margin: '0 0 8px' }}>UBTC Wallet</h1>
+        <p style={{ color: 'var(--t-faint)', fontSize: '14px', ...mono, margin: '0 0 32px', lineHeight: '1.7' }}>Send and receive UBTC, UUSDT and UUSDC instantly.</p>
         <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '10px' }}>
           <button onClick={() => setView('create')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))', color: 'white', border: 'none', borderRadius: '14px', padding: '16px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)', boxShadow: '0 0 30px hsl(205 85% 55% / 0.3)' }}>
             {Icons.plus(18, 'white')} Create New Wallet
           </button>
-          <button onClick={() => setView('lookup')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'hsl(220 12% 10%)', border: '1px solid hsl(220 10% 16%)', color: 'hsl(0 0% 60%)', borderRadius: '14px', padding: '16px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
-            {Icons.user(18, 'hsl(0 0% 60%)')} Find a User
+          <button onClick={() => setView('lookup')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'var(--t-surface2)', border: '1px solid var(--t-border)', color: 'var(--t-muted)', borderRadius: '14px', padding: '16px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
+            {Icons.user(18, 'var(--t-muted)')} Find a User
           </button>
           {walletAddress && (
-            <button onClick={() => loadWallet(walletAddress)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'hsl(220 12% 10%)', border: '1px solid hsl(205 85% 55% / 0.35)', color: 'hsl(205 85% 60%)', borderRadius: '14px', padding: '16px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
-              {Icons.wallet(18, 'hsl(205 85% 60%)')} Open My Wallet
+            <button onClick={() => loadWallet(walletAddress)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'var(--t-surface2)', border: '1px solid hsl(205 85% 55% / 0.35)', color: 'var(--t-accent)', borderRadius: '14px', padding: '16px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
+              {Icons.wallet(18, 'var(--t-accent)')} Open My Wallet
             </button>
           )}
-          <a href="/dashboard" style={{ color: 'hsl(0 0% 25%)', fontSize: '13px', ...mono, textDecoration: 'none', marginTop: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-            {Icons.back(14, 'hsl(0 0% 25%)')} Back to Accounts
+          <a href="/dashboard" style={{ color: 'var(--t-faint)', fontSize: '13px', ...mono, textDecoration: 'none', marginTop: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+            {Icons.back(14, 'var(--t-faint)')} Back to Accounts
           </a>
         </div>
       </div>
@@ -205,64 +205,64 @@ function WalletContent() {
 
   // ── CREATE ──
   if (view === 'create') return (
-    <div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', fontFamily: 'var(--font-display)', padding: '40px 20px' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--t-bg)', fontFamily: 'var(--font-display)', padding: '40px 20px' }}>
       <div style={{ maxWidth: '480px', margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '32px' }}>
-          <button onClick={() => setView('landing')} style={{ background: 'none', border: 'none', color: 'hsl(0 0% 40%)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>{Icons.back(20, 'hsl(0 0% 40%)')}</button>
-          <h1 style={{ color: 'hsl(0 0% 92%)', fontSize: '24px', fontWeight: '700', margin: 0 }}>Create Wallet</h1>
+          <button onClick={() => setView('landing')} style={{ background: 'none', border: 'none', color: 'var(--t-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>{Icons.back(20, 'var(--t-muted)')}</button>
+          <h1 style={{ color: 'var(--t-text)', fontSize: '24px', fontWeight: '700', margin: 0 }}>Create Wallet</h1>
         </div>
         {createResult ? (
           <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '14px' }}>
             <div style={{ textAlign: 'center' as const, marginBottom: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>{Icons.key(52, 'hsl(205 85% 55%)')}</div>
-              <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '24px', fontWeight: '700', margin: '0 0 6px' }}>Save Your Recovery Phrase</h2>
-              <p style={{ color: 'hsl(0 0% 38%)', fontSize: '14px', ...mono, margin: 0 }}>@{createResult.username} · Wallet created</p>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>{Icons.key(52, 'var(--t-accent)')}</div>
+              <h2 style={{ color: 'var(--t-text)', fontSize: '24px', fontWeight: '700', margin: '0 0 6px' }}>Save Your Recovery Phrase</h2>
+              <p style={{ color: 'var(--t-faint)', fontSize: '14px', ...mono, margin: 0 }}>@{createResult.username} · Wallet created</p>
             </div>
             {createResult.mnemonic && (
-              <div style={{ background: 'hsl(220 15% 5%)', border: '1px solid hsl(38 92% 50% / 0.5)', borderRadius: '12px', padding: '20px' }}>
-                <p style={{ color: 'hsl(38 92% 50%)', fontSize: '11px', fontFamily: 'monospace', textTransform: 'uppercase' as const, letterSpacing: '0.2em', margin: '0 0 16px', fontWeight: 700 }}>⚠️ Your 24-Word Recovery Phrase</p>
-                <p style={{ color: 'hsl(0 0% 45%)', fontSize: '12px', fontFamily: 'monospace', margin: '0 0 16px', lineHeight: '1.6' }}>These 24 words are the ONLY way to recover your wallet and the ONLY way to authorise spending. Never share them. Never store them digitally. Write them on paper and store safely offline.</p>
+              <div style={{ background: 'var(--t-surface)', border: '1px solid hsl(38 92% 50% / 0.5)', borderRadius: '12px', padding: '20px' }}>
+                <p style={{ color: 'var(--t-orange)', fontSize: '11px', fontFamily: 'monospace', textTransform: 'uppercase' as const, letterSpacing: '0.2em', margin: '0 0 16px', fontWeight: 700 }}>⚠️ Your 24-Word Recovery Phrase</p>
+                <p style={{ color: 'var(--t-muted)', fontSize: '12px', fontFamily: 'monospace', margin: '0 0 16px', lineHeight: '1.6' }}>These 24 words are the ONLY way to recover your wallet and the ONLY way to authorise spending. Never share them. Never store them digitally. Write them on paper and store safely offline.</p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '16px' }}>
                   {createResult.mnemonic.split(' ').map((word: string, i: number) => (
-                    <div key={i} style={{ background: 'hsl(220 15% 8%)', border: '1px solid hsl(220 10% 16%)', borderRadius: '8px', padding: '8px 10px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <span style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', fontFamily: 'monospace', minWidth: '20px' }}>{i + 1}.</span>
-                      <span style={{ color: 'hsl(0 0% 88%)', fontSize: '13px', fontFamily: 'monospace', fontWeight: 600 }}>{word}</span>
+                    <div key={i} style={{ background: 'var(--t-surface2)', border: '1px solid var(--t-border)', borderRadius: '8px', padding: '8px 10px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <span style={{ color: 'var(--t-faint)', fontSize: '10px', fontFamily: 'monospace', minWidth: '20px' }}>{i + 1}.</span>
+                      <span style={{ color: 'var(--t-text)', fontSize: '13px', fontFamily: 'monospace', fontWeight: 600 }}>{word}</span>
                     </div>
                   ))}
                 </div>
                 <button onClick={() => {
                   navigator.clipboard.writeText(createResult.mnemonic)
-                }} style={{ background: 'hsl(220 12% 12%)', color: 'hsl(0 0% 55%)', border: '1px solid hsl(220 10% 18%)', borderRadius: '8px', padding: '10px 16px', fontSize: '12px', fontFamily: 'monospace', cursor: 'pointer', width: '100%' }}>
+                }} style={{ background: 'var(--t-surface2)', color: 'var(--t-muted)', border: '1px solid var(--t-border)', borderRadius: '8px', padding: '10px 16px', fontSize: '12px', fontFamily: 'monospace', cursor: 'pointer', width: '100%' }}>
                   Copy to clipboard (paste into secure password manager)
                 </button>
               </div>
             )}
-            <div onClick={() => setProtocolKeySaved(!protocolKeySaved)} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', background: 'hsl(220 12% 8%)', border: `1px solid ${protocolKeySaved ? 'hsl(142 76% 36% / 0.4)' : 'hsl(220 10% 14%)'}`, borderRadius: '12px', padding: '14px', cursor: 'pointer' }}>
-              <div style={{ width: '22px', height: '22px', borderRadius: '6px', border: `2px solid ${protocolKeySaved ? 'hsl(142 76% 36%)' : 'hsl(220 10% 28%)'}`, background: protocolKeySaved ? 'hsl(142 76% 36%)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div onClick={() => setProtocolKeySaved(!protocolKeySaved)} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', background: 'var(--t-surface)', border: `1px solid ${protocolKeySaved ? 'hsl(142 76% 36% / 0.4)' : 'var(--t-border)'}`, borderRadius: '12px', padding: '14px', cursor: 'pointer' }}>
+              <div style={{ width: '22px', height: '22px', borderRadius: '6px', border: `2px solid ${protocolKeySaved ? 'var(--t-green)' : 'var(--t-border)'}`, background: protocolKeySaved ? 'var(--t-green)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 {protocolKeySaved && Icons.check(13, 'white')}
               </div>
-              <p style={{ color: 'hsl(0 0% 45%)', fontSize: '13px', ...mono, margin: 0, lineHeight: '1.6' }}>I have written down my 24-word recovery phrase and stored it safely offline.</p>
+              <p style={{ color: 'var(--t-muted)', fontSize: '13px', ...mono, margin: 0, lineHeight: '1.6' }}>I have written down my 24-word recovery phrase and stored it safely offline.</p>
             </div>
-            <button onClick={() => { if (protocolKeySaved) { setWalletData(createResult); setWalletAddress(createResult.wallet_address); setView('dashboard'); loadWallet(createResult.wallet_address) } }} disabled={!protocolKeySaved} style={{ background: protocolKeySaved ? 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))' : 'hsl(220 10% 12%)', color: protocolKeySaved ? 'white' : 'hsl(0 0% 28%)', border: 'none', borderRadius: '14px', padding: '16px', fontSize: '16px', fontWeight: '700', cursor: protocolKeySaved ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', boxShadow: protocolKeySaved ? '0 0 30px hsl(205 85% 55% / 0.4)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-              {Icons.wallet(18, protocolKeySaved ? 'white' : 'hsl(0 0% 28%)')} Open My Wallet →
+            <button onClick={() => { if (protocolKeySaved) { setWalletData(createResult); setWalletAddress(createResult.wallet_address); setView('dashboard'); loadWallet(createResult.wallet_address) } }} disabled={!protocolKeySaved} style={{ background: protocolKeySaved ? 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))' : 'var(--t-border)', color: protocolKeySaved ? 'white' : 'var(--t-faint)', border: 'none', borderRadius: '14px', padding: '16px', fontSize: '16px', fontWeight: '700', cursor: protocolKeySaved ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', boxShadow: protocolKeySaved ? '0 0 30px hsl(205 85% 55% / 0.4)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              {Icons.wallet(18, protocolKeySaved ? 'white' : 'var(--t-faint)')} Open My Wallet →
             </button>
           </div>
         ) : (
-          <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 14%)', borderRadius: '20px', padding: '28px' }}>
-            <label style={{ display: 'block', color: 'hsl(0 0% 35%)', fontSize: '11px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.12em', marginBottom: '8px' }}>Username</label>
+          <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '20px', padding: '28px' }}>
+            <label style={{ display: 'block', color: 'var(--t-faint)', fontSize: '11px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.12em', marginBottom: '8px' }}>Username</label>
             <input value={username} onChange={e => setUsername(e.target.value)} placeholder="satoshi" style={inputStyle} autoFocus />
-            <label style={{ display: 'block', color: 'hsl(0 0% 35%)', fontSize: '11px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.12em', marginBottom: '8px' }}>Email</label>
+            <label style={{ display: 'block', color: 'var(--t-faint)', fontSize: '11px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.12em', marginBottom: '8px' }}>Email</label>
             <input value={email} onChange={e => setEmail(e.target.value)} placeholder="satoshi@bitcoin.org" type="email" style={inputStyle} />
-            <label style={{ display: 'block', color: 'hsl(0 0% 35%)', fontSize: '11px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.12em', marginBottom: '8px' }}>Wallet Name (optional)</label>
+            <label style={{ display: 'block', color: 'var(--t-faint)', fontSize: '11px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.12em', marginBottom: '8px' }}>Wallet Name (optional)</label>
             <input value={walletName} onChange={e => setWalletName(e.target.value)} placeholder="My Main Wallet" style={inputStyle} />
-            <label style={{ display: 'block', color: 'hsl(0 0% 35%)', fontSize: '11px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.12em', marginBottom: '8px' }}>Link to Vault (optional)</label>
+            <label style={{ display: 'block', color: 'var(--t-faint)', fontSize: '11px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.12em', marginBottom: '8px' }}>Link to Vault (optional)</label>
             <select value={linkedVaultId} onChange={e => setLinkedVaultId(e.target.value)} style={{ ...inputStyle, appearance: 'none' as const }}>
               <option value="">No vault linked</option>
               {vaults.map(v => { const meta = accountMeta[v.account_type] || { icon: '💳', title: v.account_type }; return <option key={v.vault_id} value={v.vault_id}>{meta.icon} {meta.title} — {v.vault_id}</option> })}
             </select>
-            {error && <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: 'hsl(0 84% 60% / 0.08)', border: '1px solid hsl(0 84% 60% / 0.25)', borderRadius: '10px', padding: '12px 14px', marginBottom: '14px' }}>{Icons.warning(14, 'hsl(0 84% 60%)')}<p style={{ color: 'hsl(0 84% 60%)', fontSize: '13px', ...mono, margin: 0 }}>{error}</p></div>}
-            <button onClick={createWallet} disabled={loading || !username || !email} style={{ width: '100%', background: username && email && !loading ? 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))' : 'hsl(220 10% 12%)', color: username && email && !loading ? 'white' : 'hsl(0 0% 28%)', border: 'none', borderRadius: '12px', padding: '16px', fontSize: '16px', fontWeight: '700', cursor: username && email && !loading ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-              {Icons.key(18, username && email && !loading ? 'white' : 'hsl(0 0% 28%)')}
+            {error && <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: 'var(--t-red-bg)', border: '1px solid hsl(0 84% 60% / 0.25)', borderRadius: '10px', padding: '12px 14px', marginBottom: '14px' }}>{Icons.warning(14, 'var(--t-red)')}<p style={{ color: 'var(--t-red)', fontSize: '13px', ...mono, margin: 0 }}>{error}</p></div>}
+            <button onClick={createWallet} disabled={loading || !username || !email} style={{ width: '100%', background: username && email && !loading ? 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))' : 'var(--t-border)', color: username && email && !loading ? 'white' : 'var(--t-faint)', border: 'none', borderRadius: '12px', padding: '16px', fontSize: '16px', fontWeight: '700', cursor: username && email && !loading ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              {Icons.key(18, username && email && !loading ? 'white' : 'var(--t-faint)')}
               {loading ? 'Creating...' : 'Create Wallet & Generate Keys'}
             </button>
           </div>
@@ -273,24 +273,24 @@ function WalletContent() {
 
   // ── LOOKUP ──
   if (view === 'lookup') return (
-    <div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', fontFamily: 'var(--font-display)', padding: '40px 20px' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--t-bg)', fontFamily: 'var(--font-display)', padding: '40px 20px' }}>
       <div style={{ maxWidth: '480px', margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '32px' }}>
-          <button onClick={() => { setView('landing'); setError(''); setLookupResult(null); setLookupUsername('') }} style={{ background: 'none', border: 'none', color: 'hsl(0 0% 40%)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>{Icons.back(20, 'hsl(0 0% 40%)')}</button>
-          <h1 style={{ color: 'hsl(0 0% 92%)', fontSize: '24px', fontWeight: '700', margin: 0 }}>Find a User</h1>
+          <button onClick={() => { setView('landing'); setError(''); setLookupResult(null); setLookupUsername('') }} style={{ background: 'none', border: 'none', color: 'var(--t-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>{Icons.back(20, 'var(--t-muted)')}</button>
+          <h1 style={{ color: 'var(--t-text)', fontSize: '24px', fontWeight: '700', margin: 0 }}>Find a User</h1>
         </div>
-        <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 14%)', borderRadius: '20px', padding: '28px' }}>
+        <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '20px', padding: '28px' }}>
           <input value={lookupUsername} onChange={e => { setLookupUsername(e.target.value); setError(''); setLookupResult(null) }} onKeyDown={e => e.key === 'Enter' && lookupUser()} placeholder="@username or wallet address" style={inputStyle} autoFocus />
-          {error && <p style={{ color: 'hsl(0 84% 60%)', fontSize: '13px', ...mono, marginBottom: '12px' }}>{error}</p>}
-          <button onClick={lookupUser} disabled={loading || !lookupUsername} style={{ width: '100%', background: lookupUsername && !loading ? 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))' : 'hsl(220 10% 12%)', color: lookupUsername && !loading ? 'white' : 'hsl(0 0% 28%)', border: 'none', borderRadius: '12px', padding: '14px', fontSize: '15px', fontWeight: '700', cursor: lookupUsername && !loading ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)' }}>
+          {error && <p style={{ color: 'var(--t-red)', fontSize: '13px', ...mono, marginBottom: '12px' }}>{error}</p>}
+          <button onClick={lookupUser} disabled={loading || !lookupUsername} style={{ width: '100%', background: lookupUsername && !loading ? 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))' : 'var(--t-border)', color: lookupUsername && !loading ? 'white' : 'var(--t-faint)', border: 'none', borderRadius: '12px', padding: '14px', fontSize: '15px', fontWeight: '700', cursor: lookupUsername && !loading ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)' }}>
             {loading ? 'Searching...' : 'Find User'}
           </button>
         </div>
         {lookupResult && (
-          <div style={{ marginTop: '16px', background: 'hsl(220 12% 8%)', border: '1px solid hsl(142 76% 36% / 0.3)', borderRadius: '16px', padding: '22px' }}>
-            <p style={{ color: 'hsl(0 0% 92%)', fontWeight: '700', fontSize: '16px', margin: '0 0 8px' }}>@{lookupResult.username}</p>
+          <div style={{ marginTop: '16px', background: 'var(--t-surface)', border: '1px solid hsl(142 76% 36% / 0.3)', borderRadius: '16px', padding: '22px' }}>
+            <p style={{ color: 'var(--t-text)', fontWeight: '700', fontSize: '16px', margin: '0 0 8px' }}>@{lookupResult.username}</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-              <p style={{ color: 'hsl(0 0% 65%)', fontSize: '11px', ...mono, margin: 0, flex: 1, wordBreak: 'break-all' as const }}>{lookupResult.wallet_address}</p>
+              <p style={{ color: 'var(--t-muted)', fontSize: '11px', ...mono, margin: 0, flex: 1, wordBreak: 'break-all' as const }}>{lookupResult.wallet_address}</p>
               <CopyBtn text={lookupResult.wallet_address} id="lookup-addr" />
             </div>
             <button onClick={() => { setWalletAddress(lookupResult.wallet_address); localStorage.setItem('ubtc_wallet_address', lookupResult.wallet_address); loadWallet(lookupResult.wallet_address) }} style={{ width: '100%', background: 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))', color: 'white', border: 'none', borderRadius: '12px', padding: '14px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>Open Wallet →</button>
@@ -302,55 +302,55 @@ function WalletContent() {
 
   // ── DASHBOARD ──
   return (
-    <div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', fontFamily: 'var(--font-display)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--t-bg)', fontFamily: 'var(--font-display)' }}>
 
       {/* Proof download modal */}
       {proofModal.type && (
-        <div style={{ position: 'fixed', inset: 0, background: 'hsl(220 15% 2% / 0.95)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-          <div style={{ background: 'hsl(220 12% 8%)', borderRadius: '24px', padding: '40px', maxWidth: '480px', width: '100%', border: `2px solid ${proofModal.type === 'success' ? 'hsl(142 76% 36% / 0.4)' : 'hsl(38 92% 50% / 0.4)'}` }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'var(--t-bg)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+          <div style={{ background: 'var(--t-surface)', borderRadius: '24px', padding: '40px', maxWidth: '480px', width: '100%', border: `2px solid ${proofModal.type === 'success' ? 'hsl(142 76% 36% / 0.4)' : 'hsl(38 92% 50% / 0.4)'}` }}>
             {proofModal.type === 'warning' && (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '20px' }}>
                   <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'hsl(38 92% 50% / 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', flexShrink: 0 }}>⚠️</div>
                   <div>
-                    <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '20px', fontWeight: '700', margin: '0 0 2px' }}>Read Before Downloading</h2>
-                    <p style={{ color: 'hsl(38 92% 50%)', fontSize: '12px', ...mono, margin: 0 }}>Bearer Instrument Warning</p>
+                    <h2 style={{ color: 'var(--t-text)', fontSize: '20px', fontWeight: '700', margin: '0 0 2px' }}>Read Before Downloading</h2>
+                    <p style={{ color: 'var(--t-orange)', fontSize: '12px', ...mono, margin: 0 }}>Bearer Instrument Warning</p>
                   </div>
                 </div>
-                <div style={{ background: 'hsl(220 15% 5%)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
-                  <p style={{ color: 'hsl(0 0% 75%)', fontSize: '13px', ...mono, margin: '0 0 16px', lineHeight: '1.7' }}>This proof file is <strong style={{ color: 'hsl(38 92% 50%)' }}>digital cash</strong>. Anyone with both of these can redeem your Bitcoin:</p>
+                <div style={{ background: 'var(--t-surface)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+                  <p style={{ color: 'hsl(0 0% 75%)', fontSize: '13px', ...mono, margin: '0 0 16px', lineHeight: '1.7' }}>This proof file is <strong style={{ color: 'var(--t-orange)' }}>digital cash</strong>. Anyone with both of these can redeem your Bitcoin:</p>
                   <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '8px', marginBottom: '16px' }}>
                     {[{ icon: '📄', label: 'This .ubtc proof file' }, { icon: '🔑', label: 'Your 24-word recovery phrase' }].map(item => (
-                      <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'hsl(0 84% 60% / 0.08)', border: '1px solid hsl(0 84% 60% / 0.2)', borderRadius: '8px', padding: '12px 14px' }}>
+                      <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--t-red-bg)', border: '1px solid hsl(0 84% 60% / 0.2)', borderRadius: '8px', padding: '12px 14px' }}>
                         <span style={{ fontSize: '18px' }}>{item.icon}</span>
                         <p style={{ color: 'hsl(0 0% 82%)', fontSize: '13px', ...mono, margin: 0, fontWeight: 600 }}>{item.label}</p>
                       </div>
                     ))}
                   </div>
-                  <div style={{ borderTop: '1px solid hsl(220 10% 12%)', paddingTop: '14px', display: 'flex', flexDirection: 'column' as const, gap: '8px' }}>
+                  <div style={{ borderTop: '1px solid var(--t-border-subtle)', paddingTop: '14px', display: 'flex', flexDirection: 'column' as const, gap: '8px' }}>
                     {['Store proof file and recovery phrase in separate secure locations', 'Never store them together on the same device', 'Never send them in the same email or message', 'Treat this file like physical cash'].map((rule, i) => (
                       <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                        <span style={{ color: 'hsl(38 92% 50%)', fontSize: '12px', marginTop: '1px', flexShrink: 0 }}>→</span>
-                        <p style={{ color: 'hsl(0 0% 55%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.5' }}>{rule}</p>
+                        <span style={{ color: 'var(--t-orange)', fontSize: '12px', marginTop: '1px', flexShrink: 0 }}>→</span>
+                        <p style={{ color: 'var(--t-muted)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.5' }}>{rule}</p>
                       </div>
                     ))}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={() => setProofModal({ type: null })} style={{ background: 'none', border: '1px solid hsl(220 10% 18%)', color: 'hsl(0 0% 40%)', borderRadius: '12px', padding: '14px 20px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>Cancel</button>
-                  <button onClick={() => downloadProof(proofModal.proof)} style={{ flex: 1, background: 'hsl(38 92% 50%)', color: '#000', border: 'none', borderRadius: '12px', padding: '14px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>I Understand — Download</button>
+                  <button onClick={() => setProofModal({ type: null })} style={{ background: 'none', border: '1px solid var(--t-border)', color: 'var(--t-muted)', borderRadius: '12px', padding: '14px 20px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>Cancel</button>
+                  <button onClick={() => downloadProof(proofModal.proof)} style={{ flex: 1, background: 'var(--t-orange)', color: '#000', border: 'none', borderRadius: '12px', padding: '14px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>I Understand — Download</button>
                 </div>
               </>
             )}
             {proofModal.type === 'success' && (
               <>
                 <div style={{ textAlign: 'center' as const, marginBottom: '24px' }}>
-                  <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'hsl(142 76% 36% / 0.15)', border: '2px solid hsl(142 76% 36% / 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: '32px' }}>✅</div>
-                  <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '22px', fontWeight: '700', margin: '0 0 6px' }}>Proof File Downloaded</h2>
-                  <p style={{ color: 'hsl(142 76% 36%)', fontSize: '13px', ...mono, margin: 0 }}>{proofModal.proof?.proof_data?.ownership?.ubtc_amount || '?'} UBTC bearer instrument</p>
+                  <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'var(--t-green-bg)', border: '2px solid hsl(142 76% 36% / 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: '32px' }}>✅</div>
+                  <h2 style={{ color: 'var(--t-text)', fontSize: '22px', fontWeight: '700', margin: '0 0 6px' }}>Proof File Downloaded</h2>
+                  <p style={{ color: 'var(--t-green)', fontSize: '13px', ...mono, margin: 0 }}>{proofModal.proof?.proof_data?.ownership?.ubtc_amount || '?'} UBTC bearer instrument</p>
                 </div>
-                <div style={{ background: 'hsl(220 15% 5%)', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
-                  <p style={{ color: 'hsl(0 0% 55%)', fontSize: '12px', ...mono, margin: '0 0 14px', lineHeight: '1.7' }}>Server copy marked for deletion. Store your proof file now:</p>
+                <div style={{ background: 'var(--t-surface)', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
+                  <p style={{ color: 'var(--t-muted)', fontSize: '12px', ...mono, margin: '0 0 14px', lineHeight: '1.7' }}>Server copy marked for deletion. Store your proof file now:</p>
                   {[
                     { icon: '💾', text: 'Save the .ubtc file to a USB drive or secure offline storage' },
                     { icon: '🔑', text: 'Store recovery phrase separately — different device or location' },
@@ -364,7 +364,7 @@ function WalletContent() {
                   ))}
                 </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={() => setProofModal({ type: null })} style={{ flex: 1, background: 'none', border: '1px solid hsl(220 10% 18%)', color: 'hsl(0 0% 40%)', borderRadius: '12px', padding: '14px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>Done</button>
+                  <button onClick={() => setProofModal({ type: null })} style={{ flex: 1, background: 'none', border: '1px solid var(--t-border)', color: 'var(--t-muted)', borderRadius: '12px', padding: '14px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>Done</button>
                   <a href="/redeem/proof" style={{ flex: 1, background: 'linear-gradient(135deg, hsl(38,92%,50%), hsl(32,90%,45%))', color: '#000', border: 'none', borderRadius: '12px', padding: '14px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Redeem Now →</a>
                 </div>
               </>
@@ -376,19 +376,19 @@ function WalletContent() {
       {/* Manage Tokens Modal */}
       {showManageTokens && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-          <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 16%)', borderRadius: '20px', padding: '28px', maxWidth: '400px', width: '100%' }}>
-            <h3 style={{ color: 'hsl(0 0% 92%)', fontSize: '18px', fontWeight: '700', margin: '0 0 20px' }}>Manage Tokens</h3>
+          <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '20px', padding: '28px', maxWidth: '400px', width: '100%' }}>
+            <h3 style={{ color: 'var(--t-text)', fontSize: '18px', fontWeight: '700', margin: '0 0 20px' }}>Manage Tokens</h3>
             {[
-              { key: 'ubtc', name: 'UBTC', sub: 'Bitcoin-backed · Always enabled', color: 'hsl(38 92% 50%)', locked: true },
-              { key: 'uusdt', name: 'UUSDT', sub: '1:1 USDT · Bitcoin-native', color: 'hsl(142 76% 36%)', locked: false },
-              { key: 'uusdc', name: 'UUSDC', sub: '1:1 USDC · Bitcoin-native', color: 'hsl(220 85% 60%)', locked: false },
+              { key: 'ubtc', name: 'UBTC', sub: 'Bitcoin-backed · Always enabled', color: 'var(--t-orange)', locked: true },
+              { key: 'uusdt', name: 'UUSDT', sub: '1:1 USDT · Bitcoin-native', color: 'var(--t-green)', locked: false },
+              { key: 'uusdc', name: 'UUSDC', sub: '1:1 USDC · Bitcoin-native', color: 'var(--t-accent)', locked: false },
             ].map(t => (
-              <div key={t.key} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 0', borderBottom: '1px solid hsl(220 10% 12%)' }}>
+              <div key={t.key} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 0', borderBottom: '1px solid var(--t-border-subtle)' }}>
                 <div style={{ flex: 1 }}>
-                  <p style={{ color: 'hsl(0 0% 88%)', fontWeight: '600', fontSize: '14px', margin: '0 0 2px' }}>{t.name}</p>
-                  <p style={{ color: 'hsl(0 0% 32%)', fontSize: '11px', ...mono, margin: 0 }}>{t.sub}</p>
+                  <p style={{ color: 'var(--t-text)', fontWeight: '600', fontSize: '14px', margin: '0 0 2px' }}>{t.name}</p>
+                  <p style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono, margin: 0 }}>{t.sub}</p>
                 </div>
-                <div onClick={() => !t.locked && setTokens(prev => ({ ...prev, [t.key]: !prev[t.key as keyof typeof prev] }))} style={{ width: '44px', height: '26px', borderRadius: '13px', background: tokens[t.key as keyof typeof tokens] ? t.color : 'hsl(220 12% 14%)', cursor: t.locked ? 'default' : 'pointer', position: 'relative' as const, transition: 'all 0.2s', flexShrink: 0 }}>
+                <div onClick={() => !t.locked && setTokens(prev => ({ ...prev, [t.key]: !prev[t.key as keyof typeof prev] }))} style={{ width: '44px', height: '26px', borderRadius: '13px', background: tokens[t.key as keyof typeof tokens] ? t.color : 'var(--t-surface3)', cursor: t.locked ? 'default' : 'pointer', position: 'relative' as const, transition: 'all 0.2s', flexShrink: 0 }}>
                   <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'white', position: 'absolute' as const, top: '3px', left: tokens[t.key as keyof typeof tokens] ? '21px' : '3px', transition: 'left 0.2s' }} />
                 </div>
               </div>
@@ -399,57 +399,57 @@ function WalletContent() {
       )}
 
       {/* Header */}
-      <div style={{ background: 'hsl(220 15% 5%)', borderBottom: '1px solid hsl(220 10% 10%)', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px' }}>
-        <a href="/dashboard" style={{ color: 'hsl(0 0% 38%)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', ...mono }}>
-          {Icons.back(16, 'hsl(0 0% 38%)')} Accounts
+      <div style={{ background: 'var(--t-surface)', borderBottom: '1px solid var(--t-border-subtle)', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px' }}>
+        <a href="/dashboard" style={{ color: 'var(--t-faint)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', ...mono }}>
+          {Icons.back(16, 'var(--t-faint)')} Accounts
         </a>
-        <span style={{ color: 'hsl(0 0% 55%)', fontWeight: '700', fontSize: '15px' }}>UBTC Wallet</span>
-        <button onClick={() => loadWallet(walletData?.wallet_address || walletAddress)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'hsl(0 0% 28%)' }}>
-          {Icons.refresh(18, 'hsl(0 0% 28%)')}
+        <span style={{ color: 'var(--t-muted)', fontWeight: '700', fontSize: '15px' }}>UBTC Wallet</span>
+        <button onClick={() => loadWallet(walletData?.wallet_address || walletAddress)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--t-faint)' }}>
+          {Icons.refresh(18, 'var(--t-faint)')}
         </button>
       </div>
 
       {/* Balance hero */}
-      <div style={{ background: 'hsl(220 15% 4%)', padding: '40px 24px 32px', textAlign: 'center' as const, borderBottom: '1px solid hsl(220 10% 9%)' }}>
-        <p style={{ color: 'hsl(0 0% 38%)', fontSize: '12px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 6px' }}>@{walletData?.username}</p>
-        <p style={{ color: 'hsl(0 0% 92%)', fontSize: '44px', fontWeight: '700', ...mono, margin: '0 0 4px', lineHeight: '1' }}>
+      <div style={{ background: 'var(--t-bg)', padding: '40px 24px 32px', textAlign: 'center' as const, borderBottom: '1px solid var(--t-border-subtle)' }}>
+        <p style={{ color: 'var(--t-faint)', fontSize: '12px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 6px' }}>@{walletData?.username}</p>
+        <p style={{ color: 'var(--t-text)', fontSize: '44px', fontWeight: '700', ...mono, margin: '0 0 4px', lineHeight: '1' }}>
           ${(balance + uusdtBalance + uusdcBalance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </p>
-        <p style={{ color: 'hsl(0 0% 28%)', fontSize: '12px', ...mono, margin: '0 0 24px' }}>Total Balance</p>
+        <p style={{ color: 'var(--t-faint)', fontSize: '12px', ...mono, margin: '0 0 24px' }}>Total Balance</p>
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', maxWidth: '380px', margin: '0 auto' }}>
           {[
-            { label: 'Send', icon: Icons.send(18, 'hsl(0 0% 55%)'), href: `/transfer?from_wallet=${walletData?.wallet_address}&ubtc=${balance}&uusdt=${uusdtBalance}&uusdc=${uusdcBalance}` },
-            { label: 'Receive', icon: Icons.receive(18, 'hsl(0 0% 55%)'), action: () => copy(walletData?.wallet_address || '', 'recv') },
-            { label: 'Redeem', icon: Icons.redeem(18, 'hsl(38 92% 50%)'), href: '/redeem/proof', highlight: true },
-            { label: 'Tokens', icon: Icons.settings(18, 'hsl(0 0% 55%)'), action: () => setShowManageTokens(true) },
+            { label: 'Send', icon: Icons.send(18, 'var(--t-muted)'), href: `/transfer?from_wallet=${walletData?.wallet_address}&ubtc=${balance}&uusdt=${uusdtBalance}&uusdc=${uusdcBalance}` },
+            { label: 'Receive', icon: Icons.receive(18, 'var(--t-muted)'), action: () => copy(walletData?.wallet_address || '', 'recv') },
+            { label: 'Redeem', icon: Icons.redeem(18, 'var(--t-orange)'), href: '/redeem/proof', highlight: true },
+            { label: 'Tokens', icon: Icons.settings(18, 'var(--t-muted)'), action: () => setShowManageTokens(true) },
           ].map(btn => (
             btn.href
-              ? <a key={btn.label} href={btn.href} style={{ flex: 1, background: (btn as any).highlight ? 'hsl(38 92% 50% / 0.1)' : 'hsl(220 12% 10%)', border: `1px solid ${(btn as any).highlight ? 'hsl(38 92% 50% / 0.3)' : 'hsl(220 10% 15%)'}`, borderRadius: '14px', padding: '14px 8px', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: '6px', textDecoration: 'none' }}>
+              ? <a key={btn.label} href={btn.href} style={{ flex: 1, background: (btn as any).highlight ? 'var(--t-orange-bg)' : 'var(--t-surface2)', border: `1px solid ${(btn as any).highlight ? 'hsl(38 92% 50% / 0.3)' : 'var(--t-border)'}`, borderRadius: '14px', padding: '14px 8px', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: '6px', textDecoration: 'none' }}>
                 {btn.icon}
-                <span style={{ color: (btn as any).highlight ? 'hsl(38 92% 55%)' : 'hsl(0 0% 48%)', fontSize: '11px', fontWeight: '600', ...mono }}>{btn.label}</span>
+                <span style={{ color: (btn as any).highlight ? 'var(--t-orange)' : 'hsl(0 0% 48%)', fontSize: '11px', fontWeight: '600', ...mono }}>{btn.label}</span>
               </a>
-              : <button key={btn.label} onClick={(btn as any).action} style={{ flex: 1, background: 'hsl(220 12% 10%)', border: '1px solid hsl(220 10% 15%)', borderRadius: '14px', padding: '14px 8px', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: '6px', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
+              : <button key={btn.label} onClick={(btn as any).action} style={{ flex: 1, background: 'var(--t-surface2)', border: '1px solid var(--t-border)', borderRadius: '14px', padding: '14px 8px', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: '6px', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
                 {btn.icon}
                 <span style={{ color: 'hsl(0 0% 48%)', fontSize: '11px', fontWeight: '600', ...mono }}>{btn.label}</span>
               </button>
           ))}
         </div>
       </div>
-      {copied === 'recv' && <p style={{ color: 'hsl(142 76% 36%)', fontSize: '12px', ...mono, margin: '12px 0 0', textAlign: 'center' as const }}>Address copied</p>}
+      {copied === 'recv' && <p style={{ color: 'var(--t-green)', fontSize: '12px', ...mono, margin: '12px 0 0', textAlign: 'center' as const }}>Address copied</p>}
 
       <div style={{ maxWidth: '480px', margin: '0 auto', padding: '24px 16px' }}>
 
         {/* Assets */}
-        <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 10px' }}>Assets</p>
+        <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 10px' }}>Assets</p>
         {[
-          { show: true, name: 'UBTC', sub: 'Bitcoin-backed', color: 'hsl(38 92% 50%)', bal: '$' + balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), unit: 'UBTC' },
-          { show: tokens.uusdt, name: 'UUSDT', sub: '1:1 USDT · Bitcoin-native', color: 'hsl(142 76% 36%)', bal: '$' + uusdtBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), unit: 'UUSDT' },
-          { show: tokens.uusdc, name: 'UUSDC', sub: '1:1 USDC · Bitcoin-native', color: 'hsl(220 85% 60%)', bal: '$' + uusdcBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), unit: 'UUSDC' },
+          { show: true, name: 'UBTC', sub: 'Bitcoin-backed', color: 'var(--t-orange)', bal: '$' + balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), unit: 'UBTC' },
+          { show: tokens.uusdt, name: 'UUSDT', sub: '1:1 USDT · Bitcoin-native', color: 'var(--t-green)', bal: '$' + uusdtBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), unit: 'UUSDT' },
+          { show: tokens.uusdc, name: 'UUSDC', sub: '1:1 USDC · Bitcoin-native', color: 'var(--t-accent)', bal: '$' + uusdcBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), unit: 'UUSDC' },
         ].filter(t => t.show).map(t => (
-          <div key={t.name} style={{ background: 'hsl(220 12% 8%)', border: `1px solid ${t.color}1a`, borderRadius: '14px', padding: '16px 18px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div key={t.name} style={{ background: 'var(--t-surface)', border: `1px solid ${t.color}1a`, borderRadius: '14px', padding: '16px 18px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '14px' }}>
             <div style={{ flex: 1 }}>
-              <p style={{ color: 'hsl(0 0% 88%)', fontWeight: '600', fontSize: '14px', margin: '0 0 2px' }}>{t.name}</p>
-              <p style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', ...mono, margin: 0 }}>{t.sub}</p>
+              <p style={{ color: 'var(--t-text)', fontWeight: '600', fontSize: '14px', margin: '0 0 2px' }}>{t.name}</p>
+              <p style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono, margin: 0 }}>{t.sub}</p>
             </div>
             <div style={{ textAlign: 'right' as const }}>
               <p style={{ color: t.color, fontWeight: '700', fontSize: '18px', ...mono, margin: '0 0 1px' }}>{t.bal}</p>
@@ -460,10 +460,10 @@ function WalletContent() {
 
         {/* Wallet address */}
         {walletData && (
-          <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 12%)', borderRadius: '14px', padding: '16px', margin: '16px 0' }}>
-            <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 8px' }}>Wallet Address</p>
+          <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border-subtle)', borderRadius: '14px', padding: '16px', margin: '16px 0' }}>
+            <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 8px' }}>Wallet Address</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <p style={{ color: 'hsl(205 85% 55%)', fontSize: '11px', ...mono, margin: 0, flex: 1, wordBreak: 'break-all' as const }}>{walletData.wallet_address}</p>
+              <p style={{ color: 'var(--t-accent)', fontSize: '11px', ...mono, margin: 0, flex: 1, wordBreak: 'break-all' as const }}>{walletData.wallet_address}</p>
               <CopyBtn text={walletData.wallet_address} id="wal-addr" />
             </div>
           </div>
@@ -471,22 +471,22 @@ function WalletContent() {
 
         {/* Pending Proof Files */}
         {pendingProofs.length > 0 && (
-          <div style={{ background: 'hsl(220 12% 8%)', border: '2px solid hsl(38 92% 50% / 0.6)', borderRadius: '16px', padding: '20px', margin: '16px 0', boxShadow: '0 0 24px hsl(38 92% 50% / 0.15)' }}>
+          <div style={{ background: 'var(--t-surface)', border: '2px solid hsl(38 92% 50% / 0.6)', borderRadius: '16px', padding: '20px', margin: '16px 0', boxShadow: '0 0 24px hsl(38 92% 50% / 0.15)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
               <span style={{ fontSize: '18px' }}>📥</span>
-              <p style={{ color: 'hsl(38 92% 50%)', fontSize: '12px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: 0, fontWeight: 700 }}>
+              <p style={{ color: 'var(--t-orange)', fontSize: '12px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: 0, fontWeight: 700 }}>
                 {pendingProofs.length} Incoming Proof File{pendingProofs.length > 1 ? 's' : ''} — Action Required
               </p>
             </div>
-            <p style={{ color: 'hsl(0 0% 45%)', fontSize: '11px', ...mono, margin: '0 0 16px', lineHeight: '1.7' }}>
+            <p style={{ color: 'var(--t-muted)', fontSize: '11px', ...mono, margin: '0 0 16px', lineHeight: '1.7' }}>
               You have received UBTC. Enter your recovery phrase to redeem directly to Bitcoin.
             </p>
             {pendingProofs.map((proof: any) => {
               const isDownloaded = !!proof.downloaded
-              const accentColor = isDownloaded ? 'hsl(0 0% 30%)' : 'hsl(190 80% 50%)'
-              const borderColor = isDownloaded ? 'hsl(220 10% 14%)' : 'hsl(190 80% 50% / 0.35)'
+              const accentColor = isDownloaded ? 'var(--t-faint)' : 'hsl(190 80% 50%)'
+              const borderColor = isDownloaded ? 'var(--t-border)' : 'hsl(190 80% 50% / 0.35)'
               return (
-              <div key={proof.proof_id} style={{ background: 'hsl(220 15% 5%)', borderRadius: '10px', padding: '14px', marginBottom: '10px', border: `1px solid ${borderColor}` }}>
+              <div key={proof.proof_id} style={{ background: 'var(--t-surface)', borderRadius: '10px', padding: '14px', marginBottom: '10px', border: `1px solid ${borderColor}` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
@@ -495,21 +495,21 @@ function WalletContent() {
                         <span style={{ background: 'hsl(190 80% 50% / 0.15)', color: 'hsl(190 80% 65%)', fontSize: '9px', ...mono, fontWeight: 700, letterSpacing: '0.08em', padding: '3px 7px', borderRadius: '999px', textTransform: 'uppercase' }}>New</span>
                       )}
                       {isDownloaded && (
-                        <span style={{ background: 'hsl(220 10% 10%)', color: 'hsl(0 0% 45%)', fontSize: '9px', ...mono, fontWeight: 700, letterSpacing: '0.08em', padding: '3px 7px', borderRadius: '999px', textTransform: 'uppercase' }}>Saved</span>
+                        <span style={{ background: 'var(--t-border-subtle)', color: 'var(--t-muted)', fontSize: '9px', ...mono, fontWeight: 700, letterSpacing: '0.08em', padding: '3px 7px', borderRadius: '999px', textTransform: 'uppercase' }}>Saved</span>
                       )}
                     </div>
                     <p style={{ color: accentColor, fontSize: '10px', ...mono, margin: 0 }}>from {proof.sender_vault_id} · {new Date(proof.created_at).toLocaleString()}</p>
                     {isDownloaded && proof.downloaded_at && (
-                      <p style={{ color: 'hsl(0 0% 25%)', fontSize: '9px', ...mono, margin: '2px 0 0' }}>Saved to your device · {new Date(proof.downloaded_at).toLocaleString()}</p>
+                      <p style={{ color: 'var(--t-faint)', fontSize: '9px', ...mono, margin: '2px 0 0' }}>Saved to your device · {new Date(proof.downloaded_at).toLocaleString()}</p>
                     )}
                   </div>
                   <div style={{ display: 'flex', gap: '6px' }}>
                    {!isInTelegram() && (
-                    <button onClick={() => downloadProof(proof)} title={isDownloaded ? 'Re-download proof file' : 'Download proof file'} style={{ background: 'transparent', color: 'hsl(0 0% 55%)', ...mono, fontSize: '11px', fontWeight: 600, padding: '10px 12px', border: '1px solid hsl(220 10% 18%)', borderRadius: '8px', cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
+                    <button onClick={() => downloadProof(proof)} title={isDownloaded ? 'Re-download proof file' : 'Download proof file'} style={{ background: 'transparent', color: 'var(--t-muted)', ...mono, fontSize: '11px', fontWeight: 600, padding: '10px 12px', border: '1px solid var(--t-border)', borderRadius: '8px', cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
                       {isDownloaded ? '↻ Re-download' : '↓ Download'}
                     </button>
                     )}
-                    <button onClick={() => window.location.href = `/redeem/proof?proof_id=${proof.proof_id}&vault_id=${proof.sender_vault_id}&amount=${proof.proof_data?.ownership?.ubtc_amount}`} style={{ background: 'hsl(142 76% 36%)', color: 'white', ...mono, fontSize: '11px', fontWeight: 700, padding: '10px 16px', border: 'none', borderRadius: '8px', cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
+                    <button onClick={() => window.location.href = `/redeem/proof?proof_id=${proof.proof_id}&vault_id=${proof.sender_vault_id}&amount=${proof.proof_data?.ownership?.ubtc_amount}`} style={{ background: 'var(--t-green)', color: 'white', ...mono, fontSize: '11px', fontWeight: 700, padding: '10px 16px', border: 'none', borderRadius: '8px', cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
                       ⚡ Redeem to Bitcoin
                     </button>
                   </div>
@@ -522,29 +522,29 @@ function WalletContent() {
         )}
 
         {/* Transactions */}
-        <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '16px 0 10px' }}>Transactions</p>
+        <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '16px 0 10px' }}>Transactions</p>
         {walletTxs.length === 0 ? (
-          <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 12%)', borderRadius: '14px', padding: '40px', textAlign: 'center' as const }}>
-            <p style={{ color: 'hsl(0 0% 25%)', fontSize: '13px', ...mono, margin: 0 }}>No transactions yet</p>
+          <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border-subtle)', borderRadius: '14px', padding: '40px', textAlign: 'center' as const }}>
+            <p style={{ color: 'var(--t-faint)', fontSize: '13px', ...mono, margin: 0 }}>No transactions yet</p>
           </div>
         ) : walletTxs.map((tx: any) => {
           const isIn = tx.is_incoming
-          const color = isIn ? 'hsl(142 76% 36%)' : 'hsl(0 84% 60%)'
+          const color = isIn ? 'var(--t-green)' : 'var(--t-red)'
           return (
-            <div key={tx.id} style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 11%)', borderRadius: '12px', padding: '14px 16px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div key={tx.id} style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border-subtle)', borderRadius: '12px', padding: '14px 16px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: color + '12', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 {isIn ? Icons.receive(16, color) : Icons.send(16, color)}
               </div>
               <div style={{ flex: 1 }}>
                 <p style={{ color: 'hsl(0 0% 82%)', fontWeight: '600', fontSize: '13px', margin: '0 0 2px' }}>{tx.description}</p>
-                <p style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', ...mono, margin: 0 }}>{new Date(tx.created_at).toLocaleString()}</p>
+                <p style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono, margin: 0 }}>{new Date(tx.created_at).toLocaleString()}</p>
               </div>
               <p style={{ color, fontWeight: '700', fontSize: '14px', ...mono, margin: 0 }}>{isIn ? '+' : '-'}{parseFloat(tx.amount).toLocaleString()} UBTC</p>
             </div>
           )
         })}
 
-        <button onClick={() => { localStorage.removeItem('ubtc_wallet_address'); setWalletData(null); setView('landing') }} style={{ width: '100%', background: 'none', border: '1px solid hsl(220 10% 12%)', color: 'hsl(0 0% 22%)', borderRadius: '12px', padding: '12px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', ...mono, marginTop: '16px' }}>
+        <button onClick={() => { localStorage.removeItem('ubtc_wallet_address'); setWalletData(null); setView('landing') }} style={{ width: '100%', background: 'none', border: '1px solid var(--t-border-subtle)', color: 'hsl(0 0% 22%)', borderRadius: '12px', padding: '12px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', ...mono, marginTop: '16px' }}>
           Sign out of wallet
         </button>
       </div>
@@ -554,7 +554,7 @@ function WalletContent() {
 
 export default function WalletPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'hsl(0 0% 28%)', fontFamily: 'var(--font-mono)' }}>Loading...</div>}>
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'var(--t-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--t-faint)', fontFamily: 'var(--font-mono)' }}>Loading...</div>}>
       <WalletContent />
     </Suspense>
   )

@@ -21,7 +21,7 @@ const mono: any = { fontFamily: 'var(--font-mono)' }
 
 export function SigningOverlay({
   stage,
-  tokenColor = 'hsl(38 92% 50%)',
+  tokenColor = 'var(--t-orange)',
   tokenName = 'UBTC',
   amount,
   context = 'Authorizing redemption',
@@ -89,7 +89,7 @@ export function SigningOverlay({
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'hsl(220 15% 3% / 0.88)',
+        background: 'var(--t-bg)',
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)',
         display: 'flex',
@@ -102,13 +102,13 @@ export function SigningOverlay({
     >
       <div
         style={{
-          background: 'linear-gradient(180deg, hsl(220 15% 7%) 0%, hsl(220 15% 4%) 100%)',
+          background: 'linear-gradient(180deg, var(--t-surface2) 0%, var(--t-bg) 100%)',
           border: `1px solid ${tokenColor}22`,
           borderRadius: '20px',
           padding: '36px 32px 28px',
           maxWidth: '460px',
           width: 'calc(100% - 32px)',
-          boxShadow: `0 30px 80px -20px hsl(220 15% 0% / 0.85), 0 0 0 1px ${tokenColor}08`,
+          boxShadow: `0 30px 80px -20px var(--t-bg), 0 0 0 1px ${tokenColor}08`,
           textAlign: 'center',
         }}
       >
@@ -141,7 +141,7 @@ export function SigningOverlay({
 
         <h2
           style={{
-            color: 'hsl(0 0% 92%)',
+            color: 'var(--t-text)',
             fontSize: '22px',
             fontWeight: 700,
             margin: '0 0 10px',
@@ -201,12 +201,12 @@ export function SigningOverlay({
         {amount && (
           <p
             style={{
-              color: 'hsl(0 0% 35%)',
+              color: 'var(--t-faint)',
               fontSize: '11px',
               ...mono,
               margin: '0 0 16px',
               paddingBottom: '16px',
-              borderBottom: '1px solid hsl(220 10% 11%)',
+              borderBottom: '1px solid var(--t-border-subtle)',
             }}
           >
             {parseFloat(amount).toLocaleString()} {tokenName}
@@ -215,7 +215,7 @@ export function SigningOverlay({
 
         <p
           style={{
-            color: 'hsl(0 0% 32%)',
+            color: 'var(--t-faint)',
             fontSize: '10px',
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
@@ -252,8 +252,8 @@ function Step({
   state: 'pending' | 'active' | 'done'
   tokenColor: string
 }) {
-  const successColor = 'hsl(142 76% 36%)'
-  const pendingColor = 'hsl(220 10% 22%)'
+  const successColor = 'var(--t-green)'
+  const pendingColor = 'var(--t-border)'
   const color =
     state === 'done' ? successColor : state === 'active' ? tokenColor : pendingColor
 
@@ -278,7 +278,7 @@ function Step({
           alignItems: 'center',
           justifyContent: 'center',
           fontSize: '13px',
-          color: state === 'done' ? 'hsl(220 15% 3%)' : color,
+          color: state === 'done' ? 'var(--t-bg)' : color,
           fontWeight: 700,
           transition: 'all 0.25s ease',
           animation: state === 'active' ? 'wlb-pulse 1.4s ease-in-out infinite' : 'none',
@@ -303,13 +303,13 @@ function Step({
 }
 
 function Connector({ done }: { done: boolean }) {
-  const successColor = 'hsl(142 76% 36%)'
+  const successColor = 'var(--t-green)'
   return (
     <div
       style={{
         flex: 1,
         height: '2px',
-        background: done ? successColor : 'hsl(220 10% 16%)',
+        background: done ? successColor : 'var(--t-border)',
         marginTop: '14px',
         transition: 'background 0.3s ease',
       }}

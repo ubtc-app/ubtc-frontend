@@ -38,18 +38,25 @@ import type {
 } from "./types";
 
 // BIP32 derivation paths
-// Wallet root: m/44'/0'/0'/0/0 (single key per wallet)
-// Vault path:  m/44'/0'/1'/0/<vaultIndex> (one BTC custody key per vault)
-const TAPROOT_DERIVATION_PATH = "m/44'/0'/0'/0/0";
+// Account root: m/44'/0'/<accountIndex>'/0/0
+// Vault path:   m/44'/0'/<accountIndex>'/1/<vaultIndex>
 const VAULT_TAPROOT_BASE_PATH = "m/44'/0'/1'/0";
+
+function taprootPath(accountIndex: number): string {
+  return `m/44'/0'/${accountIndex}'/0/0`;
+}
 
 // ─── Wallet Creation ──────────────────────────────────────────────────────────
 
-export async function createWallet(): Promise<QAPWallet> {
+export async function createWallet(accountIndex = 0): Promise<QAPWallet> {
   const mnemonic = generateMnemonic(wordlist, 256);
+  return createWalletFromMnemonic(mnemonic, accountIndex);
+}
+
+export async function createWalletFromMnemonic(mnemonic: string, accountIndex = 0): Promise<QAPWallet> {
   const bip39Seed = mnemonicToSeedSync(mnemonic);
   const seeds = await deriveKeySeeds(bip39Seed);
-  const { taprootPrivKey, taprootPubKey } = deriveTaprootKey(seeds.taprootSeed);
+  const { taprootPrivKey, taprootPubKey } = deriveTaprootKey(seeds.taprootSeed, accountIndex);
   const { kyberPubKey, kyberSecKey } = await generateKyberKeypair();
   const { dilithiumPubKey, dilithiumSecKey } = generateDilithiumKeypair(seeds.dilithiumSeed);
   const { sphincsPubKey, sphincsSecKey } = generateSphincsKeypair(seeds.sphincsSeed);
@@ -91,6 +98,7 @@ export async function createWallet(): Promise<QAPWallet> {
     encrypted,
     version: "QAP-WALLET-V1",
     createdAt: Date.now(),
+    accountIndex,
   };
 }
 
@@ -101,6 +109,7 @@ export async function persistWallet(wallet: QAPWallet): Promise<void> {
     encrypted: wallet.encrypted,
     version: wallet.version,
     createdAt: wallet.createdAt,
+    accountIndex: wallet.accountIndex,
   };
   await saveWallet(stored);
 }
@@ -316,17 +325,12 @@ export async function signHybrid(
   const dilithiumSk = await getDilithiumSecretKey(wallet, mnemonic);
   const sphincsSk = await getSphincsSecretKey(wallet, mnemonic);
 
-  console.log('[signHybrid] dilithiumSk length:', dilithiumSk.length, 'expected 4032');
-    console.log('[signHybrid] sphincsSk length:', sphincsSk.length, 'expected 128');
-    console.log('[signHybrid] wallet address:', wallet.address);
-    console.log('[signHybrid] dilithium_sk.ciphertext length:', wallet.encrypted.dilithium_sk.ciphertext?.length);
-	
   try {
     const dilithiumSigBytes = ml_dsa65.sign(message, dilithiumSk)
     const sphincsSigBytes = slh_dsa_shake_256s.sign(message, sphincsSk)
 
     return {
-      dilithiumSig: btoa(String.fromCharCode(...dilithiumSigBytes)),
+      dilithiumSig: toHex(dilithiumSigBytes),
       sphincsSig: toHex(sphincsSigBytes),
     };
   } finally {
@@ -364,12 +368,12 @@ export function createKeyShareBStub(
 
 // ─── Internal Key Derivation ──────────────────────────────────────────────────
 
-function deriveTaprootKey(taprootSeed: Uint8Array): {
+function deriveTaprootKey(taprootSeed: Uint8Array, accountIndex = 0): {
   taprootPrivKey: Uint8Array;
   taprootPubKey: Uint8Array;
 } {
   const root = HDKey.fromMasterSeed(taprootSeed);
-  const child = root.derive(TAPROOT_DERIVATION_PATH);
+  const child = root.derive(taprootPath(accountIndex));
 
   if (!child.privateKey || !child.publicKey) {
     throw new Error("BIP32 derivation failed");
@@ -455,8 +459,8 @@ export async function signHybridWithLocalEncKey(
     const dilithiumSigBytes = ml_dsa65.sign(message, dilithiumSk)
     const sphincsSigBytes = slh_dsa_shake_256s.sign(message, sphincsSk)
     return {
-      dilithiumSig: btoa(String.fromCharCode(...dilithiumSigBytes)),
-      sphincsSig: Array.from(sphincsSigBytes).map(b => b.toString(16).padStart(2, '0')).join(''),
+      dilithiumSig: toHex(dilithiumSigBytes),
+      sphincsSig: toHex(sphincsSigBytes),
     }
   } finally {
     dilithiumSk.fill(0)

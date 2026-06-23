@@ -85,15 +85,15 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--t-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
       <div style={{ width: '100%', maxWidth: '480px' }}>
 
         <div style={{ textAlign: 'center' as const, marginBottom: '32px' }}>
-          <h1 style={{ color: 'hsl(0 0% 92%)', fontSize: '28px', fontWeight: 700, margin: '0 0 8px' }}>Reset Wallet Password</h1>
-          <p style={{ color: 'hsl(0 0% 38%)', fontSize: '13px', ...mono, margin: 0 }}>Use your 24-word recovery phrase to set a new password</p>
+          <h1 style={{ color: 'var(--t-text)', fontSize: '28px', fontWeight: 700, margin: '0 0 8px' }}>Reset Wallet Password</h1>
+          <p style={{ color: 'var(--t-faint)', fontSize: '13px', ...mono, margin: 0 }}>Use your 24-word recovery phrase to set a new password</p>
         </div>
 
-        <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 13%)', borderRadius: '20px', padding: '28px' }}>
+        <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '20px', padding: '28px' }}>
 
           {/* Step 1 — Enter mnemonic */}
           {step === 'mnemonic' && (
@@ -101,13 +101,13 @@ export default function ResetPasswordPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
                 <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'hsl(38 92% 50% / 0.15)', border: '1px solid hsl(38 92% 50% / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>🔑</div>
                 <div>
-                  <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '18px', fontWeight: 700, margin: '0 0 4px' }}>Enter Your Recovery Phrase</h2>
-                  <p style={{ color: 'hsl(38 92% 50%)', fontSize: '11px', ...mono, margin: 0 }}>Step 1 of 2</p>
+                  <h2 style={{ color: 'var(--t-text)', fontSize: '18px', fontWeight: 700, margin: '0 0 4px' }}>Enter Your Recovery Phrase</h2>
+                  <p style={{ color: 'var(--t-orange)', fontSize: '11px', ...mono, margin: 0 }}>Step 1 of 2</p>
                 </div>
               </div>
 
-              <div style={{ background: 'hsl(220 15% 5%)', border: '1px solid hsl(38 92% 50% / 0.2)', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
-                <p style={{ color: 'hsl(0 0% 55%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.8' }}>
+              <div style={{ background: 'var(--t-surface)', border: '1px solid hsl(38 92% 50% / 0.2)', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+                <p style={{ color: 'var(--t-muted)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.8' }}>
                   Enter all 24 words in order, separated by spaces. This verifies you are the wallet owner before allowing a password reset.
                 </p>
               </div>
@@ -117,19 +117,19 @@ export default function ResetPasswordPage() {
                 onChange={e => setMnemonic(e.target.value)}
                 placeholder="word1 word2 word3 ... word24"
                 rows={4}
-                style={{ width: '100%', padding: '14px', background: 'hsl(220 15% 5%)', border: '1px solid hsl(220 10% 16%)', borderRadius: '10px', color: 'hsl(0 0% 88%)', fontSize: '14px', ...mono, marginBottom: '12px', boxSizing: 'border-box' as const, outline: 'none', resize: 'vertical' as const, lineHeight: '1.8' }}
+                style={{ width: '100%', padding: '14px', background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '10px', color: 'var(--t-text)', fontSize: '14px', ...mono, marginBottom: '12px', boxSizing: 'border-box' as const, outline: 'none', resize: 'vertical' as const, lineHeight: '1.8' }}
               />
 
               {mnemonic.trim().split(/\s+/).length > 1 && (
-                <p style={{ color: 'hsl(0 0% 35%)', fontSize: '11px', ...mono, margin: '0 0 12px' }}>
+                <p style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono, margin: '0 0 12px' }}>
                   {mnemonic.trim().split(/\s+/).length} / 24 words entered
                 </p>
               )}
 
-              {error && <p style={{ color: 'hsl(0 84% 60%)', fontSize: '12px', ...mono, margin: '0 0 12px' }}>{error}</p>}
+              {error && <p style={{ color: 'var(--t-red)', fontSize: '12px', ...mono, margin: '0 0 12px' }}>{error}</p>}
 
               <button onClick={verifyMnemonic} disabled={loading || mnemonic.trim().split(/\s+/).length < 24}
-                style={{ width: '100%', background: mnemonic.trim().split(/\s+/).length >= 24 ? 'hsl(38 92% 50%)' : 'hsl(220 10% 12%)', color: mnemonic.trim().split(/\s+/).length >= 24 ? '#000' : 'hsl(0 0% 30%)', border: 'none', borderRadius: '12px', padding: '16px', fontSize: '15px', fontWeight: 700, cursor: mnemonic.trim().split(/\s+/).length >= 24 ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)' }}>
+                style={{ width: '100%', background: mnemonic.trim().split(/\s+/).length >= 24 ? 'var(--t-orange)' : 'var(--t-border)', color: mnemonic.trim().split(/\s+/).length >= 24 ? '#000' : 'var(--t-faint)', border: 'none', borderRadius: '12px', padding: '16px', fontSize: '15px', fontWeight: 700, cursor: mnemonic.trim().split(/\s+/).length >= 24 ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)' }}>
                 {loading ? 'Verifying...' : 'Verify Recovery Phrase →'}
               </button>
             </div>
@@ -139,39 +139,39 @@ export default function ResetPasswordPage() {
           {step === 'password' && (
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'hsl(142 76% 36% / 0.15)', border: '1px solid hsl(142 76% 36% / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>🔒</div>
+                <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'var(--t-green-bg)', border: '1px solid hsl(142 76% 36% / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>🔒</div>
                 <div>
-                  <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '18px', fontWeight: 700, margin: '0 0 4px' }}>Set New Password</h2>
-                  <p style={{ color: 'hsl(142 76% 36%)', fontSize: '11px', ...mono, margin: 0 }}>Step 2 of 2 — Recovery phrase verified ✅</p>
+                  <h2 style={{ color: 'var(--t-text)', fontSize: '18px', fontWeight: 700, margin: '0 0 4px' }}>Set New Password</h2>
+                  <p style={{ color: 'var(--t-green)', fontSize: '11px', ...mono, margin: 0 }}>Step 2 of 2 — Recovery phrase verified ✅</p>
                 </div>
               </div>
 
-              <div style={{ background: 'hsl(142 76% 36% / 0.08)', border: '1px solid hsl(142 76% 36% / 0.2)', borderRadius: '12px', padding: '14px', marginBottom: '20px' }}>
-                <p style={{ color: 'hsl(0 0% 55%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.8' }}>
+              <div style={{ background: 'var(--t-green-bg)', border: '1px solid hsl(142 76% 36% / 0.2)', borderRadius: '12px', padding: '14px', marginBottom: '20px' }}>
+                <p style={{ color: 'var(--t-muted)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.8' }}>
                   Your new password will re-encrypt your Quantum Kyber key on this device. Your recovery phrase remains the master key.
                 </p>
               </div>
 
               <input type="password" placeholder="New password (min 8 characters)" value={newPassword} onChange={e => setNewPassword(e.target.value)}
-                style={{ width: '100%', padding: '13px 16px', background: 'hsl(220 15% 5%)', border: '1px solid hsl(220 10% 16%)', borderRadius: '10px', color: 'hsl(0 0% 88%)', fontSize: '14px', ...mono, marginBottom: '10px', boxSizing: 'border-box' as const, outline: 'none' }} />
+                style={{ width: '100%', padding: '13px 16px', background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '10px', color: 'var(--t-text)', fontSize: '14px', ...mono, marginBottom: '10px', boxSizing: 'border-box' as const, outline: 'none' }} />
               <input type="password" placeholder="Confirm new password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
-                style={{ width: '100%', padding: '13px 16px', background: 'hsl(220 15% 5%)', border: '1px solid hsl(220 10% 16%)', borderRadius: '10px', color: 'hsl(0 0% 88%)', fontSize: '14px', ...mono, marginBottom: '16px', boxSizing: 'border-box' as const, outline: 'none' }} />
+                style={{ width: '100%', padding: '13px 16px', background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '10px', color: 'var(--t-text)', fontSize: '14px', ...mono, marginBottom: '16px', boxSizing: 'border-box' as const, outline: 'none' }} />
 
               {newPassword.length > 0 && (
                 <div style={{ marginBottom: '12px' }}>
-                  <div style={{ height: '4px', borderRadius: '2px', background: 'hsl(220 10% 14%)', marginBottom: '4px' }}>
-                    <div style={{ height: '100%', borderRadius: '2px', width: `${Math.min(100, newPassword.length * 8)}%`, background: newPassword.length < 8 ? 'hsl(0 84% 60%)' : newPassword.length < 12 ? 'hsl(38 92% 50%)' : 'hsl(142 76% 36%)', transition: 'all 0.3s' }} />
+                  <div style={{ height: '4px', borderRadius: '2px', background: 'var(--t-border)', marginBottom: '4px' }}>
+                    <div style={{ height: '100%', borderRadius: '2px', width: `${Math.min(100, newPassword.length * 8)}%`, background: newPassword.length < 8 ? 'var(--t-red)' : newPassword.length < 12 ? 'var(--t-orange)' : 'var(--t-green)', transition: 'all 0.3s' }} />
                   </div>
-                  <p style={{ color: newPassword.length < 8 ? 'hsl(0 84% 60%)' : newPassword.length < 12 ? 'hsl(38 92% 50%)' : 'hsl(142 76% 36%)', fontSize: '11px', ...mono, margin: 0 }}>
+                  <p style={{ color: newPassword.length < 8 ? 'var(--t-red)' : newPassword.length < 12 ? 'var(--t-orange)' : 'var(--t-green)', fontSize: '11px', ...mono, margin: 0 }}>
                     {newPassword.length < 8 ? 'Too short' : newPassword.length < 12 ? 'Acceptable' : 'Strong ✓'}
                   </p>
                 </div>
               )}
 
-              {error && <p style={{ color: 'hsl(0 84% 60%)', fontSize: '12px', ...mono, margin: '0 0 12px' }}>{error}</p>}
+              {error && <p style={{ color: 'var(--t-red)', fontSize: '12px', ...mono, margin: '0 0 12px' }}>{error}</p>}
 
               <button onClick={resetPassword} disabled={loading || newPassword.length < 8}
-                style={{ width: '100%', background: newPassword.length >= 8 ? 'hsl(142 76% 36%)' : 'hsl(220 10% 12%)', color: 'white', border: 'none', borderRadius: '12px', padding: '16px', fontSize: '15px', fontWeight: 700, cursor: newPassword.length >= 8 ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)' }}>
+                style={{ width: '100%', background: newPassword.length >= 8 ? 'var(--t-green)' : 'var(--t-border)', color: 'white', border: 'none', borderRadius: '12px', padding: '16px', fontSize: '15px', fontWeight: 700, cursor: newPassword.length >= 8 ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)' }}>
                 {loading ? 'Resetting...' : 'Reset Password'}
               </button>
             </div>
@@ -181,11 +181,11 @@ export default function ResetPasswordPage() {
           {step === 'done' && (
             <div style={{ textAlign: 'center' as const }}>
               <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
-              <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '20px', fontWeight: 700, margin: '0 0 8px' }}>Password Reset</h2>
-              <p style={{ color: 'hsl(0 0% 45%)', fontSize: '13px', ...mono, margin: '0 0 24px', lineHeight: '1.7' }}>
+              <h2 style={{ color: 'var(--t-text)', fontSize: '20px', fontWeight: 700, margin: '0 0 8px' }}>Password Reset</h2>
+              <p style={{ color: 'var(--t-muted)', fontSize: '13px', ...mono, margin: '0 0 24px', lineHeight: '1.7' }}>
                 Your wallet password has been reset. Your Quantum Kyber key is re-encrypted with your new password.
               </p>
-              <a href="/wallet" style={{ display: 'block', background: 'hsl(142 76% 36%)', color: 'white', textDecoration: 'none', borderRadius: '12px', padding: '16px', fontSize: '15px', fontWeight: 700, fontFamily: 'var(--font-display)' }}>
+              <a href="/wallet" style={{ display: 'block', background: 'var(--t-green)', color: 'white', textDecoration: 'none', borderRadius: '12px', padding: '16px', fontSize: '15px', fontWeight: 700, fontFamily: 'var(--font-display)' }}>
                 Go to Wallet →
               </a>
             </div>
@@ -194,7 +194,7 @@ export default function ResetPasswordPage() {
         </div>
 
         <p style={{ textAlign: 'center' as const, marginTop: '16px' }}>
-          <a href="/wallet" style={{ color: 'hsl(0 0% 35%)', fontSize: '12px', ...mono, textDecoration: 'none' }}>← Back to wallet</a>
+          <a href="/wallet" style={{ color: 'var(--t-faint)', fontSize: '12px', ...mono, textDecoration: 'none' }}>← Back to wallet</a>
         </p>
       </div>
     </div>

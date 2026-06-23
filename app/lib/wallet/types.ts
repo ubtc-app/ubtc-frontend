@@ -59,6 +59,9 @@ export interface QAPWallet {
 
   /** Unix timestamp of creation */
   createdAt: number;
+
+  /** BIP32 account index — 0 for first account, 1 for second, etc. */
+  accountIndex: number;
 }
 
 /** Stored wallet — what we persist to localStorage (no mnemonic) */
@@ -68,6 +71,7 @@ export interface StoredWallet {
   encrypted: QAPEncryptedSecrets;
   version: "QAP-WALLET-V1";
   createdAt: number;
+  accountIndex: number;
 }
 
 /** Result of wallet restoration */

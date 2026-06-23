@@ -19,7 +19,7 @@ export function TelegramSafeDisplay({
   confirmed,
   onConfirmedChange,
   confirmLabel = 'I have saved this. I understand it cannot be recovered if lost.',
-  accentColor = 'hsl(38 92% 50%)',
+  accentColor = 'var(--t-orange)',
 }: TelegramSafeDisplayProps) {
   const [copied, setCopied] = useState(false)
   const [showQR, setShowQR] = useState(false)
@@ -44,21 +44,21 @@ export function TelegramSafeDisplay({
   }
 
   return (
-    <div style={{ background: 'hsl(220 12% 8%)', border: `1px solid ${accentColor}33`, borderRadius: '14px', padding: '18px', marginBottom: '16px' }}>
+    <div style={{ background: 'var(--t-surface)', border: `1px solid ${accentColor}33`, borderRadius: '14px', padding: '18px', marginBottom: '16px' }}>
       <p style={{ color: accentColor, fontSize: '11px', fontWeight: 700, ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 4px' }}>{title}</p>
       {description && (
-        <p style={{ color: 'hsl(0 0% 38%)', fontSize: '11px', ...mono, margin: '0 0 14px', lineHeight: 1.6 }}>{description}</p>
+        <p style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono, margin: '0 0 14px', lineHeight: 1.6 }}>{description}</p>
       )}
 
-      <div style={{ background: 'hsl(220 15% 4%)', border: '1px solid hsl(220 10% 14%)', borderRadius: '10px', padding: '14px', marginBottom: '12px', wordBreak: 'break-all' as const, color: 'hsl(0 0% 88%)', fontSize: '13px', lineHeight: 1.6, ...mono }}>
+      <div style={{ background: 'var(--t-bg)', border: '1px solid var(--t-border)', borderRadius: '10px', padding: '14px', marginBottom: '12px', wordBreak: 'break-all' as const, color: 'var(--t-text)', fontSize: '13px', lineHeight: 1.6, ...mono }}>
         {content}
       </div>
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-        <button onClick={handleCopy} style={{ flex: 1, background: copied ? 'hsl(142 76% 36%)' : accentColor, color: copied ? 'white' : '#000', border: 'none', borderRadius: '8px', padding: '12px', fontSize: '12px', fontWeight: 700, ...mono, cursor: 'pointer' }}>
+        <button onClick={handleCopy} style={{ flex: 1, background: copied ? 'var(--t-green)' : accentColor, color: copied ? 'white' : '#000', border: 'none', borderRadius: '8px', padding: '12px', fontSize: '12px', fontWeight: 700, ...mono, cursor: 'pointer' }}>
           {copied ? 'Copied' : 'Copy to clipboard'}
         </button>
-        <button onClick={() => setShowQR(!showQR)} style={{ flex: 1, background: 'hsl(220 12% 12%)', color: 'hsl(0 0% 65%)', border: '1px solid hsl(220 10% 18%)', borderRadius: '8px', padding: '12px', fontSize: '12px', fontWeight: 600, ...mono, cursor: 'pointer' }}>
+        <button onClick={() => setShowQR(!showQR)} style={{ flex: 1, background: 'var(--t-surface2)', color: 'var(--t-muted)', border: '1px solid var(--t-border)', borderRadius: '8px', padding: '12px', fontSize: '12px', fontWeight: 600, ...mono, cursor: 'pointer' }}>
           {showQR ? 'Hide QR' : 'Show QR code'}
         </button>
       </div>
@@ -71,9 +71,9 @@ export function TelegramSafeDisplay({
 
       <div
         onClick={() => onConfirmedChange(!confirmed)}
-        style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', background: 'hsl(220 15% 5%)', border: `1px solid ${confirmed ? 'hsl(142 76% 36% / 0.4)' : 'hsl(220 10% 14%)'}`, borderRadius: '10px', padding: '14px', cursor: 'pointer' }}
+        style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', background: 'var(--t-surface)', border: `1px solid ${confirmed ? 'hsl(142 76% 36% / 0.4)' : 'var(--t-border)'}`, borderRadius: '10px', padding: '14px', cursor: 'pointer' }}
       >
-        <div style={{ width: '22px', height: '22px', borderRadius: '6px', border: `2px solid ${confirmed ? 'hsl(142 76% 36%)' : 'hsl(220 10% 28%)'}`, background: confirmed ? 'hsl(142 76% 36%)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <div style={{ width: '22px', height: '22px', borderRadius: '6px', border: `2px solid ${confirmed ? 'var(--t-green)' : 'var(--t-border)'}`, background: confirmed ? 'var(--t-green)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           {confirmed && <span style={{ color: 'white', fontSize: '14px', fontWeight: 700 }}>✓</span>}
         </div>
         <p style={{ color: 'hsl(0 0% 60%)', fontSize: '12px', ...mono, margin: 0, lineHeight: 1.6 }}>{confirmLabel}</p>

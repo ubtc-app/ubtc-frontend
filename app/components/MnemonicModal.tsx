@@ -154,7 +154,7 @@ export function MnemonicModal({
       style={{
         position: "fixed",
         inset: 0,
-        background: "hsl(220 15% 3% / 0.92)",
+        background: "var(--t-bg)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -167,8 +167,8 @@ export function MnemonicModal({
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: "hsl(220 15% 6%)",
-          border: "1px solid hsl(220 10% 14%)",
+          background: "var(--t-surface)",
+          border: "1px solid var(--t-border)",
           borderRadius: "20px",
           padding: "28px",
           maxWidth: "680px",
@@ -203,7 +203,7 @@ export function MnemonicModal({
                 ? "hsl(142 76% 36% / 0.6)"
                 : status === "invalid"
                 ? "hsl(0 84% 60% / 0.6)"
-                : "hsl(220 10% 14%)";
+                : "var(--t-border)";
             return (
               <div key={i} style={{ position: "relative" }}>
                 <span
@@ -234,7 +234,7 @@ export function MnemonicModal({
                   style={{
                     width: "100%",
                     padding: "8px 8px 8px 32px",
-                    background: "hsl(220 15% 5%)",
+                    background: "var(--t-surface)",
                     border: `1px solid ${borderColour}`,
                     borderRadius: "8px",
                     color: "hsl(0 0% 92%)",
@@ -271,9 +271,9 @@ export function MnemonicModal({
             onClick={handleCancel}
             disabled={submitting}
             style={{
-              background: "hsl(220 12% 10%)",
-              border: "1px solid hsl(220 10% 16%)",
-              color: "hsl(0 0% 60%)",
+              background: "var(--t-surface2)",
+              border: "1px solid var(--t-border)",
+              color: "var(--t-muted)",
               borderRadius: "10px",
               padding: "10px 18px",
               fontSize: "13px",
@@ -292,7 +292,7 @@ export function MnemonicModal({
               background:
                 isValid && !submitting
                   ? "linear-gradient(135deg, hsl(205, 85%, 55%), hsl(190, 80%, 50%))"
-                  : "hsl(220 12% 14%)",
+                  : "var(--t-surface3)",
               border: "none",
               color: isValid && !submitting ? "white" : "hsl(0 0% 35%)",
               borderRadius: "10px",

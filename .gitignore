@@ -45,3 +45,6 @@ next-env.d.ts
 *.backup
 *.stage1-backup
 setup-signing-overlay.ps1
+
+# Claude Code session files
+.claude/

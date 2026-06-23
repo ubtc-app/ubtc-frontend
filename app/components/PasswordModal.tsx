@@ -33,7 +33,7 @@ export function PasswordModal({ isOpen, onCancel, onSubmit, title, subtitle }: P
   return (
     <div
       style={{
-        position: 'fixed', inset: 0, background: 'hsl(220 15% 3% / 0.85)',
+        position: 'fixed', inset: 0, background: 'var(--t-bg)',
         backdropFilter: 'blur(8px)', zIndex: 1000,
         display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
       }}
@@ -42,21 +42,21 @@ export function PasswordModal({ isOpen, onCancel, onSubmit, title, subtitle }: P
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          background: 'hsl(220 15% 6%)', border: '1px solid hsl(220 10% 14%)',
+          background: 'var(--t-surface)', border: '1px solid var(--t-border)',
           borderRadius: '20px', padding: '28px', maxWidth: '440px', width: '100%',
           fontFamily: 'var(--font-display)',
         }}
       >
-        <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '20px', fontWeight: '700', margin: '0 0 6px' }}>
+        <h2 style={{ color: 'var(--t-text)', fontSize: '20px', fontWeight: '700', margin: '0 0 6px' }}>
           {title || 'Enter Password'}
         </h2>
         {subtitle && (
-          <p style={{ color: 'hsl(0 0% 45%)', fontSize: '13px', ...mono, margin: '0 0 18px', lineHeight: '1.6' }}>
+          <p style={{ color: 'var(--t-muted)', fontSize: '13px', ...mono, margin: '0 0 18px', lineHeight: '1.6' }}>
             {subtitle}
           </p>
         )}
 
-        <label style={{ display: 'block', color: 'hsl(0 0% 35%)', fontSize: '11px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.12em', marginBottom: '8px' }}>
+        <label style={{ display: 'block', color: 'var(--t-faint)', fontSize: '11px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.12em', marginBottom: '8px' }}>
           Wallet Password
         </label>
         <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
@@ -68,18 +68,18 @@ export function PasswordModal({ isOpen, onCancel, onSubmit, title, subtitle }: P
             placeholder="Your wallet password"
             autoFocus
             style={{
-              flex: 1, padding: '14px 16px', background: 'hsl(220 15% 4%)',
-              border: '1px solid hsl(220 10% 16%)', borderRadius: '12px',
-              color: 'hsl(0 0% 92%)', fontSize: '14px', ...mono, outline: 'none',
+              flex: 1, padding: '14px 16px', background: 'var(--t-bg)',
+              border: '1px solid var(--t-border)', borderRadius: '12px',
+              color: 'var(--t-text)', fontSize: '14px', ...mono, outline: 'none',
               boxSizing: 'border-box' as const,
             }}
           />
           <button
             onClick={() => setShow(!show)}
             style={{
-              padding: '0 14px', background: 'hsl(220 15% 8%)',
-              border: '1px solid hsl(220 10% 16%)', borderRadius: '12px',
-              color: 'hsl(0 0% 60%)', fontSize: '12px', ...mono, cursor: 'pointer',
+              padding: '0 14px', background: 'var(--t-surface2)',
+              border: '1px solid var(--t-border)', borderRadius: '12px',
+              color: 'var(--t-muted)', fontSize: '12px', ...mono, cursor: 'pointer',
             }}
           >
             {show ? 'Hide' : 'Show'}
@@ -91,9 +91,9 @@ export function PasswordModal({ isOpen, onCancel, onSubmit, title, subtitle }: P
             onClick={onCancel}
             disabled={submitting}
             style={{
-              flex: 1, padding: '14px', background: 'hsl(220 15% 8%)',
-              border: '1px solid hsl(220 10% 14%)', borderRadius: '12px',
-              color: 'hsl(0 0% 65%)', fontSize: '14px', fontWeight: '600',
+              flex: 1, padding: '14px', background: 'var(--t-surface2)',
+              border: '1px solid var(--t-border)', borderRadius: '12px',
+              color: 'var(--t-muted)', fontSize: '14px', fontWeight: '600',
               fontFamily: 'var(--font-display)', cursor: submitting ? 'not-allowed' : 'pointer',
             }}
           >
@@ -104,9 +104,9 @@ export function PasswordModal({ isOpen, onCancel, onSubmit, title, subtitle }: P
             disabled={!password || submitting}
             style={{
               flex: 1, padding: '14px',
-              background: password && !submitting ? 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))' : 'hsl(220 10% 12%)',
+              background: password && !submitting ? 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))' : 'var(--t-border)',
               border: 'none', borderRadius: '12px',
-              color: password && !submitting ? 'white' : 'hsl(0 0% 28%)',
+              color: password && !submitting ? 'white' : 'var(--t-faint)',
               fontSize: '14px', fontWeight: '700',
               fontFamily: 'var(--font-display)', cursor: password && !submitting ? 'pointer' : 'not-allowed',
             }}

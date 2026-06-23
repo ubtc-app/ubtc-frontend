@@ -9,16 +9,21 @@ type Step = 'account' | 'custody' | 'confirm' | 'done'
 type AccountType = 'current' | 'savings' | 'yield' | 'custody_yield' | 'prime' | 'managed_yield'
 export default function VaultPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: 'hsl(0 0% 30%)', fontSize: '14px', fontFamily: 'var(--font-mono)' }}>Loading...</p></div>}>
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'var(--t-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: 'var(--t-faint)', fontSize: '14px', fontFamily: 'var(--font-mono)' }}>Loading...</p></div>}>
       <VaultPageInner />
     </Suspense>
   )
 }
 function VaultPageInner() {
-  const [step, setStep] = useState<Step>('confirm')
-  const [accountType, setAccountType] = useState<AccountType | null>('current')
+  const [step, setStep] = useState<Step>('account')
+  const [accountType, setAccountType] = useState<AccountType | null>(null)
   const [custodyPreference, setCustodyPreference] = useState<'ubtc' | 'bitgo' | 'komainu'>('ubtc')
   const [existingTypes, setExistingTypes] = useState<string[]>([])
+  const [existingMnemonic, setExistingMnemonic] = useState('')
+  const [hasExistingWallet, setHasExistingWallet] = useState(false)
+  const [existingWalletAddress, setExistingWalletAddress] = useState<string | null>(null)
+  const [existingWalletUsername, setExistingWalletUsername] = useState<string | null>(null)
+  const [newWalletMnemonic, setNewWalletMnemonic] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
   const [error, setError] = useState('')
@@ -51,11 +56,28 @@ function VaultPageInner() {
   const [checkingUsername, setCheckingUsername] = useState(false)
   const [quantumUsernameSet, setQuantumUsernameSet] = useState(false)
   const usernameCheckTimeout = useRef<any>(null)
+  const [useRecoveryPhrase, setUseRecoveryPhrase] = useState(false)
+  const [recoveryPhraseInput, setRecoveryPhraseInput] = useState('')
 
   useEffect(() => {
-    fetch(`${API_URL}/dashboard`)
-      .then(r => r.json())
-      .then(d => setExistingTypes((d.vaults || []).map((v: any) => v.account_type)))
+    import('../lib/wallet/storage').then(({ loadActiveWallet }) => loadActiveWallet()).then(wallet => {
+      if (!wallet) return
+      setHasExistingWallet(true)
+      setExistingWalletAddress(wallet.address)
+      const pubkey = wallet.publicKeys?.dilithium
+      if (!pubkey) return
+      fetch(`${API_URL}/dashboard?user_pubkey=${encodeURIComponent(pubkey)}`)
+        .then(r => r.json())
+        .then(d => setExistingTypes((d.vaults || []).map((v: any) => v.account_type)))
+        .catch(() => {})
+      fetch(`${API_URL}/wallets/all`)
+        .then(r => r.json())
+        .then(d => {
+          const match = (d.wallets || []).find((w: any) => w.wallet_address === wallet.address || w.dilithium_pk === pubkey)
+          if (match?.username) setExistingWalletUsername(match.username)
+        })
+        .catch(() => {})
+    })
   }, [])
 
   const selfCustodyTypes: AccountType[] = ['current', 'savings', 'yield']
@@ -64,20 +86,75 @@ function VaultPageInner() {
  const createAccount = async () => {
       setLoading(true); setError('')
       try {
-        // Step 1 — generate wallet (mnemonic + ML-DSA + SPHINCS+ + Kyber + wallet Taproot)
-        const { createWallet: generateWallet, persistWallet } = await import('../lib/wallet/wallet')
-        const { deriveVaultTaproot } = await import('../lib/wallet/wallet')
+        const { createWallet: generateWallet, createWalletFromMnemonic, persistWallet, deriveVaultTaproot } = await import('../lib/wallet/wallet')
+        const { listWallets, loadActiveWallet, setActiveWallet } = await import('../lib/wallet/storage')
         const { wrapTaprootSk } = await import('../lib/wallet/vault-wrap')
         const { fromHex } = await import('../lib/wallet/encryption')
-        const wallet = await generateWallet()
 
-        // Step 2 — derive vault-specific Taproot, wrap SK against the user's own Kyber PK
-        const { taprootSk, taprootPubKey } = await deriveVaultTaproot(wallet.mnemonic, 0)
+        // If a wallet already exists, derive the next account from the same mnemonic.
+        // The user must provide their mnemonic to unlock it — we never store it.
+        // For the first account (no existing wallet), generate fresh keys.
+        const existingWallets = await listWallets()
+        const activeWallet = await loadActiveWallet()
+
+        let wallet: Awaited<ReturnType<typeof generateWallet>>
+        let mnemonic: string | null = null
+        let vaultMnemonic: string
+
+        if (existingWallets.length === 0 || !activeWallet) {
+          // First-time setup — generate brand new wallet at account index 0
+          wallet = await generateWallet(0)
+          mnemonic = wallet.mnemonic
+          vaultMnemonic = mnemonic
+        } else {
+          // Additional account — decrypt mnemonic using wallet password, derive next index
+          if (!existingMnemonic) {
+            setError('Enter your wallet password to add a new account.')
+            setLoading(false)
+            return
+          }
+          const { loadMnemonicVault } = await import('../lib/wallet/storage')
+          const { unsealWithPassword } = await import('../lib/wallet/password')
+          const { validateMnemonic } = await import('@scure/bip39')
+          const { wordlist } = await import('@scure/bip39/wordlists/english.js')
+          const mnemonicVault = await loadMnemonicVault()
+          if (!mnemonicVault || useRecoveryPhrase) {
+            // Fallback: user enters their 24-word phrase directly
+            if (!recoveryPhraseInput.trim()) {
+              setUseRecoveryPhrase(true)
+              setError('Enter your 24-word recovery phrase to add a new account.')
+              setLoading(false)
+              return
+            }
+            const trimmed = recoveryPhraseInput.trim()
+            if (!validateMnemonic(trimmed, wordlist)) {
+              setError('Invalid recovery phrase. Check spelling and word count.')
+              setLoading(false)
+              return
+            }
+            vaultMnemonic = trimmed
+          } else {
+          let decryptedMnemonicBytes: Uint8Array
+          try {
+            decryptedMnemonicBytes = await unsealWithPassword(mnemonicVault, existingMnemonic)
+          } catch {
+            setError('Incorrect password. If you forgot it, use your 24-word recovery phrase below.')
+            setUseRecoveryPhrase(true)
+            setLoading(false)
+            return
+          }
+          vaultMnemonic = new TextDecoder().decode(decryptedMnemonicBytes)
+          decryptedMnemonicBytes.fill(0)
+          }
+          const nextIndex = Math.max(...existingWallets.map(w => w.accountIndex ?? 0)) + 1
+          wallet = await createWalletFromMnemonic(vaultMnemonic, nextIndex)
+        }
+        const { taprootSk, taprootPubKey } = await deriveVaultTaproot(vaultMnemonic, wallet.accountIndex ?? 0)
         const kyberPubKeyBytes = fromHex(wallet.publicKeys.kyber)
         const taprootSkKyberWrapped = await wrapTaprootSk(taprootSk, kyberPubKeyBytes)
         taprootSk.fill(0)
 
-        // Step 3 — POST only public material + opaque ciphertext envelope
+        // POST only public material + opaque ciphertext envelope
         const res = await fetch(`${API_URL}/vaults`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -88,7 +165,7 @@ function VaultPageInner() {
             taproot_sk_kyber_wrapped: taprootSkKyberWrapped,
             network: 'testnet4',
             recovery_blocks: 6,
-          account_type: accountType,
+            account_type: accountType,
             username: tgHandle || `user_${Math.random().toString(36).slice(2, 8)}`,
             telegram_id: tgId ? Number(tgId) : undefined,
             telegram_handle: tgHandle || undefined,
@@ -97,12 +174,15 @@ function VaultPageInner() {
         const data = await res.json()
         if (!res.ok) throw new Error(data.error)
 
-        // Step 4 — persist encrypted wallet locally; server has no secret keys
+        // Persist encrypted wallet locally; server has no secret keys
         await persistWallet(wallet)
+        await setActiveWallet(wallet.address)
         localStorage.setItem('ubtc_wallet_address', wallet.address)
+        window.dispatchEvent(new CustomEvent('wallets-updated'))
 
-        // Step 5 — show mnemonic to user (only time it's ever shown)
-        setResult({ ...data, mnemonic: wallet.mnemonic, wallet_address: wallet.address })
+        // Track mnemonic in dedicated state — avoids backend response overwriting it
+        if (mnemonic) setNewWalletMnemonic(mnemonic)
+        setResult({ ...data, wallet_address: wallet.address })
         setStep('done')
       } catch (e: any) { setError(e.message) }
       setLoading(false)
@@ -156,54 +236,98 @@ function VaultPageInner() {
        body: JSON.stringify({ wallet_address: result.wallet_address, vault_id: result.vault_id, quantum_username: quantumUsername })
       })
       if (res.ok) { setQuantumUsernameSet(true) }
-      else { setQuantumUsernameSet(true) } // proceed even if endpoint not yet built
+      else { setQuantumUsernameSet(true) }
     } catch { setQuantumUsernameSet(true) }
+    // Save username locally so the Header can display it without an API call
+    const addr = result?.wallet_address
+    if (addr) localStorage.setItem(`ubtc_username_${addr}`, quantumUsername)
   }
 
-  const btnBack: any = { background: 'none', border: '1px solid hsl(220 10% 16%)', color: 'hsl(0 0% 65%)', borderRadius: '10px', padding: '14px 24px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)' }
-  const btnNext = (enabled: boolean): any => ({ flex: 1, background: enabled ? 'linear-gradient(135deg, hsl(205, 85%, 55%), hsl(190, 80%, 50%))' : 'hsl(220 10% 14%)', color: enabled ? 'white' : 'hsl(0 0% 40%)', border: 'none', borderRadius: '10px', padding: '14px 32px', fontSize: '14px', fontWeight: '600', cursor: enabled ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', boxShadow: enabled ? '0 0 30px hsl(205 85% 55% / 0.4)' : 'none' })
+  const btnBack: any = { background: 'none', border: '1px solid var(--t-border)', color: 'var(--t-muted)', borderRadius: '10px', padding: '14px 24px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)' }
+  const btnNext = (enabled: boolean): any => ({ flex: 1, background: enabled ? 'linear-gradient(135deg, hsl(205, 85%, 55%), hsl(190, 80%, 50%))' : 'var(--t-border)', color: enabled ? 'white' : 'var(--t-muted)', border: 'none', borderRadius: '10px', padding: '14px 32px', fontSize: '14px', fontWeight: '600', cursor: enabled ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', boxShadow: enabled ? '0 0 30px hsl(205 85% 55% / 0.4)' : 'none' })
 
   const accountDetails: Record<AccountType, { icon: string; title: string; color: string; custodyLabel: string; yieldLabel: string; apy: string | null }> = {
-    current: { icon: '💳', title: 'Current Account', color: 'hsl(205 85% 55%)', custodyLabel: '⚛️ Taproot Self-Custody', yieldLabel: 'No yield', apy: null },
-    savings: { icon: '🔐', title: 'Savings Account', color: 'hsl(38 92% 50%)', custodyLabel: '⚛️ Taproot Self-Custody', yieldLabel: 'No yield', apy: null },
-    yield: { icon: '₿', title: 'Yield Account', color: 'hsl(142 76% 36%)', custodyLabel: '⚛️ Taproot Self-Custody', yieldLabel: 'Babylon staking', apy: '3-5%' },
-    custody_yield: { icon: '📊', title: 'Custody Yield', color: 'hsl(205 85% 55%)', custodyLabel: '🏦 BitGo / Komainu', yieldLabel: 'Institutional yield', apy: '4-6%' },
-    prime: { icon: '💎', title: 'Prime Account', color: 'hsl(270 85% 65%)', custodyLabel: '🏦 BitGo / Komainu', yieldLabel: 'Institutional yield', apy: '5-8%' },
-    managed_yield: { icon: '🏦', title: 'Managed Yield', color: 'hsl(142 76% 36%)', custodyLabel: '🏦 BitGo / Komainu', yieldLabel: 'Dynamic yield', apy: '6-10%' },
+    current: { icon: '💳', title: 'Current Account', color: 'var(--t-accent)', custodyLabel: '⚛️ Taproot Self-Custody', yieldLabel: 'No yield', apy: null },
+    savings: { icon: '🔐', title: 'Savings Account', color: 'var(--t-orange)', custodyLabel: '⚛️ Taproot Self-Custody', yieldLabel: 'No yield', apy: null },
+    yield: { icon: '₿', title: 'Yield Account', color: 'var(--t-green)', custodyLabel: '⚛️ Taproot Self-Custody', yieldLabel: 'Babylon staking', apy: '3-5%' },
+    custody_yield: { icon: '📊', title: 'Custody Yield', color: 'var(--t-accent)', custodyLabel: '🏦 BitGo / Komainu', yieldLabel: 'Institutional yield', apy: '4-6%' },
+    prime: { icon: '💎', title: 'Prime Account', color: 'var(--t-purple)', custodyLabel: '🏦 BitGo / Komainu', yieldLabel: 'Institutional yield', apy: '5-8%' },
+    managed_yield: { icon: '🏦', title: 'Managed Yield', color: 'var(--t-green)', custodyLabel: '🏦 BitGo / Komainu', yieldLabel: 'Dynamic yield', apy: '6-10%' },
   }
 
   const selfAccounts = [
-    { type: 'current' as AccountType, icon: '💳', title: 'Current Account', subtitle: 'Everyday spending', description: 'Your everyday UBTC account. Send and receive instantly. Your Bitcoin collateral is locked in a Taproot script — nobody, not even WLB, can touch it without your signature.', yieldLabel: 'No yield — pure collateral', apy: null, tags: ['Instant transfers', 'Self-custody'], color: 'hsl(205 85% 55%)' },
-    { type: 'savings' as AccountType, icon: '🔐', title: 'Savings Account', subtitle: 'Long-term secure storage', description: 'For holding larger amounts safely. Every outgoing transfer requires explicit confirmation.', yieldLabel: 'No yield — pure collateral', apy: null, tags: ['Transfer confirmation', 'Long-term storage'], color: 'hsl(38 92% 50%)' },
-    { type: 'yield' as AccountType, icon: '₿', title: 'Yield Account', subtitle: 'Earn on your Bitcoin', description: 'Your Bitcoin stays in Taproot self-custody while Babylon Protocol stakes it on-chain earning yield in BTC.', yieldLabel: 'Babylon Protocol staking', apy: '3-5%', tags: ['Bitcoin-native yield', 'Non-custodial'], color: 'hsl(142 76% 36%)' },
+    {
+      type: 'current' as AccountType,
+      icon: '💳',
+      title: 'Standard Account',
+      subtitle: 'Everyday spending & transfers',
+      description: 'Your primary UBTC account. Send, receive, and redeem instantly. Your Bitcoin collateral is locked in a Taproot script secured by post-quantum signatures — nobody, not even World Local Bank, can move it without your authorisation.',
+      yieldLabel: 'No yield — pure self-custody',
+      apy: null,
+      tags: ['Instant transfers', 'Self-custody', 'PQ-secured'],
+      color: 'var(--t-accent)',
+      comingSoon: false,
+    },
+    {
+      type: 'savings' as AccountType,
+      icon: '🏛️',
+      title: 'Savings Account',
+      subtitle: 'Earn yield via Babylon staking',
+      description: 'Your Bitcoin collateral is staked through Babylon Protocol — a non-custodial Bitcoin staking layer — while remaining in your Taproot vault. Earn native BTC yield without giving up custody. Withdrawals require a confirmation window.',
+      yieldLabel: 'Babylon Protocol staking',
+      apy: '3-5%',
+      tags: ['Babylon staking', 'BTC-native yield', 'Self-custody'],
+      color: 'var(--t-orange)',
+      comingSoon: false,
+    },
+    {
+      type: 'yield' as AccountType,
+      icon: '📈',
+      title: 'High Yield Investment Account',
+      subtitle: 'Up to 20–30% APY — Coming Soon',
+      description: '25% of your Bitcoin collateral is actively deployed into institutional trading strategies — covered calls, basis trades, and structured products — while 75% remains in your self-custody Taproot vault. Target yield of 20–30% per year paid in UBTC.',
+      yieldLabel: 'Institutional trading strategies',
+      apy: '20-30',
+      tags: ['25% deployed', '75% self-custody', 'Active management'],
+      color: 'var(--t-green)',
+      comingSoon: true,
+    },
   ]
 
   const managedAccounts = [
-    { type: 'custody_yield' as AccountType, icon: '📊', title: 'Custody Yield', subtitle: 'Managed yield', description: 'UBTC holds at BitGo or Komainu and deploys institutional yield strategies.', yieldLabel: 'Covered calls + T-Bills', apy: '4-6%', tags: ['BitGo / Komainu', '$250M insured'], color: 'hsl(205 85% 55%)' },
-    { type: 'prime' as AccountType, icon: '💎', title: 'Prime Account', subtitle: 'Institutional grade', description: 'Segregated custody, prime brokerage features and multi-authorisation controls.', yieldLabel: 'Institutional yield', apy: '5-8%', tags: ['Segregated custody', 'Prime reporting'], color: 'hsl(270 85% 65%)' },
-    { type: 'managed_yield' as AccountType, icon: '🏦', title: 'Managed Yield', subtitle: 'Dynamic allocation', description: 'UBTC actively manages a diversified yield portfolio across all currencies.', yieldLabel: 'Dynamic rotating yield', apy: '6-10%', tags: ['Dynamic allocation', 'Active management'], color: 'hsl(142 76% 36%)' },
+    { type: 'custody_yield' as AccountType, icon: '📊', title: 'Custody Yield', subtitle: 'Managed yield', description: 'UBTC holds at BitGo or Komainu and deploys institutional yield strategies.', yieldLabel: 'Covered calls + T-Bills', apy: '4-6%', tags: ['BitGo / Komainu', '$250M insured'], color: 'var(--t-accent)', comingSoon: true },
+    { type: 'prime' as AccountType, icon: '💎', title: 'Prime Account', subtitle: 'Institutional grade', description: 'Segregated custody, prime brokerage features and multi-authorisation controls.', yieldLabel: 'Institutional yield', apy: '5-8%', tags: ['Segregated custody', 'Prime reporting'], color: 'var(--t-purple)', comingSoon: true },
+    { type: 'managed_yield' as AccountType, icon: '🏦', title: 'Managed Yield', subtitle: 'Dynamic allocation', description: 'UBTC actively manages a diversified yield portfolio across all currencies.', yieldLabel: 'Dynamic rotating yield', apy: '6-10%', tags: ['Dynamic allocation', 'Active management'], color: 'var(--t-green)', comingSoon: true },
   ]
 
   const Card = ({ acc, selected, onClick }: { acc: typeof selfAccounts[0]; selected: boolean; onClick: () => void }) => {
-    const disabled = existingTypes.includes(acc.type)
+    const disabled = existingTypes.includes(acc.type) || acc.comingSoon
     return (
-      <div onClick={() => !disabled && onClick()} style={{ background: 'hsl(220 12% 8%)', border: `2px solid ${selected ? acc.color : disabled ? 'hsl(220 10% 12%)' : 'hsl(220 10% 16%)'}`, borderRadius: '14px', padding: '20px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1, transition: 'border-color 0.15s', display: 'flex', flexDirection: 'column' as const, gap: '10px', boxSizing: 'border-box' as const }}>
+      <div onClick={() => !disabled && onClick()} style={{ background: 'var(--t-surface)', border: `2px solid ${selected ? acc.color : disabled ? 'var(--t-border)' : 'var(--t-border)'}`, borderRadius: '14px', padding: '20px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: acc.comingSoon ? 0.7 : disabled ? 0.5 : 1, transition: 'border-color 0.15s', display: 'flex', flexDirection: 'column' as const, gap: '10px', boxSizing: 'border-box' as const, position: 'relative' as const }}>
+        {acc.comingSoon && (
+          <div style={{ position: 'absolute' as const, top: '12px', right: '12px', background: 'hsl(38 92% 50% / 0.15)', border: '1px solid hsl(38 92% 50% / 0.4)', borderRadius: '20px', padding: '3px 10px', fontSize: '10px', fontWeight: '700', color: 'hsl(38 92% 60%)', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.05em' }}>
+            COMING SOON
+          </div>
+        )}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: acc.color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>{acc.icon}</div>
-          <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: `2px solid ${selected ? acc.color : 'hsl(220 10% 30%)'}`, background: selected ? acc.color : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {selected && <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'white' }} />}
-          </div>
+          {!acc.comingSoon && (
+            <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: `2px solid ${selected ? acc.color : 'var(--t-surface3)'}`, background: selected ? acc.color : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {selected && <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'white' }} />}
+            </div>
+          )}
         </div>
         <div>
-          <h3 style={{ color: 'hsl(0 0% 92%)', fontSize: '15px', fontWeight: '700', margin: '0 0 2px' }}>{acc.title}</h3>
+          <h3 style={{ color: 'var(--t-text)', fontSize: '15px', fontWeight: '700', margin: '0 0 2px' }}>{acc.title}</h3>
           <p style={{ color: acc.color, fontSize: '11px', ...mono, margin: 0 }}>{acc.subtitle}</p>
         </div>
-        <p style={{ color: 'hsl(0 0% 60%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.7', flex: 1 }}>{acc.description}</p>
+        <p style={{ color: 'var(--t-muted)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.7', flex: 1 }}>{acc.description}</p>
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' as const }}>
           {acc.tags.map(t => <span key={t} style={{ fontSize: '9px', ...mono, color: acc.color, border: `1px solid ${acc.color}40`, borderRadius: '20px', padding: '2px 8px', textTransform: 'uppercase' as const }}>{t}</span>)}
         </div>
-        {acc.apy && <p style={{ color: 'hsl(142 76% 36%)', fontWeight: 700, fontSize: '14px', ...mono, margin: 0 }}>{acc.apy}% APY</p>}
-        {disabled && <p style={{ color: 'hsl(0 84% 60%)', fontSize: '10px', ...mono, margin: 0 }}>✗ Already open</p>}
+        {acc.apy && !acc.comingSoon && <p style={{ color: 'var(--t-green)', fontWeight: 700, fontSize: '14px', ...mono, margin: 0 }}>{acc.apy}% APY</p>}
+        {acc.apy && acc.comingSoon && <p style={{ color: 'var(--t-orange)', fontWeight: 700, fontSize: '14px', ...mono, margin: 0 }}>Up to {acc.apy}% APY</p>}
+        {existingTypes.includes(acc.type) && !acc.comingSoon && <p style={{ color: 'var(--t-red)', fontSize: '10px', ...mono, margin: 0 }}>✗ Already open</p>}
       </div>
     )
   }
@@ -213,8 +337,8 @@ function VaultPageInner() {
   // ── Wizard steps labels ──
   const wizardSteps = ['Recovery Phrase', 'Password', 'Protocol Key', 'Verify Key', 'Account', 'Wallet & @ID', 'Ready']
 
-  const infoBox = (children: React.ReactNode, borderColor = 'hsl(38 92% 50%)') => (
-    <div style={{ background: 'hsl(220 15% 5%)', border: `1px solid ${borderColor}30`, borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+  const infoBox = (children: React.ReactNode, borderColor = 'var(--t-orange)') => (
+    <div style={{ background: 'var(--t-surface)', border: `1px solid ${borderColor}30`, borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
       {children}
     </div>
   )
@@ -222,62 +346,62 @@ function VaultPageInner() {
   const qa = (q: string, a: string, color = 'hsl(0 0% 78%)') => (
     <div style={{ marginBottom: '12px' }}>
       <p style={{ color, fontSize: '13px', fontFamily: 'monospace', fontWeight: 700, margin: '0 0 4px' }}>{q}</p>
-      <p style={{ color: 'hsl(0 0% 50%)', fontSize: '12px', fontFamily: 'monospace', margin: 0, lineHeight: '1.8' }} dangerouslySetInnerHTML={{ __html: a }} />
+      <p style={{ color: 'var(--t-muted)', fontSize: '12px', fontFamily: 'monospace', margin: 0, lineHeight: '1.8' }} dangerouslySetInnerHTML={{ __html: a }} />
     </div>
   )
 
-  const nextBtn = (label: string, onClick: () => void, enabled: boolean, color = 'hsl(38 92% 50%)') => (
-    <button onClick={() => enabled && onClick()} disabled={!enabled} style={{ width: '100%', background: enabled ? color : 'hsl(220 10% 12%)', color: enabled ? (color === 'hsl(38 92% 50%)' ? '#000' : 'white') : 'hsl(0 0% 30%)', border: 'none', borderRadius: '12px', padding: '16px', fontSize: '15px', fontWeight: 700, cursor: enabled ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', marginTop: '8px' }}>
+  const nextBtn = (label: string, onClick: () => void, enabled: boolean, color = 'var(--t-orange)') => (
+    <button onClick={() => enabled && onClick()} disabled={!enabled} style={{ width: '100%', background: enabled ? color : 'var(--t-border)', color: enabled ? (color === 'var(--t-orange)' ? '#000' : 'white') : 'var(--t-faint)', border: 'none', borderRadius: '12px', padding: '16px', fontSize: '15px', fontWeight: 700, cursor: enabled ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', marginTop: '8px' }}>
       {label}
     </button>
   )
 
   const checkBox = (checked: boolean, onToggle: () => void, label: string) => (
-    <div onClick={onToggle} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', background: 'hsl(220 12% 6%)', border: `1px solid ${checked ? 'hsl(142 76% 36% / 0.4)' : 'hsl(220 10% 14%)'}`, borderRadius: '10px', padding: '14px', cursor: 'pointer', marginBottom: '16px' }}>
-      <div style={{ width: '22px', height: '22px', borderRadius: '6px', border: `2px solid ${checked ? 'hsl(142 76% 36%)' : 'hsl(220 10% 28%)'}`, background: checked ? 'hsl(142 76% 36%)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
+    <div onClick={onToggle} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', background: 'var(--t-surface)', border: `1px solid ${checked ? 'hsl(142 76% 36% / 0.4)' : 'var(--t-border)'}`, borderRadius: '10px', padding: '14px', cursor: 'pointer', marginBottom: '16px' }}>
+      <div style={{ width: '22px', height: '22px', borderRadius: '6px', border: `2px solid ${checked ? 'var(--t-green)' : 'var(--t-border)'}`, background: checked ? 'var(--t-green)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
         {checked && <span style={{ color: 'white', fontSize: '13px' }}>✓</span>}
       </div>
-      <p style={{ color: 'hsl(0 0% 55%)', fontSize: '13px', fontFamily: 'monospace', margin: 0, lineHeight: '1.6' }}>{label}</p>
+      <p style={{ color: 'var(--t-muted)', fontSize: '13px', fontFamily: 'monospace', margin: 0, lineHeight: '1.6' }}>{label}</p>
     </div>
   )
 
   return (
-    <div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', padding: '40px 24px 80px', fontFamily: 'var(--font-display)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--t-bg)', padding: '40px 24px 80px', fontFamily: 'var(--font-display)' }}>
       <div style={{ maxWidth: step === 'done' ? '580px' : '1100px', margin: '0 auto' }}>
 
         {/* ── DETAILS MODAL ── */}
         {showDetailsModal && (
-          <div style={{ position: 'fixed', inset: 0, background: 'hsl(220 15% 2% / 0.95)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-            <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(205 85% 55% / 0.3)', borderRadius: '24px', padding: '40px', maxWidth: '480px', width: '100%' }}>
+          <div style={{ position: 'fixed', inset: 0, background: 'var(--t-bg)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+            <div style={{ background: 'var(--t-surface)', border: '1px solid hsl(205 85% 55% / 0.3)', borderRadius: '24px', padding: '40px', maxWidth: '480px', width: '100%' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'hsl(205 85% 55% / 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>👤</div>
+                <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'var(--t-accent-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>👤</div>
                 <div>
-                  <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '20px', fontWeight: '700', margin: '0 0 2px' }}>Create your identity</h2>
-                  <p style={{ color: 'hsl(205 85% 55%)', fontSize: '12px', ...mono, margin: 0 }}>World Local Bank · QAP Protocol</p>
+                  <h2 style={{ color: 'var(--t-text)', fontSize: '20px', fontWeight: '700', margin: '0 0 2px' }}>Create your identity</h2>
+                  <p style={{ color: 'var(--t-accent)', fontSize: '12px', ...mono, margin: 0 }}>World Local Bank · QAP Protocol</p>
                 </div>
               </div>
-              <p style={{ color: 'hsl(0 0% 45%)', fontSize: '13px', ...mono, margin: '0 0 28px', lineHeight: '1.7', borderTop: '1px solid hsl(220 10% 12%)', paddingTop: '16px' }}>
+              <p style={{ color: 'var(--t-muted)', fontSize: '13px', ...mono, margin: '0 0 28px', lineHeight: '1.7', borderTop: '1px solid var(--t-border-subtle)', paddingTop: '16px' }}>
                 Your username becomes part of your QAP identity. Your email receives security alerts only — never shared.
               </p>
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', color: 'hsl(0 0% 40%)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', marginBottom: '8px' }}>Username <span style={{ color: 'hsl(0 84% 60%)' }}>required</span></label>
+                <label style={{ display: 'block', color: 'var(--t-muted)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', marginBottom: '8px' }}>Username <span style={{ color: 'var(--t-red)' }}>required</span></label>
                 <div style={{ position: 'relative' as const }}>
-                  <span style={{ position: 'absolute' as const, left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'hsl(0 0% 35%)', fontSize: '14px', ...mono }}>@</span>
+                  <span style={{ position: 'absolute' as const, left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--t-faint)', fontSize: '14px', ...mono }}>@</span>
                   <input value={username} onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))} placeholder="satoshi" maxLength={20} autoFocus
-                    style={{ display: 'block', width: '100%', padding: '14px 16px 14px 32px', background: 'hsl(220 15% 5%)', border: `1px solid ${username.length >= 3 ? 'hsl(142 76% 36% / 0.6)' : 'hsl(220 10% 18%)'}`, borderRadius: '12px', color: 'hsl(0 0% 92%)', fontSize: '16px', ...mono, outline: 'none', boxSizing: 'border-box' as const }} />
-                  {username.length >= 3 && <span style={{ position: 'absolute' as const, right: '14px', top: '50%', transform: 'translateY(-50%)', color: 'hsl(142 76% 36%)', fontSize: '16px' }}>✓</span>}
+                    style={{ display: 'block', width: '100%', padding: '14px 16px 14px 32px', background: 'var(--t-surface)', border: `1px solid ${username.length >= 3 ? 'hsl(142 76% 36% / 0.6)' : 'var(--t-border)'}`, borderRadius: '12px', color: 'var(--t-text)', fontSize: '16px', ...mono, outline: 'none', boxSizing: 'border-box' as const }} />
+                  {username.length >= 3 && <span style={{ position: 'absolute' as const, right: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--t-green)', fontSize: '16px' }}>✓</span>}
                 </div>
-                <p style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', ...mono, margin: '6px 0 0' }}>Lowercase, numbers, underscores · 3–20 characters</p>
+                <p style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono, margin: '6px 0 0' }}>Lowercase, numbers, underscores · 3–20 characters</p>
               </div>
               <div style={{ marginBottom: '24px' }}>
-                <label style={{ display: 'block', color: 'hsl(0 0% 40%)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', marginBottom: '8px' }}>Email <span style={{ color: 'hsl(0 84% 60%)' }}>required</span></label>
+                <label style={{ display: 'block', color: 'var(--t-muted)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', marginBottom: '8px' }}>Email <span style={{ color: 'var(--t-red)' }}>required</span></label>
                 <input value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" type="email"
-                  style={{ display: 'block', width: '100%', padding: '14px 16px', background: 'hsl(220 15% 5%)', border: `1px solid ${email.includes('@') ? 'hsl(142 76% 36% / 0.6)' : 'hsl(220 10% 18%)'}`, borderRadius: '12px', color: 'hsl(0 0% 92%)', fontSize: '16px', ...mono, outline: 'none', boxSizing: 'border-box' as const }} />
+                  style={{ display: 'block', width: '100%', padding: '14px 16px', background: 'var(--t-surface)', border: `1px solid ${email.includes('@') ? 'hsl(142 76% 36% / 0.6)' : 'var(--t-border)'}`, borderRadius: '12px', color: 'var(--t-text)', fontSize: '16px', ...mono, outline: 'none', boxSizing: 'border-box' as const }} />
               </div>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button onClick={() => setShowDetailsModal(false)} style={btnBack}>← Back</button>
                 <button onClick={() => { if (!canProceed) return; setShowDetailsModal(false); const managed = ['custody_yield', 'prime', 'managed_yield']; if (accountType && managed.includes(accountType)) setStep('custody'); else setStep('confirm') }} disabled={!canProceed}
-                  style={{ flex: 1, background: canProceed ? 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))' : 'hsl(220 10% 14%)', color: canProceed ? 'white' : 'hsl(0 0% 30%)', border: 'none', borderRadius: '12px', padding: '14px', fontSize: '15px', fontWeight: '700', cursor: canProceed ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)' }}>
+                  style={{ flex: 1, background: canProceed ? 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))' : 'var(--t-border)', color: canProceed ? 'white' : 'var(--t-faint)', border: 'none', borderRadius: '12px', padding: '14px', fontSize: '15px', fontWeight: '700', cursor: canProceed ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)' }}>
                   Continue →
                 </button>
               </div>
@@ -288,7 +412,7 @@ function VaultPageInner() {
         {/* ── PRE-DONE HEADER ── */}
         {step !== 'done' && (
           <div style={{ textAlign: 'center' as const, marginBottom: '48px' }}>
-            <h1 style={{ color: 'hsl(0 0% 92%)', fontSize: '38px', fontWeight: '700', margin: '0 0 12px' }}>
+            <h1 style={{ color: 'var(--t-text)', fontSize: '38px', fontWeight: '700', margin: '0 0 12px' }}>
               {step === 'account' && 'Choose your account type'}
               {step === 'custody' && 'Custody preference'}
               {step === 'confirm' && 'Open your account'}
@@ -299,25 +423,22 @@ function VaultPageInner() {
         {/* ── STEP 1: Account Selection ── */}
         {step === 'account' && (
           <div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '32px' }}>
-              <div>
-                <div style={{ background: 'hsl(205 85% 55% / 0.06)', border: '1px solid hsl(205 85% 55% / 0.2)', borderRadius: '16px', padding: '20px 24px', marginBottom: '16px' }}>
-                  <h2 style={{ color: 'hsl(205 85% 55%)', fontSize: '16px', fontWeight: '700', margin: '0 0 8px' }}>⚛️ Self-Custody Accounts</h2>
-                  <p style={{ color: 'hsl(0 0% 60%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.7' }}>Your keys. Your Bitcoin. Always. Locked in a Taproot script — nobody can move it without your signature.</p>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '12px' }}>
-                  {selfAccounts.map(acc => <Card key={acc.type} acc={acc} selected={accountType === acc.type} onClick={() => setAccountType(acc.type)} />)}
-                </div>
-              </div>
-              <div>
-                <div style={{ background: 'hsl(38 92% 50% / 0.06)', border: '1px solid hsl(38 92% 50% / 0.2)', borderRadius: '16px', padding: '20px 24px', marginBottom: '16px' }}>
-                  <h2 style={{ color: 'hsl(38 92% 50%)', fontSize: '16px', fontWeight: '700', margin: '0 0 8px' }}>🏦 Managed Custody Accounts</h2>
-                  <p style={{ color: 'hsl(0 0% 60%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.7' }}>You own everything. We hold at BitGo or Komainu — insured up to $250M — and deploy institutional yield.</p>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '12px' }}>
-                  {managedAccounts.map(acc => <Card key={acc.type} acc={acc} selected={accountType === acc.type} onClick={() => setAccountType(acc.type)} />)}
-                </div>
-              </div>
+            {/* Self-custody section */}
+            <div style={{ background: 'hsl(205 85% 55% / 0.06)', border: '1px solid hsl(205 85% 55% / 0.2)', borderRadius: '16px', padding: '20px 24px', marginBottom: '16px' }}>
+              <h2 style={{ color: 'var(--t-accent)', fontSize: '16px', fontWeight: '700', margin: '0 0 6px' }}>⚛️ Self-Custody Accounts</h2>
+              <p style={{ color: 'var(--t-muted)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.7' }}>Your keys. Your Bitcoin. Always. Locked in a Taproot script secured by post-quantum signatures.</p>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px', marginBottom: '32px' }}>
+              {selfAccounts.map(acc => <Card key={acc.type} acc={acc} selected={accountType === acc.type} onClick={() => setAccountType(acc.type)} />)}
+            </div>
+
+            {/* Managed custody section */}
+            <div style={{ background: 'hsl(38 92% 50% / 0.06)', border: '1px solid hsl(38 92% 50% / 0.2)', borderRadius: '16px', padding: '20px 24px', marginBottom: '16px' }}>
+              <h2 style={{ color: 'var(--t-orange)', fontSize: '16px', fontWeight: '700', margin: '0 0 6px' }}>🏦 Managed Custody Accounts</h2>
+              <p style={{ color: 'var(--t-muted)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.7' }}>You own everything. We hold at BitGo or Komainu — insured up to $250M — and deploy institutional yield strategies.</p>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px', marginBottom: '32px' }}>
+              {managedAccounts.map(acc => <Card key={acc.type} acc={acc} selected={accountType === acc.type} onClick={() => setAccountType(acc.type)} />)}
             </div>
             <div style={{ maxWidth: '400px', margin: '32px auto 0' }}>
              <button onClick={() => { if (!accountType) return; const managed = ['custody_yield', 'prime', 'managed_yield']; if (accountType && managed.includes(accountType)) setStep('custody'); else setStep('confirm') }} disabled={!accountType} style={btnNext(!!accountType)}>
@@ -331,24 +452,24 @@ function VaultPageInner() {
         {step === 'custody' && (
           <div style={{ maxWidth: '680px', margin: '0 auto', display: 'flex', flexDirection: 'column' as const, gap: '14px' }}>
             {[
-              { type: 'ubtc' as const, icon: '🏦', title: 'UBTC Direct Custody', subtitle: 'Standard — immediate activation', description: 'UBTC holds and manages your assets directly.', tags: ['Immediate activation', 'No additional KYB'], color: 'hsl(205 85% 55%)' },
-              { type: 'bitgo' as const, icon: '🔐', title: 'UBTC + BitGo Sub-Custody', subtitle: '$250M insured', description: 'Assets sub-custodied at BitGo — $60B+ AUM, SOC2 certified, insured up to $250M.', tags: ['$250M insured', 'SOC2', 'KYB required'], color: 'hsl(38 92% 50%)' },
-              { type: 'komainu' as const, icon: '🌍', title: 'UBTC + Komainu', subtitle: 'VARA Dubai & UK FCA regulated', description: 'Sub-custodied at Komainu — regulated by Dubai VARA and UK FCA, backed by Nomura.', tags: ['VARA Dubai', 'UK FCA', 'Nomura-backed'], color: 'hsl(270 85% 65%)' },
+              { type: 'ubtc' as const, icon: '🏦', title: 'UBTC Direct Custody', subtitle: 'Standard — immediate activation', description: 'UBTC holds and manages your assets directly.', tags: ['Immediate activation', 'No additional KYB'], color: 'var(--t-accent)' },
+              { type: 'bitgo' as const, icon: '🔐', title: 'UBTC + BitGo Sub-Custody', subtitle: '$250M insured', description: 'Assets sub-custodied at BitGo — $60B+ AUM, SOC2 certified, insured up to $250M.', tags: ['$250M insured', 'SOC2', 'KYB required'], color: 'var(--t-orange)' },
+              { type: 'komainu' as const, icon: '🌍', title: 'UBTC + Komainu', subtitle: 'VARA Dubai & UK FCA regulated', description: 'Sub-custodied at Komainu — regulated by Dubai VARA and UK FCA, backed by Nomura.', tags: ['VARA Dubai', 'UK FCA', 'Nomura-backed'], color: 'var(--t-purple)' },
             ].map(opt => (
-              <div key={opt.type} onClick={() => setCustodyPreference(opt.type)} style={{ background: 'hsl(220 12% 8%)', border: `2px solid ${custodyPreference === opt.type ? opt.color : 'hsl(220 10% 16%)'}`, borderRadius: '16px', padding: '22px', cursor: 'pointer' }}>
+              <div key={opt.type} onClick={() => setCustodyPreference(opt.type)} style={{ background: 'var(--t-surface)', border: `2px solid ${custodyPreference === opt.type ? opt.color : 'var(--t-border)'}`, borderRadius: '16px', padding: '22px', cursor: 'pointer' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div style={{ display: 'flex', gap: '14px', flex: 1 }}>
                     <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: opt.color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', flexShrink: 0 }}>{opt.icon}</div>
                     <div>
-                      <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '16px', fontWeight: '700', margin: '0 0 2px' }}>{opt.title}</h2>
+                      <h2 style={{ color: 'var(--t-text)', fontSize: '16px', fontWeight: '700', margin: '0 0 2px' }}>{opt.title}</h2>
                       <p style={{ color: opt.color, fontSize: '12px', ...mono, margin: '0 0 8px' }}>{opt.subtitle}</p>
-                      <p style={{ color: 'hsl(0 0% 65%)', fontSize: '13px', ...mono, margin: '0 0 10px', lineHeight: '1.7' }}>{opt.description}</p>
+                      <p style={{ color: 'var(--t-muted)', fontSize: '13px', ...mono, margin: '0 0 10px', lineHeight: '1.7' }}>{opt.description}</p>
                       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' as const }}>
                         {opt.tags.map(t => <span key={t} style={{ fontSize: '10px', ...mono, color: opt.color, border: `1px solid ${opt.color}40`, borderRadius: '20px', padding: '2px 8px' }}>{t}</span>)}
                       </div>
                     </div>
                   </div>
-                  <div style={{ width: '24px', height: '24px', borderRadius: '50%', border: `2px solid ${custodyPreference === opt.type ? opt.color : 'hsl(220 10% 30%)'}`, background: custodyPreference === opt.type ? opt.color : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: '24px', height: '24px', borderRadius: '50%', border: `2px solid ${custodyPreference === opt.type ? opt.color : 'var(--t-surface3)'}`, background: custodyPreference === opt.type ? opt.color : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     {custodyPreference === opt.type && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'white' }} />}
                   </div>
                 </div>
@@ -362,36 +483,120 @@ function VaultPageInner() {
         )}
 
         {/* ── STEP 3: Confirm ── */}
-        {step === 'confirm' && accountType && (
-          <div style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', flexDirection: 'column' as const, gap: '16px' }}>
-            <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 16%)', borderRadius: '16px', padding: '28px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid hsl(220 10% 12%)' }}>
-                <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: accountDetails[accountType].color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>{accountDetails[accountType].icon}</div>
-                <div>
-                 <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '20px', fontWeight: '700', margin: '0 0 4px' }}>Self-Custody Account</h2>
-                  <p style={{ color: accountDetails[accountType].color, fontSize: '12px', ...mono, margin: 0 }}>{accountDetails[accountType].custodyLabel}</p>
+        {step === 'confirm' && accountType && (() => {
+          const det = accountDetails[accountType]
+          const isSavings = accountType === 'savings'
+          const confirmRows: { label: string; value: string; highlight?: string }[] = [
+            { label: 'Account Type', value: det.title },
+            { label: 'Custody', value: det.custodyLabel },
+            ...(isSavings ? [
+              { label: 'Staking Protocol', value: 'Babylon — Bitcoin-native staking', highlight: 'var(--t-orange)' },
+              { label: 'Yield', value: `Babylon staking rewards — ${det.apy ?? '3-5'}% APY`, highlight: 'var(--t-green)' },
+              { label: 'Lock-up', value: 'Unbonding period applies (Babylon protocol)' },
+            ] : [
+              { label: 'Yield', value: det.yieldLabel + (det.apy ? ` — ${det.apy}% APY` : 'None') },
+            ]),
+            { label: 'Vault', value: 'Dedicated Taproot address — separate from other accounts' },
+            { label: 'UBTC Tracking', value: 'Mint & redemption linked to this vault ID' },
+            { label: 'Collateral Ratio', value: '150% minimum — $150 BTC per $100 UBTC' },
+            { label: 'Network', value: 'Bitcoin Testnet4' },
+          ]
+          return (
+            <div style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', flexDirection: 'column' as const, gap: '16px' }}>
+              <div style={{ background: 'var(--t-surface)', border: `1px solid ${det.color}40`, borderRadius: '16px', padding: '28px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid var(--t-border-subtle)' }}>
+                  <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: det.color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>{det.icon}</div>
+                  <div>
+                    <h2 style={{ color: 'var(--t-text)', fontSize: '20px', fontWeight: '700', margin: '0 0 4px' }}>{det.title}</h2>
+                    <p style={{ color: det.color, fontSize: '12px', ...mono, margin: 0 }}>{det.custodyLabel}</p>
+                  </div>
                 </div>
+                {isSavings && (
+                  <div style={{ background: 'var(--t-orange-bg)', border: '1px solid hsl(38 92% 50% / 0.25)', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px' }}>
+                    <p style={{ color: 'var(--t-orange)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.7' }}>
+                      Your BTC collateral will be staked via <strong>Babylon Protocol</strong> — a Bitcoin-native staking layer. You earn yield without bridging or wrapping. An unbonding period applies before redemption.
+                    </p>
+                  </div>
+                )}
+                {confirmRows.map(item => (
+                  <div key={item.label} style={{ padding: '12px 0', borderBottom: '1px solid var(--t-border-subtle)' }}>
+                    <p style={{ color: 'var(--t-muted)', fontSize: '11px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.1em', margin: '0 0 4px' }}>{item.label}</p>
+                    <p style={{ color: item.highlight ?? 'var(--t-text)', fontSize: '13px', fontWeight: '600', ...mono, margin: 0 }}>{item.value}</p>
+                  </div>
+                ))}
               </div>
-              {[
-               
-                { label: 'Yield', value: accountDetails[accountType].yieldLabel + (accountDetails[accountType].apy ? ` — ${accountDetails[accountType].apy}% APY` : '') },
-                { label: 'Collateral Ratio', value: '150% minimum — $150 BTC per $100 UBTC' },
-                { label: 'Network', value: 'Bitcoin Testnet4' },
-              ].map(item => (
-                <div key={item.label} style={{ padding: '12px 0', borderBottom: '1px solid hsl(220 10% 12%)' }}>
-                  <p style={{ color: 'hsl(0 0% 45%)', fontSize: '11px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.1em', margin: '0 0 4px' }}>{item.label}</p>
-                  <p style={{ color: 'hsl(0 0% 92%)', fontSize: '13px', fontWeight: '600', ...mono, margin: 0 }}>{item.value}</p>
+              {hasExistingWallet ? (
+                <div style={{ background: 'var(--t-surface)', border: '1px solid hsl(205 85% 55% / 0.3)', borderRadius: '16px', padding: '24px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '20px' }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--t-accent-bg)', border: '1px solid hsl(205 85% 55% / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 }}>⚛️</div>
+                    <div>
+                      <p style={{ color: 'var(--t-text)', fontSize: '16px', fontWeight: '700', margin: '0 0 3px', fontFamily: 'var(--font-display)' }}>
+                        {existingWalletUsername ? `@${existingWalletUsername}` : 'Your wallet'}
+                      </p>
+                      <p style={{ color: 'var(--t-faint)', fontSize: '11px', fontFamily: 'ui-monospace, monospace', margin: 0 }}>
+                        {existingWalletAddress ? `${existingWalletAddress.slice(0, 14)}…${existingWalletAddress.slice(-6)}` : ''}
+                      </p>
+                    </div>
+                    <div style={{ marginLeft: 'auto', background: 'var(--t-green-bg)', border: '1px solid hsl(142 76% 36% / 0.3)', borderRadius: '20px', padding: '4px 10px' }}>
+                      <span style={{ color: 'var(--t-green)', fontSize: '10px', fontFamily: 'ui-monospace, monospace', fontWeight: 700 }}>ACTIVE</span>
+                    </div>
+                  </div>
+                  <p style={{ color: 'var(--t-muted)', fontSize: '12px', ...mono, margin: '0 0 14px', lineHeight: '1.7' }}>
+                    This account will be added to your existing wallet. Enter your password to connect and open it — no new recovery phrase will be created.
+                  </p>
+                  {!useRecoveryPhrase ? (
+                    <>
+                      <input
+                        type="password"
+                        value={existingMnemonic}
+                        onChange={e => setExistingMnemonic(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter' && existingMnemonic.length >= 8 && !loading) createAccount() }}
+                        placeholder="Wallet password"
+                        style={{ width: '100%', background: 'var(--t-surface)', border: `1px solid ${existingMnemonic.length >= 8 ? 'hsl(205 85% 55% / 0.5)' : 'var(--t-border)'}`, borderRadius: '10px', padding: '13px 16px', color: 'var(--t-text)', fontSize: '14px', fontFamily: 'ui-monospace, monospace', boxSizing: 'border-box' as const, outline: 'none', marginBottom: '8px' }}
+                      />
+                      <button onClick={() => setUseRecoveryPhrase(true)} style={{ background: 'none', border: 'none', color: 'var(--t-faint)', fontSize: '11px', fontFamily: 'ui-monospace, monospace', cursor: 'pointer', padding: '0 0 14px', textDecoration: 'underline' }}>
+                        Forgot password? Use 24-word recovery phrase instead
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <p style={{ color: 'var(--t-orange)', fontSize: '12px', ...mono, margin: '0 0 8px' }}>Enter your 24-word recovery phrase:</p>
+                      <textarea
+                        value={recoveryPhraseInput}
+                        onChange={e => setRecoveryPhraseInput(e.target.value)}
+                        placeholder="word1 word2 word3 ... word24"
+                        rows={3}
+                        style={{ width: '100%', background: 'var(--t-surface)', border: `1px solid ${recoveryPhraseInput.trim().split(' ').length === 24 ? 'hsl(142 76% 36% / 0.5)' : 'var(--t-border)'}`, borderRadius: '10px', padding: '13px 16px', color: 'var(--t-text)', fontSize: '13px', fontFamily: 'ui-monospace, monospace', boxSizing: 'border-box' as const, outline: 'none', resize: 'vertical' as const, marginBottom: '8px' }}
+                      />
+                      <button onClick={() => { setUseRecoveryPhrase(false); setRecoveryPhraseInput(''); setError('') }} style={{ background: 'none', border: 'none', color: 'var(--t-faint)', fontSize: '11px', fontFamily: 'ui-monospace, monospace', cursor: 'pointer', padding: '0 0 14px', textDecoration: 'underline' }}>
+                        Use password instead
+                      </button>
+                    </>
+                  )}
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button onClick={() => setStep('account')} style={btnBack}>← Back</button>
+                    <button
+                      onClick={createAccount}
+                      disabled={loading || (!useRecoveryPhrase && existingMnemonic.length < 8) || (useRecoveryPhrase && recoveryPhraseInput.trim().split(' ').length < 24)}
+                      style={{ ...btnNext((!useRecoveryPhrase && existingMnemonic.length >= 8 || useRecoveryPhrase && recoveryPhraseInput.trim().split(' ').length >= 24) && !loading), flex: 1 }}
+                    >
+                      {loading ? 'Connecting…' : `Connect & Open ${det.title} →`}
+                    </button>
+                  </div>
+                  {error && <p style={{ color: 'var(--t-red)', fontSize: '13px', ...mono, margin: '12px 0 0' }}>{error}</p>}
                 </div>
-              ))}
+              ) : (
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button onClick={() => setStep('account')} style={btnBack}>← Back</button>
+                  <button onClick={createAccount} disabled={loading} style={btnNext(!loading)}>
+                    {loading ? 'Opening account...' : `Open ${det.title} →`}
+                  </button>
+                </div>
+              )}
+              {!hasExistingWallet && error && <p style={{ color: 'var(--t-red)', fontSize: '13px', ...mono }}>{error}</p>}
             </div>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button onClick={createAccount} disabled={loading} style={btnNext(!loading)}>
-                {loading ? 'Opening account...' : 'Open Self-Custody Account →'}
-              </button>
-            </div>
-            {error && <p style={{ color: 'hsl(0 84% 60%)', fontSize: '13px', ...mono }}>{error}</p>}
-          </div>
-        )}
+          )
+        })()}
 
         {/* ── DONE: 7-STEP ONBOARDING WIZARD ── */}
         {step === 'done' && result && accountType && (
@@ -405,18 +610,18 @@ function VaultPageInner() {
                 return (
                   <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: '3px' }}>
-                      <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: done ? 'hsl(142 76% 36%)' : active ? 'hsl(38 92% 50%)' : 'hsl(220 12% 12%)', border: `2px solid ${done ? 'hsl(142 76% 36%)' : active ? 'hsl(38 92% 50%)' : 'hsl(220 10% 18%)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <span style={{ color: done || active ? 'white' : 'hsl(0 0% 30%)', fontSize: '11px', fontWeight: 700 }}>{done ? '✓' : n}</span>
+                      <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: done ? 'var(--t-green)' : active ? 'var(--t-orange)' : 'var(--t-surface2)', border: `2px solid ${done ? 'var(--t-green)' : active ? 'var(--t-orange)' : 'var(--t-border)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ color: done || active ? 'white' : 'var(--t-faint)', fontSize: '11px', fontWeight: 700 }}>{done ? '✓' : n}</span>
                       </div>
-                      <span style={{ color: active ? 'hsl(38 92% 50%)' : done ? 'hsl(142 76% 36%)' : 'hsl(0 0% 25%)', fontSize: '8px', fontFamily: 'monospace', textAlign: 'center' as const, maxWidth: '55px', lineHeight: '1.2' }}>{label}</span>
+                      <span style={{ color: active ? 'var(--t-orange)' : done ? 'var(--t-green)' : 'var(--t-faint)', fontSize: '8px', fontFamily: 'monospace', textAlign: 'center' as const, maxWidth: '55px', lineHeight: '1.2' }}>{label}</span>
                     </div>
-                    {i < wizardSteps.length - 1 && <div style={{ width: '16px', height: '2px', background: done ? 'hsl(142 76% 36%)' : 'hsl(220 10% 18%)', marginBottom: '14px' }} />}
+                    {i < wizardSteps.length - 1 && <div style={{ width: '16px', height: '2px', background: done ? 'var(--t-green)' : 'var(--t-border)', marginBottom: '14px' }} />}
                   </div>
                 )
               })}
             </div>
 
-            <div style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 13%)', borderRadius: '20px', padding: '28px' }}>
+            <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '20px', padding: '28px' }}>
 
               {/* ── WIZARD STEP 1: Recovery Phrase ── */}
               {onboardStep === 1 && (
@@ -424,8 +629,8 @@ function VaultPageInner() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
                     <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'hsl(38 92% 50% / 0.15)', border: '1px solid hsl(38 92% 50% / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 }}>🔑</div>
                     <div>
-                      <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '20px', fontWeight: '700', margin: '0 0 4px' }}>Your 24-Word Recovery Phrase</h2>
-                      <p style={{ color: 'hsl(38 92% 50%)', fontSize: '11px', fontFamily: 'monospace', margin: 0 }}>Step 1 of 7 — The most important step in your setup</p>
+                      <h2 style={{ color: 'var(--t-text)', fontSize: '20px', fontWeight: '700', margin: '0 0 4px' }}>Your 24-Word Recovery Phrase</h2>
+                      <p style={{ color: 'var(--t-orange)', fontSize: '11px', fontFamily: 'monospace', margin: 0 }}>Step 1 of 7 — The most important step in your setup</p>
                     </div>
                   </div>
                   {infoBox(<>
@@ -433,42 +638,49 @@ function VaultPageInner() {
                     {qa('Why 24 words instead of a password?', 'Unlike a password, your 24-word phrase generates all your cryptographic keys mathematically. From these words, your system derives your Quantum Kyber encryption key, your Taproot Bitcoin key, and your local encryption key. One phrase. All keys. Forever.')}
                     {qa('What should I do right now?', 'Write all 24 words on paper — in order — right now. Store the paper somewhere safe offline. <span style="color:hsl(0 84% 60%)">Do not photograph them. Do not email them. Do not store in Notes, iCloud, or Google Drive.</span>')}
                     {qa('What if I lose them?', '<span style="color:hsl(0 84% 60%)">Your funds cannot be recovered. Not by us. Not by anyone. These words are shown exactly once.</span>')}
-                  </>, 'hsl(38 92% 50%)')}
+                  </>, 'var(--t-orange)')}
 
-                 {result.mnemonic && isInTelegram() && (
+                  {!newWalletMnemonic && (
+                    <div style={{ background: 'var(--t-green-bg)', border: '1px solid hsl(142 76% 36% / 0.25)', borderRadius: '10px', padding: '16px', marginBottom: '16px' }}>
+                      <p style={{ color: 'var(--t-green)', fontSize: '13px', ...mono, margin: 0, lineHeight: '1.7' }}>
+                        ✓ This account was added to your existing wallet. Your 24-word recovery phrase is unchanged — the same phrase you already have covers all your accounts.
+                      </p>
+                    </div>
+                  )}
+                  {newWalletMnemonic && isInTelegram() && (
                     <TelegramSafeDisplay
                       title="24-Word Recovery Phrase"
-                      content={result.mnemonic}
+                      content={newWalletMnemonic}
                       description="Tap Copy to save into your password manager (1Password, Bitwarden, Apple Passwords). Or tap Show QR to scan with another device. This phrase will not be shown again."
                       confirmed={mnemonicConfirmed}
                       onConfirmedChange={setMnemonicConfirmed}
                       confirmLabel="I have copied my 24 words into a secure password manager or written them down offline. I understand losing them means losing my wallet."
                     />
                   )}
-                  {result.mnemonic && !isInTelegram() && (
+                  {newWalletMnemonic && !isInTelegram() && (
                     <>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '12px' }}>
-                        {result.mnemonic.split(' ').map((word: string, i: number) => (
-                          <div key={i} style={{ background: 'hsl(220 15% 5%)', border: '1px solid hsl(220 10% 14%)', borderRadius: '6px', padding: '8px 10px', display: 'flex', gap: '6px', alignItems: 'center' }}>
-                            <span style={{ color: 'hsl(0 0% 28%)', fontSize: '9px', fontFamily: 'monospace', minWidth: '16px' }}>{i + 1}.</span>
-                            <span style={{ color: 'hsl(0 0% 88%)', fontSize: '12px', fontFamily: 'monospace', fontWeight: 600 }}>{word}</span>
+                        {newWalletMnemonic.split(' ').map((word: string, i: number) => (
+                          <div key={i} style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '6px', padding: '8px 10px', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            <span style={{ color: 'var(--t-faint)', fontSize: '9px', fontFamily: 'monospace', minWidth: '16px' }}>{i + 1}.</span>
+                            <span style={{ color: 'var(--t-text)', fontSize: '12px', fontFamily: 'monospace', fontWeight: 600 }}>{word}</span>
                           </div>
                         ))}
                       </div>
                       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-                        <button onClick={() => navigator.clipboard.writeText(result.mnemonic)} style={{ flex: 1, background: 'hsl(220 12% 12%)', color: 'hsl(0 0% 55%)', border: '1px solid hsl(220 10% 18%)', borderRadius: '8px', padding: '10px', fontSize: '11px', fontFamily: 'monospace', cursor: 'pointer' }}>Copy to clipboard</button>
+                        <button onClick={() => navigator.clipboard.writeText(newWalletMnemonic)} style={{ flex: 1, background: 'var(--t-surface2)', color: 'var(--t-muted)', border: '1px solid var(--t-border)', borderRadius: '8px', padding: '10px', fontSize: '11px', fontFamily: 'monospace', cursor: 'pointer' }}>Copy to clipboard</button>
                         <button onClick={() => {
-                          const text = `QAP WALLET RECOVERY PHRASE\nVault: ${result.vault_id}\nCreated: ${new Date().toISOString()}\n\nWARNING: These 24 words control your entire wallet.\nWrite them on paper. Store offline. Never share.\n\n${result.mnemonic.split(' ').map((w: string, i: number) => `${i + 1}. ${w}`).join('\n')}`
+                          const text = `QAP WALLET RECOVERY PHRASE\nVault: ${result.vault_id}\nCreated: ${new Date().toISOString()}\n\nWARNING: These 24 words control your entire wallet.\nWrite them on paper. Store offline. Never share.\n\n${newWalletMnemonic.split(' ').map((w: string, i: number) => `${i + 1}. ${w}`).join('\n')}`
                           const blob = new Blob([text], { type: 'text/plain' })
                           const url = URL.createObjectURL(blob)
                           const a = document.createElement('a'); a.href = url; a.download = `recovery-phrase-${result.vault_id}.txt`
                           document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url)
-                        }} style={{ flex: 1, background: 'hsl(38 92% 50%)', color: '#000', border: 'none', borderRadius: '8px', padding: '10px', fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, cursor: 'pointer' }}>⬇ Download as text file</button>
+                        }} style={{ flex: 1, background: 'var(--t-orange)', color: '#000', border: 'none', borderRadius: '8px', padding: '10px', fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, cursor: 'pointer' }}>⬇ Download as text file</button>
                       </div>
                     </>
                   )}
-                 {!isInTelegram() && checkBox(mnemonicConfirmed, () => setMnemonicConfirmed(!mnemonicConfirmed), 'I have written down all 24 words in order and stored them safely offline. I understand these cannot be recovered if lost.')}
-                  {nextBtn('Saved my phrase — Next: Set Password →', () => setOnboardStep(2), mnemonicConfirmed)}
+                  {newWalletMnemonic && !isInTelegram() && checkBox(mnemonicConfirmed, () => setMnemonicConfirmed(!mnemonicConfirmed), 'I have written down all 24 words in order and stored them safely offline. I understand these cannot be recovered if lost.')}
+                  {nextBtn(newWalletMnemonic ? 'Saved my phrase — Next: Set Password →' : 'Continue — Next: Set Password →', () => setOnboardStep(2), newWalletMnemonic ? mnemonicConfirmed : true)}
                 </div>
               )}
 
@@ -476,10 +688,10 @@ function VaultPageInner() {
               {onboardStep === 2 && (
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                    <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'hsl(142 76% 36% / 0.15)', border: '1px solid hsl(142 76% 36% / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 }}>🔒</div>
+                    <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'var(--t-green-bg)', border: '1px solid hsl(142 76% 36% / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 }}>🔒</div>
                     <div>
-                      <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '20px', fontWeight: '700', margin: '0 0 4px' }}>Set Your Wallet Password</h2>
-                      <p style={{ color: 'hsl(142 76% 36%)', fontSize: '11px', fontFamily: 'monospace', margin: 0 }}>Step 2 of 7 — Daily device security</p>
+                      <h2 style={{ color: 'var(--t-text)', fontSize: '20px', fontWeight: '700', margin: '0 0 4px' }}>Set Your Wallet Password</h2>
+                      <p style={{ color: 'var(--t-green)', fontSize: '11px', fontFamily: 'monospace', margin: 0 }}>Step 2 of 7 — Daily device security</p>
                     </div>
                   </div>
                   {infoBox(<>
@@ -487,20 +699,20 @@ function VaultPageInner() {
                     {qa('What is my Quantum Kyber key?', 'Your Kyber1024 key is a post-quantum encryption key generated in your browser from your 24-word phrase. It is used to encrypt and decrypt UBTC proof files. Unlike classical encryption, Kyber1024 cannot be broken by a quantum computer — it is a NIST post-quantum standard. Your password locks this key on your device.')}
                     {qa('How does the password protect it?', 'Your password is processed through PBKDF2 — 310,000 rounds of hashing — to derive an AES-256-GCM encryption key. This key encrypts your Kyber secret key in your browser\'s secure local storage. Even if someone accesses your device storage, they cannot use your Kyber key without your password.')}
                     {qa('What if I forget it?', '<span style="color:hsl(38 92% 50%)">Use your 24-word recovery phrase to restore access and set a new password. The phrase is the master — the password is for daily convenience.</span>')}
-                  </>, 'hsl(142 76% 36%)')}
+                  </>, 'var(--t-green)')}
 
                   {!passwordSet ? (
                     <>
                       <input type="password" placeholder="Choose a strong password (min 8 characters)" value={walletPassword} onChange={e => setWalletPassword(e.target.value)}
-                        style={{ width: '100%', padding: '13px 16px', background: 'hsl(220 15% 5%)', border: '1px solid hsl(220 10% 16%)', borderRadius: '10px', color: 'hsl(0 0% 88%)', fontSize: '14px', fontFamily: 'monospace', marginBottom: '10px', boxSizing: 'border-box' as const, outline: 'none' }} />
+                        style={{ width: '100%', padding: '13px 16px', background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '10px', color: 'var(--t-text)', fontSize: '14px', fontFamily: 'monospace', marginBottom: '10px', boxSizing: 'border-box' as const, outline: 'none' }} />
                       <input type="password" placeholder="Confirm your password" value={walletPasswordConfirm} onChange={e => setWalletPasswordConfirm(e.target.value)}
-                        style={{ width: '100%', padding: '13px 16px', background: 'hsl(220 15% 5%)', border: '1px solid hsl(220 10% 16%)', borderRadius: '10px', color: 'hsl(0 0% 88%)', fontSize: '14px', fontFamily: 'monospace', marginBottom: '12px', boxSizing: 'border-box' as const, outline: 'none' }} />
+                        style={{ width: '100%', padding: '13px 16px', background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '10px', color: 'var(--t-text)', fontSize: '14px', fontFamily: 'monospace', marginBottom: '12px', boxSizing: 'border-box' as const, outline: 'none' }} />
                       {walletPassword.length > 0 && (
                         <div style={{ marginBottom: '12px' }}>
-                          <div style={{ height: '4px', borderRadius: '2px', background: 'hsl(220 10% 14%)', marginBottom: '4px' }}>
-                            <div style={{ height: '100%', borderRadius: '2px', width: `${Math.min(100, walletPassword.length * 8)}%`, background: walletPassword.length < 8 ? 'hsl(0 84% 60%)' : walletPassword.length < 12 ? 'hsl(38 92% 50%)' : 'hsl(142 76% 36%)', transition: 'all 0.3s' }} />
+                          <div style={{ height: '4px', borderRadius: '2px', background: 'var(--t-border)', marginBottom: '4px' }}>
+                            <div style={{ height: '100%', borderRadius: '2px', width: `${Math.min(100, walletPassword.length * 8)}%`, background: walletPassword.length < 8 ? 'var(--t-red)' : walletPassword.length < 12 ? 'var(--t-orange)' : 'var(--t-green)', transition: 'all 0.3s' }} />
                           </div>
-                          <p style={{ color: walletPassword.length < 8 ? 'hsl(0 84% 60%)' : walletPassword.length < 12 ? 'hsl(38 92% 50%)' : 'hsl(142 76% 36%)', fontSize: '11px', fontFamily: 'monospace', margin: 0 }}>
+                          <p style={{ color: walletPassword.length < 8 ? 'var(--t-red)' : walletPassword.length < 12 ? 'var(--t-orange)' : 'var(--t-green)', fontSize: '11px', fontFamily: 'monospace', margin: 0 }}>
                             {walletPassword.length < 8 ? 'Too short' : walletPassword.length < 12 ? 'Acceptable' : 'Strong ✓'}
                           </p>
                         </div>
@@ -509,29 +721,35 @@ function VaultPageInner() {
                         if (walletPassword.length < 8) { alert('Password must be at least 8 characters'); return }
                         if (walletPassword !== walletPasswordConfirm) { alert('Passwords do not match'); return }
                         try {
-                          const { loadWallet, savePasswordVault } = await import('../lib/wallet/storage')
+                          const { loadWallet, savePasswordVault, saveMnemonicVault } = await import('../lib/wallet/storage')
                           const { sealWithPassword } = await import('../lib/wallet/password')
                           const { deriveKeySeeds } = await import('../lib/wallet/hkdf')
                           const { mnemonicToSeedSync } = await import('@scure/bip39')
                           const stored = await loadWallet()
                           if (!stored) { alert('Wallet not found'); return }
-                          const bip39Seed = mnemonicToSeedSync(result.mnemonic)
+                          const bip39Seed = mnemonicToSeedSync(newWalletMnemonic!)
                           const seeds = await deriveKeySeeds(bip39Seed)
                           const vault = await sealWithPassword(seeds.localEncKey, walletPassword)
                           seeds.localEncKey.fill(0)
                           await savePasswordVault(vault)
+                          // Also store mnemonic encrypted with same password so new accounts
+                          // can be derived without re-entering the 24 words
+                          const mnemonicBytes = new TextEncoder().encode(newWalletMnemonic!)
+                          const mnemonicVault = await sealWithPassword(mnemonicBytes, walletPassword)
+                          mnemonicBytes.fill(0)
+                          await saveMnemonicVault(mnemonicVault)
                           setPasswordSet(true)
                         } catch (e: any) { alert('Failed: ' + e.message) }
-                      }} style={{ width: '100%', background: 'hsl(142 76% 36%)', color: 'white', border: 'none', borderRadius: '12px', padding: '16px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
+                      }} style={{ width: '100%', background: 'var(--t-green)', color: 'white', border: 'none', borderRadius: '12px', padding: '16px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
                         Encrypt Wallet with Password
                       </button>
                     </>
                   ) : (
                     <>
-                      <div style={{ background: 'hsl(142 76% 36% / 0.1)', border: '1px solid hsl(142 76% 36% / 0.3)', borderRadius: '12px', padding: '16px', marginBottom: '16px', textAlign: 'center' as const }}>
-                        <p style={{ color: 'hsl(142 76% 36%)', fontSize: '14px', fontFamily: 'monospace', fontWeight: 700, margin: 0 }}>✅ Password set — Kyber key encrypted on this device</p>
+                      <div style={{ background: 'var(--t-green-bg)', border: '1px solid hsl(142 76% 36% / 0.3)', borderRadius: '12px', padding: '16px', marginBottom: '16px', textAlign: 'center' as const }}>
+                        <p style={{ color: 'var(--t-green)', fontSize: '14px', fontFamily: 'monospace', fontWeight: 700, margin: 0 }}>✅ Password set — Kyber key encrypted on this device</p>
                       </div>
-                      {nextBtn('Next: Download Protocol Key →', () => setOnboardStep(3), true, 'hsl(38 92% 50%)')}
+                      {nextBtn('Next: Download Protocol Key →', () => setOnboardStep(3), true, 'var(--t-orange)')}
                     </>
                   )}
                 </div>
@@ -541,19 +759,19 @@ function VaultPageInner() {
               {onboardStep === 3 && (
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                    <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'hsl(205 85% 55% / 0.15)', border: '1px solid hsl(205 85% 55% / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 }}>🏦</div>
+                    <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'var(--t-accent-bg)', border: '1px solid hsl(205 85% 55% / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 }}>🏦</div>
                     <div>
-                      <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '20px', fontWeight: '700', margin: '0 0 4px' }}>Your Protocol Second Key</h2>
-                      <p style={{ color: 'hsl(205 85% 55%)', fontSize: '11px', fontFamily: 'monospace', margin: 0 }}>Step 3 of 7 — Vault minting authorisation</p>
+                      <h2 style={{ color: 'var(--t-text)', fontSize: '20px', fontWeight: '700', margin: '0 0 4px' }}>Your Protocol Second Key</h2>
+                      <p style={{ color: 'var(--t-accent)', fontSize: '11px', fontFamily: 'monospace', margin: 0 }}>Step 3 of 7 — Vault minting authorisation</p>
                     </div>
                   </div>
                   {infoBox(<>
                     {qa('What is this key?', 'The Protocol Second Key is a separate security layer for your <strong style="color:hsl(205 85% 55%)">vault</strong> — not your wallet. You need it to mint UBTC from your Bitcoin collateral and to move UBTC from your vault to your wallet. It proves you are the legitimate vault owner.')}
                     {qa('How is it different from my password and phrase?', 'You have three independent security layers:<br/>• <strong style="color:hsl(38 92% 50%)">24-word phrase</strong> — master recovery key<br/>• <strong style="color:hsl(142 76% 36%)">Password</strong> — encrypts your Kyber key on this device<br/>• <strong style="color:hsl(205 85% 55%)">Protocol Key</strong> — authorises vault minting operations<br/><br/>All three are needed for full system access. This is defence in depth.')}
                     {qa('How do I use it?', 'Download it now. When you mint UBTC, upload this file. The system checks a cryptographic hash — the key itself never leaves your device. Store it separately from your recovery phrase.')}
-                  </>, 'hsl(205 85% 55%)')}
+                  </>, 'var(--t-accent)')}
 
-                  <div style={{ background: 'hsl(220 15% 5%)', border: '1px solid hsl(205 85% 55% / 0.3)', borderRadius: '10px', padding: '14px', marginBottom: '16px' }}>
+                  <div style={{ background: 'var(--t-surface)', border: '1px solid hsl(205 85% 55% / 0.3)', borderRadius: '10px', padding: '14px', marginBottom: '16px' }}>
                     {isInTelegram() && result.protocol_second_key && (
                       <TelegramSafeDisplay
                         title="Protocol Second Key"
@@ -566,10 +784,10 @@ function VaultPageInner() {
                       />
                     )}
                     {!isInTelegram() && <>
-                    <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 6px' }}>Protocol Second Key</p>
-                    <p style={{ color: 'hsl(205 85% 55%)', fontSize: '11px', fontFamily: 'monospace', margin: '0 0 12px', wordBreak: 'break-all' as const }}>{result.protocol_second_key?.substring(0, 64)}...</p>
+                    <p style={{ color: 'var(--t-faint)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 6px' }}>Protocol Second Key</p>
+                    <p style={{ color: 'var(--t-accent)', fontSize: '11px', fontFamily: 'monospace', margin: '0 0 12px', wordBreak: 'break-all' as const }}>{result.protocol_second_key?.substring(0, 64)}...</p>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <button onClick={() => navigator.clipboard.writeText(result.protocol_second_key || '')} style={{ flex: 1, background: 'hsl(220 12% 12%)', color: 'hsl(0 0% 55%)', border: '1px solid hsl(220 10% 18%)', borderRadius: '8px', padding: '10px', fontSize: '11px', fontFamily: 'monospace', cursor: 'pointer' }}>Copy</button>
+                      <button onClick={() => navigator.clipboard.writeText(result.protocol_second_key || '')} style={{ flex: 1, background: 'var(--t-surface2)', color: 'var(--t-muted)', border: '1px solid var(--t-border)', borderRadius: '8px', padding: '10px', fontSize: '11px', fontFamily: 'monospace', cursor: 'pointer' }}>Copy</button>
                       <button onClick={() => {
                         const text = `QAP PROTOCOL SECOND KEY\nVault: ${result.vault_id}\nCreated: ${new Date().toISOString()}\n\nWARNING: This key authorises minting UBTC from your vault.\nUpload it when minting. Store securely. Never share.\n\n${result.protocol_second_key}`
                         const blob = new Blob([text], { type: 'text/plain' })
@@ -577,13 +795,13 @@ function VaultPageInner() {
                         const a = document.createElement('a'); a.href = url; a.download = `protocol-key-${result.vault_id}.txt`
                         document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url)
                         setPskDownloaded(true)
-                     }} style={{ flex: 1, background: 'hsl(205 85% 55%)', color: '#000', border: 'none', borderRadius: '8px', padding: '10px', fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, cursor: 'pointer' }}>⬇ Download Key File</button>
+                     }} style={{ flex: 1, background: 'var(--t-accent)', color: '#000', border: 'none', borderRadius: '8px', padding: '10px', fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, cursor: 'pointer' }}>⬇ Download Key File</button>
                     </div>
                     </>}
                     </div>
               
                   {nextBtn(isInTelegram() ? 'Saved — Next: Verify My Key →' : 'Downloaded — Next: Verify My Key →', () => setOnboardStep(4), pskDownloaded)}
-                  {!pskDownloaded && <p style={{ color: 'hsl(0 0% 35%)', fontSize: '11px', fontFamily: 'monospace', textAlign: 'center' as const, marginTop: '8px' }}>{isInTelegram() ? 'Copy your key and confirm to continue' : 'Download your key file to continue'}</p>}
+                  {!pskDownloaded && <p style={{ color: 'var(--t-faint)', fontSize: '11px', fontFamily: 'monospace', textAlign: 'center' as const, marginTop: '8px' }}>{isInTelegram() ? 'Copy your key and confirm to continue' : 'Download your key file to continue'}</p>}
                 </div>
               )}
 
@@ -593,38 +811,38 @@ function VaultPageInner() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
                     <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'hsl(270 85% 65% / 0.15)', border: '1px solid hsl(270 85% 65% / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 }}>🧪</div>
                     <div>
-                      <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '20px', fontWeight: '700', margin: '0 0 4px' }}>Prove You Saved Your Key</h2>
-                      <p style={{ color: 'hsl(270 85% 65%)', fontSize: '11px', fontFamily: 'monospace', margin: 0 }}>Step 4 of 7 — Verification</p>
+                      <h2 style={{ color: 'var(--t-text)', fontSize: '20px', fontWeight: '700', margin: '0 0 4px' }}>Prove You Saved Your Key</h2>
+                      <p style={{ color: 'var(--t-purple)', fontSize: '11px', fontFamily: 'monospace', margin: 0 }}>Step 4 of 7 — Verification</p>
                     </div>
                   </div>
                   {infoBox(<>
                     {qa('Why are we doing this?', 'We need to confirm you actually saved your Protocol Second Key — not just clicked download and forgot about it. If you cannot upload it now, you will not be able to mint UBTC later. <strong style="color:hsl(270 85% 65%)">This test could save your funds.</strong>')}
                     {qa('What do I do?', 'Find the file you just downloaded — it will be called <strong>protocol-key-' + result.vault_id + '.txt</strong> in your Downloads folder. Upload it below. The system will verify it matches your vault.')}
-                  </>, 'hsl(270 85% 65%)')}
+                  </>, 'var(--t-purple)')}
 
                   {!pskVerified ? (
                     <>
                       {!isInTelegram() && (
-                        <label style={{ display: 'block', border: `2px dashed ${pskVerifyError ? 'hsl(0 84% 60%)' : 'hsl(220 10% 20%)'}`, borderRadius: '12px', padding: '32px', textAlign: 'center' as const, cursor: 'pointer', marginBottom: '12px', transition: 'border-color 0.2s' }}>
-                          <p style={{ color: 'hsl(0 0% 55%)', fontSize: '13px', fontFamily: 'monospace', margin: '0 0 4px' }}>Click to upload your Protocol Key file</p>
-                          <p style={{ color: 'hsl(0 0% 30%)', fontSize: '11px', fontFamily: 'monospace', margin: 0 }}>protocol-key-{result.vault_id}.txt</p>
+                        <label style={{ display: 'block', border: `2px dashed ${pskVerifyError ? 'var(--t-red)' : 'var(--t-border)'}`, borderRadius: '12px', padding: '32px', textAlign: 'center' as const, cursor: 'pointer', marginBottom: '12px', transition: 'border-color 0.2s' }}>
+                          <p style={{ color: 'var(--t-muted)', fontSize: '13px', fontFamily: 'monospace', margin: '0 0 4px' }}>Click to upload your Protocol Key file</p>
+                          <p style={{ color: 'var(--t-faint)', fontSize: '11px', fontFamily: 'monospace', margin: 0 }}>protocol-key-{result.vault_id}.txt</p>
                           <input type="file" accept=".txt,.key,.json" onChange={e => { const f = e.target.files?.[0]; if (f) verifyProtocolKey(f) }} style={{ display: 'none' }} />
                         </label>
                       )}
                       {isInTelegram() && (
                         <div style={{ marginBottom: '12px' }}>
-                          <label style={{ display: 'block', color: 'hsl(0 0% 55%)', fontSize: '12px', fontFamily: 'monospace', marginBottom: '8px' }}>Paste your Protocol Second Key</label>
+                          <label style={{ display: 'block', color: 'var(--t-muted)', fontSize: '12px', fontFamily: 'monospace', marginBottom: '8px' }}>Paste your Protocol Second Key</label>
                           <textarea
                             value={pskPasteInput}
                             onChange={e => setPskPasteInput(e.target.value)}
                             placeholder="Paste the key you saved earlier..."
                             rows={3}
-                            style={{ width: '100%', background: 'hsl(220 15% 4%)', border: `1px solid ${pskVerifyError ? 'hsl(0 84% 60%)' : 'hsl(220 10% 14%)'}`, borderRadius: '10px', padding: '12px 14px', color: 'hsl(0 0% 92%)', fontSize: '12px', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' as const, resize: 'vertical' as const, marginBottom: '10px' }}
+                            style={{ width: '100%', background: 'var(--t-bg)', border: `1px solid ${pskVerifyError ? 'var(--t-red)' : 'var(--t-border)'}`, borderRadius: '10px', padding: '12px 14px', color: 'var(--t-text)', fontSize: '12px', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' as const, resize: 'vertical' as const, marginBottom: '10px' }}
                           />
                           <button
                             onClick={() => verifyProtocolKeyText(pskPasteInput)}
                             disabled={!pskPasteInput.trim()}
-                            style={{ width: '100%', background: pskPasteInput.trim() ? 'hsl(270 85% 65%)' : 'hsl(220 10% 14%)', color: pskPasteInput.trim() ? 'white' : 'hsl(0 0% 28%)', border: 'none', borderRadius: '10px', padding: '12px', fontSize: '13px', fontWeight: 700, fontFamily: 'var(--font-display)', cursor: pskPasteInput.trim() ? 'pointer' : 'not-allowed' }}
+                            style={{ width: '100%', background: pskPasteInput.trim() ? 'var(--t-purple)' : 'var(--t-border)', color: pskPasteInput.trim() ? 'white' : 'var(--t-faint)', border: 'none', borderRadius: '10px', padding: '12px', fontSize: '13px', fontWeight: 700, fontFamily: 'var(--font-display)', cursor: pskPasteInput.trim() ? 'pointer' : 'not-allowed' }}
                           >
                             Verify My Key
                           </button>
@@ -632,14 +850,14 @@ function VaultPageInner() {
                       )}
                       {pskVerifyError && (
                         <div style={{ background: 'hsl(0 84% 60% / 0.1)', border: '1px solid hsl(0 84% 60% / 0.3)', borderRadius: '8px', padding: '12px', marginBottom: '12px' }}>
-                          <p style={{ color: 'hsl(0 84% 60%)', fontSize: '12px', fontFamily: 'monospace', margin: 0 }}>❌ {pskVerifyError}</p>
+                          <p style={{ color: 'var(--t-red)', fontSize: '12px', fontFamily: 'monospace', margin: 0 }}>❌ {pskVerifyError}</p>
                         </div>
                       )}
                     </>
                   ) : (
-                    <div style={{ background: 'hsl(142 76% 36% / 0.1)', border: '1px solid hsl(142 76% 36% / 0.3)', borderRadius: '12px', padding: '20px', marginBottom: '16px', textAlign: 'center' as const }}>
-                      <p style={{ color: 'hsl(142 76% 36%)', fontSize: '15px', fontFamily: 'monospace', fontWeight: 700, margin: '0 0 4px' }}>✅ Key verified — your file is saved correctly</p>
-                      <p style={{ color: 'hsl(0 0% 40%)', fontSize: '12px', fontFamily: 'monospace', margin: 0 }}>You will need this file every time you mint UBTC</p>
+                    <div style={{ background: 'var(--t-green-bg)', border: '1px solid hsl(142 76% 36% / 0.3)', borderRadius: '12px', padding: '20px', marginBottom: '16px', textAlign: 'center' as const }}>
+                      <p style={{ color: 'var(--t-green)', fontSize: '15px', fontFamily: 'monospace', fontWeight: 700, margin: '0 0 4px' }}>✅ Key verified — your file is saved correctly</p>
+                      <p style={{ color: 'var(--t-muted)', fontSize: '12px', fontFamily: 'monospace', margin: 0 }}>You will need this file every time you mint UBTC</p>
                     </div>
                   )}
                   {nextBtn('Key verified — Next: Account Summary →', () => setOnboardStep(5), pskVerified)}
@@ -652,34 +870,34 @@ function VaultPageInner() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
                     <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'hsl(38 92% 50% / 0.15)', border: '1px solid hsl(38 92% 50% / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 }}>🏦</div>
                     <div>
-                      <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '20px', fontWeight: '700', margin: '0 0 4px' }}>Your Account is Ready</h2>
-                      <p style={{ color: 'hsl(38 92% 50%)', fontSize: '11px', fontFamily: 'monospace', margin: 0 }}>Step 5 of 7 — Understanding your vault and wallet</p>
+                      <h2 style={{ color: 'var(--t-text)', fontSize: '20px', fontWeight: '700', margin: '0 0 4px' }}>Your Account is Ready</h2>
+                      <p style={{ color: 'var(--t-orange)', fontSize: '11px', fontFamily: 'monospace', margin: 0 }}>Step 5 of 7 — Understanding your vault and wallet</p>
                     </div>
                   </div>
 
-                  <div style={{ background: 'hsl(142 76% 36% / 0.08)', border: '1px solid hsl(142 76% 36% / 0.2)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
-                    <p style={{ color: 'hsl(142 76% 36%)', fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, margin: '0 0 4px', textTransform: 'uppercase' as const, letterSpacing: '0.1em' }}>Vault Created</p>
-                    <p style={{ color: 'hsl(0 0% 55%)', fontSize: '11px', fontFamily: 'monospace', margin: '0 0 8px' }}>{result.vault_id}</p>
-                    <p style={{ color: 'hsl(0 0% 35%)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase' as const, letterSpacing: '0.1em', margin: '0 0 4px' }}>Bitcoin Deposit Address</p>
-                    <p style={{ color: 'hsl(205 85% 55%)', fontSize: '11px', fontFamily: 'monospace', margin: 0, wordBreak: 'break-all' as const }}>{result.mast_address || result.deposit_address}</p>
+                  <div style={{ background: 'var(--t-green-bg)', border: '1px solid hsl(142 76% 36% / 0.2)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                    <p style={{ color: 'var(--t-green)', fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, margin: '0 0 4px', textTransform: 'uppercase' as const, letterSpacing: '0.1em' }}>Vault Created</p>
+                    <p style={{ color: 'var(--t-muted)', fontSize: '11px', fontFamily: 'monospace', margin: '0 0 8px' }}>{result.vault_id}</p>
+                    <p style={{ color: 'var(--t-faint)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase' as const, letterSpacing: '0.1em', margin: '0 0 4px' }}>Bitcoin Deposit Address</p>
+                    <p style={{ color: 'var(--t-accent)', fontSize: '11px', fontFamily: 'monospace', margin: 0, wordBreak: 'break-all' as const }}>{result.mast_address || result.deposit_address}</p>
                   </div>
 
                   {infoBox(<>
                     <p style={{ color: 'hsl(0 0% 78%)', fontSize: '14px', fontFamily: 'monospace', fontWeight: 700, margin: '0 0 16px' }}>Understanding the QAP System</p>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-                      <div style={{ background: 'hsl(38 92% 50% / 0.08)', border: '1px solid hsl(38 92% 50% / 0.2)', borderRadius: '8px', padding: '12px' }}>
-                        <p style={{ color: 'hsl(38 92% 50%)', fontSize: '12px', fontFamily: 'monospace', fontWeight: 700, margin: '0 0 8px' }}>🏦 YOUR VAULT</p>
-                        <p style={{ color: 'hsl(0 0% 55%)', fontSize: '11px', fontFamily: 'monospace', margin: 0, lineHeight: '1.7' }}>Holds your Bitcoin collateral. Like a safe deposit box. You deposit BTC, it locks in Taproot. You mint UBTC against it.</p>
+                      <div style={{ background: 'var(--t-orange-bg)', border: '1px solid hsl(38 92% 50% / 0.2)', borderRadius: '8px', padding: '12px' }}>
+                        <p style={{ color: 'var(--t-orange)', fontSize: '12px', fontFamily: 'monospace', fontWeight: 700, margin: '0 0 8px' }}>🏦 YOUR VAULT</p>
+                        <p style={{ color: 'var(--t-muted)', fontSize: '11px', fontFamily: 'monospace', margin: 0, lineHeight: '1.7' }}>Holds your Bitcoin collateral. Like a safe deposit box. You deposit BTC, it locks in Taproot. You mint UBTC against it.</p>
                       </div>
-                      <div style={{ background: 'hsl(142 76% 36% / 0.08)', border: '1px solid hsl(142 76% 36% / 0.2)', borderRadius: '8px', padding: '12px' }}>
-                        <p style={{ color: 'hsl(142 76% 36%)', fontSize: '12px', fontFamily: 'monospace', fontWeight: 700, margin: '0 0 8px' }}>💳 YOUR WALLET</p>
-                        <p style={{ color: 'hsl(0 0% 55%)', fontSize: '11px', fontFamily: 'monospace', margin: 0, lineHeight: '1.7' }}>Holds your UBTC balance. Like a current account. You send, receive and redeem UBTC from here.</p>
+                      <div style={{ background: 'var(--t-green-bg)', border: '1px solid hsl(142 76% 36% / 0.2)', borderRadius: '8px', padding: '12px' }}>
+                        <p style={{ color: 'var(--t-green)', fontSize: '12px', fontFamily: 'monospace', fontWeight: 700, margin: '0 0 8px' }}>💳 YOUR WALLET</p>
+                        <p style={{ color: 'var(--t-muted)', fontSize: '11px', fontFamily: 'monospace', margin: 0, lineHeight: '1.7' }}>Holds your UBTC balance. Like a current account. You send, receive and redeem UBTC from here.</p>
                       </div>
                     </div>
                     {qa('How does minting work?', '1. Deposit BTC to your vault address<br/>2. Mint UBTC against it (150% collateral ratio — $150 BTC = max $100 UBTC)<br/>3. Move UBTC to your wallet<br/>4. Send to anyone on QAP')}
                     {qa('How does redemption work?', 'When someone sends you UBTC, you receive a proof file. Upload it on the Redeem page, enter your password, and the system releases BTC from the original vault to your Bitcoin address. No intermediary. No bridge. Pure Bitcoin.')}
                     {qa('What is the 150% collateral ratio?', 'For every $100 UBTC you mint, you must have $150 worth of BTC locked. This overcollateral protects the peg. If BTC falls below the liquidation threshold, the vault is liquidated to protect the system. Your excess collateral is returned.')}
-                  </>, 'hsl(38 92% 50%)')}
+                  </>, 'var(--t-orange)')}
 
                   {nextBtn('I understand — Set Up My Wallet →', () => setOnboardStep(6), true)}
                 </div>
@@ -691,8 +909,8 @@ function VaultPageInner() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
                     <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'hsl(270 85% 65% / 0.15)', border: '1px solid hsl(270 85% 65% / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 }}>⚛️</div>
                     <div>
-                      <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '20px', fontWeight: '700', margin: '0 0 4px' }}>Choose Your Quantum Username</h2>
-                      <p style={{ color: 'hsl(270 85% 65%)', fontSize: '11px', fontFamily: 'monospace', margin: 0 }}>Step 6 of 7 — Your permanent QAP identity</p>
+                      <h2 style={{ color: 'var(--t-text)', fontSize: '20px', fontWeight: '700', margin: '0 0 4px' }}>Choose Your Quantum Username</h2>
+                      <p style={{ color: 'var(--t-purple)', fontSize: '11px', fontFamily: 'monospace', margin: 0 }}>Step 6 of 7 — Your permanent QAP identity</p>
                     </div>
                   </div>
 
@@ -701,12 +919,12 @@ function VaultPageInner() {
                     {qa('Why is it called Quantum?', 'Your username is linked to your Kyber1024 quantum-resistant public key. When someone sends you UBTC, it is encrypted with your Kyber key — unbreakable by any classical or quantum computer. Your @username is the human face of your post-quantum identity.')}
                     {qa('Can I change it later?', '<span style="color:hsl(0 84% 60%)">No. Your Quantum Username is permanent. It is inscribed on the QAP network and linked to your vault and wallet forever. Choose carefully.</span>')}
                     {qa('How do people send me UBTC?', 'They type @yourname in the Send field. QAP resolves it to your wallet address and Kyber public key automatically. Your UBTC arrives encrypted — only you can decrypt and redeem it with your password.')}
-                  </>, 'hsl(270 85% 65%)')}
+                  </>, 'var(--t-purple)')}
 
                   {!quantumUsernameSet ? (
                     <>
                       <div style={{ position: 'relative' as const, marginBottom: '8px' }}>
-                        <span style={{ position: 'absolute' as const, left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'hsl(270 85% 65%)', fontSize: '18px', fontFamily: 'monospace', fontWeight: 700 }}>@</span>
+                        <span style={{ position: 'absolute' as const, left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--t-purple)', fontSize: '18px', fontFamily: 'monospace', fontWeight: 700 }}>@</span>
                         <input
                           value={quantumUsername}
                           onChange={e => {
@@ -718,30 +936,30 @@ function VaultPageInner() {
                           }}
                           placeholder="satoshi"
                           maxLength={20}
-                          style={{ width: '100%', padding: '16px 16px 16px 36px', background: 'hsl(220 15% 5%)', border: `2px solid ${quantumUsernameAvailable === true ? 'hsl(142 76% 36%)' : quantumUsernameAvailable === false ? 'hsl(0 84% 60%)' : 'hsl(220 10% 18%)'}`, borderRadius: '12px', color: 'hsl(0 0% 92%)', fontSize: '20px', fontFamily: 'monospace', fontWeight: 700, outline: 'none', boxSizing: 'border-box' as const, transition: 'border-color 0.2s' }}
+                          style={{ width: '100%', padding: '16px 16px 16px 36px', background: 'var(--t-surface)', border: `2px solid ${quantumUsernameAvailable === true ? 'var(--t-green)' : quantumUsernameAvailable === false ? 'var(--t-red)' : 'var(--t-border)'}`, borderRadius: '12px', color: 'var(--t-text)', fontSize: '20px', fontFamily: 'monospace', fontWeight: 700, outline: 'none', boxSizing: 'border-box' as const, transition: 'border-color 0.2s' }}
                         />
-                        {checkingUsername && <span style={{ position: 'absolute' as const, right: '14px', top: '50%', transform: 'translateY(-50%)', color: 'hsl(0 0% 40%)', fontSize: '12px', fontFamily: 'monospace' }}>checking...</span>}
-                        {!checkingUsername && quantumUsernameAvailable === true && <span style={{ position: 'absolute' as const, right: '14px', top: '50%', transform: 'translateY(-50%)', color: 'hsl(142 76% 36%)', fontSize: '16px' }}>✓ available</span>}
-                        {!checkingUsername && quantumUsernameAvailable === false && <span style={{ position: 'absolute' as const, right: '14px', top: '50%', transform: 'translateY(-50%)', color: 'hsl(0 84% 60%)', fontSize: '16px' }}>✗ taken</span>}
+                        {checkingUsername && <span style={{ position: 'absolute' as const, right: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--t-muted)', fontSize: '12px', fontFamily: 'monospace' }}>checking...</span>}
+                        {!checkingUsername && quantumUsernameAvailable === true && <span style={{ position: 'absolute' as const, right: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--t-green)', fontSize: '16px' }}>✓ available</span>}
+                        {!checkingUsername && quantumUsernameAvailable === false && <span style={{ position: 'absolute' as const, right: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--t-red)', fontSize: '16px' }}>✗ taken</span>}
                       </div>
-                      <p style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', fontFamily: 'monospace', margin: '0 0 20px' }}>Lowercase letters, numbers, underscores · 3–20 characters · Permanent</p>
+                      <p style={{ color: 'var(--t-faint)', fontSize: '11px', fontFamily: 'monospace', margin: '0 0 20px' }}>Lowercase letters, numbers, underscores · 3–20 characters · Permanent</p>
 
                       {quantumUsernameAvailable && (
                         <div style={{ background: 'hsl(270 85% 65% / 0.08)', border: '1px solid hsl(270 85% 65% / 0.3)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
-                          <p style={{ color: 'hsl(270 85% 65%)', fontSize: '13px', fontFamily: 'monospace', fontWeight: 700, margin: '0 0 4px' }}>@{quantumUsername} is available</p>
-                          <p style={{ color: 'hsl(0 0% 45%)', fontSize: '12px', fontFamily: 'monospace', margin: 0 }}>People will send you UBTC using @{quantumUsername}. This cannot be changed.</p>
+                          <p style={{ color: 'var(--t-purple)', fontSize: '13px', fontFamily: 'monospace', fontWeight: 700, margin: '0 0 4px' }}>@{quantumUsername} is available</p>
+                          <p style={{ color: 'var(--t-muted)', fontSize: '12px', fontFamily: 'monospace', margin: 0 }}>People will send you UBTC using @{quantumUsername}. This cannot be changed.</p>
                         </div>
                       )}
 
-                      <button onClick={quantumUsernameSet ? undefined : async () => { await setQuantumWalletUsername() }} disabled={!quantumUsernameAvailable} style={{ width: '100%', background: quantumUsernameAvailable ? 'linear-gradient(135deg, hsl(270,85%,65%), hsl(205,85%,55%))' : 'hsl(220 10% 12%)', color: quantumUsernameAvailable ? 'white' : 'hsl(0 0% 30%)', border: 'none', borderRadius: '12px', padding: '16px', fontSize: '15px', fontWeight: 700, cursor: quantumUsernameAvailable ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)' }}>
+                      <button onClick={quantumUsernameSet ? undefined : async () => { await setQuantumWalletUsername() }} disabled={!quantumUsernameAvailable} style={{ width: '100%', background: quantumUsernameAvailable ? 'linear-gradient(135deg, hsl(270,85%,65%), hsl(205,85%,55%))' : 'var(--t-border)', color: quantumUsernameAvailable ? 'white' : 'var(--t-faint)', border: 'none', borderRadius: '12px', padding: '16px', fontSize: '15px', fontWeight: 700, cursor: quantumUsernameAvailable ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)' }}>
                         {quantumUsernameAvailable ? `Claim @${quantumUsername} — My Quantum Identity` : 'Choose a username to continue'}
                       </button>
                     </>
                   ) : (
                     <>
                       <div style={{ background: 'hsl(270 85% 65% / 0.1)', border: '1px solid hsl(270 85% 65% / 0.3)', borderRadius: '12px', padding: '20px', marginBottom: '16px', textAlign: 'center' as const }}>
-                        <p style={{ color: 'hsl(270 85% 65%)', fontSize: '24px', fontFamily: 'monospace', fontWeight: 700, margin: '0 0 4px' }}>@{quantumUsername}</p>
-                        <p style={{ color: 'hsl(0 0% 40%)', fontSize: '12px', fontFamily: 'monospace', margin: 0 }}>Your Quantum Username is set — permanent and unique to you</p>
+                        <p style={{ color: 'var(--t-purple)', fontSize: '24px', fontFamily: 'monospace', fontWeight: 700, margin: '0 0 4px' }}>@{quantumUsername}</p>
+                        <p style={{ color: 'var(--t-muted)', fontSize: '12px', fontFamily: 'monospace', margin: 0 }}>Your Quantum Username is set — permanent and unique to you</p>
                       </div>
                       {nextBtn('All done — See My Summary →', () => setOnboardStep(7), true, 'linear-gradient(135deg, hsl(270,85%,65%), hsl(205,85%,55%))')}
                     </>
@@ -752,44 +970,44 @@ function VaultPageInner() {
               {/* ── WIZARD STEP 7: Ready ── */}
               {onboardStep === 7 && (
                 <div style={{ textAlign: 'center' as const }}>
-                  <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'hsl(142 76% 36% / 0.15)', border: '2px solid hsl(142 76% 36% / 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: '32px' }}>✅</div>
-                  <h2 style={{ color: 'hsl(0 0% 92%)', fontSize: '24px', fontWeight: '700', margin: '0 0 4px' }}>Welcome to QAP, @{quantumUsername || username}!</h2>
-                  <p style={{ color: 'hsl(270 85% 65%)', fontSize: '14px', fontFamily: 'monospace', margin: '0 0 24px' }}>Your Quantum Username: @{quantumUsername || username}</p>
+                  <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'var(--t-green-bg)', border: '2px solid hsl(142 76% 36% / 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: '32px' }}>✅</div>
+                  <h2 style={{ color: 'var(--t-text)', fontSize: '24px', fontWeight: '700', margin: '0 0 4px' }}>Welcome to QAP, @{quantumUsername || username}!</h2>
+                  <p style={{ color: 'var(--t-purple)', fontSize: '14px', fontFamily: 'monospace', margin: '0 0 24px' }}>Your Quantum Username: @{quantumUsername || username}</p>
 
-                  <div style={{ background: 'hsl(220 15% 5%)', borderRadius: '12px', padding: '16px', textAlign: 'left' as const, marginBottom: '20px' }}>
-                    <p style={{ color: 'hsl(0 0% 35%)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 12px' }}>Your Security Setup</p>
+                  <div style={{ background: 'var(--t-surface)', borderRadius: '12px', padding: '16px', textAlign: 'left' as const, marginBottom: '20px' }}>
+                    <p style={{ color: 'var(--t-faint)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 12px' }}>Your Security Setup</p>
                     {[
-                      { label: '24-word recovery phrase', detail: 'Written on paper, stored offline', status: '✅', color: 'hsl(38 92% 50%)' },
-                      { label: 'Wallet password', detail: 'Encrypts your Kyber1024 key locally', status: '✅', color: 'hsl(142 76% 36%)' },
-                      { label: 'Protocol Second Key', detail: 'Saved and verified — use for minting', status: '✅', color: 'hsl(205 85% 55%)' },
-                      { label: 'Quantum Kyber1024', detail: 'Post-quantum encryption active', status: '✅', color: 'hsl(270 85% 65%)' },
-                      { label: 'Quantum Username', detail: `@${quantumUsername || username} — permanent QAP identity`, status: '✅', color: 'hsl(270 85% 65%)' },
+                      { label: '24-word recovery phrase', detail: 'Written on paper, stored offline', status: '✅', color: 'var(--t-orange)' },
+                      { label: 'Wallet password', detail: 'Encrypts your Kyber1024 key locally', status: '✅', color: 'var(--t-green)' },
+                      { label: 'Protocol Second Key', detail: 'Saved and verified — use for minting', status: '✅', color: 'var(--t-accent)' },
+                      { label: 'Quantum Kyber1024', detail: 'Post-quantum encryption active', status: '✅', color: 'var(--t-purple)' },
+                      { label: 'Quantum Username', detail: `@${quantumUsername || username} — permanent QAP identity`, status: '✅', color: 'var(--t-purple)' },
                     ].map(item => (
-                      <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '8px 0', borderBottom: '1px solid hsl(220 10% 10%)' }}>
+                      <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '8px 0', borderBottom: '1px solid var(--t-border-subtle)' }}>
                         <div>
-                          <p style={{ color: 'hsl(0 0% 65%)', fontSize: '12px', fontFamily: 'monospace', margin: '0 0 2px' }}>{item.label}</p>
-                          <p style={{ color: 'hsl(0 0% 35%)', fontSize: '10px', fontFamily: 'monospace', margin: 0 }}>{item.detail}</p>
+                          <p style={{ color: 'var(--t-muted)', fontSize: '12px', fontFamily: 'monospace', margin: '0 0 2px' }}>{item.label}</p>
+                          <p style={{ color: 'var(--t-faint)', fontSize: '10px', fontFamily: 'monospace', margin: 0 }}>{item.detail}</p>
                         </div>
-                        <span style={{ color: 'hsl(142 76% 36%)', fontSize: '16px', flexShrink: 0, marginLeft: '12px' }}>{item.status}</span>
+                        <span style={{ color: 'var(--t-green)', fontSize: '16px', flexShrink: 0, marginLeft: '12px' }}>{item.status}</span>
                       </div>
                     ))}
                   </div>
 
-                  <div style={{ background: 'hsl(220 15% 5%)', borderRadius: '12px', padding: '16px', textAlign: 'left' as const, marginBottom: '20px' }}>
-                    <p style={{ color: 'hsl(0 0% 35%)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 8px' }}>Next Steps</p>
+                  <div style={{ background: 'var(--t-surface)', borderRadius: '12px', padding: '16px', textAlign: 'left' as const, marginBottom: '20px' }}>
+                    <p style={{ color: 'var(--t-faint)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 8px' }}>Next Steps</p>
                     {[
-                      { n: '1', label: 'Deposit Bitcoin', detail: 'Send BTC to your vault address to lock as collateral', color: 'hsl(38 92% 50%)' },
-                      { n: '2', label: 'Mint UBTC', detail: 'Create UBTC against your BTC collateral (150% ratio)', color: 'hsl(205 85% 55%)' },
-                      { n: '3', label: 'Send to your wallet', detail: 'Move minted UBTC to your wallet — ready to use', color: 'hsl(142 76% 36%)' },
-                      { n: '4', label: 'Send to @anyone', detail: `Type @username to send — they receive encrypted proof`, color: 'hsl(270 85% 65%)' },
+                      { n: '1', label: 'Deposit Bitcoin', detail: 'Send BTC to your vault address to lock as collateral', color: 'var(--t-orange)' },
+                      { n: '2', label: 'Mint UBTC', detail: 'Create UBTC against your BTC collateral (150% ratio)', color: 'var(--t-accent)' },
+                      { n: '3', label: 'Send to your wallet', detail: 'Move minted UBTC to your wallet — ready to use', color: 'var(--t-green)' },
+                      { n: '4', label: 'Send to @anyone', detail: `Type @username to send — they receive encrypted proof`, color: 'var(--t-purple)' },
                     ].map(item => (
-                      <div key={item.n} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', padding: '8px 0', borderBottom: '1px solid hsl(220 10% 10%)' }}>
+                      <div key={item.n} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', padding: '8px 0', borderBottom: '1px solid var(--t-border-subtle)' }}>
                         <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: item.color + '20', border: `1px solid ${item.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           <span style={{ color: item.color, fontSize: '11px', fontWeight: 700, fontFamily: 'monospace' }}>{item.n}</span>
                         </div>
                         <div>
                           <p style={{ color: 'hsl(0 0% 78%)', fontSize: '13px', fontFamily: 'monospace', fontWeight: 600, margin: '0 0 2px' }}>{item.label}</p>
-                          <p style={{ color: 'hsl(0 0% 40%)', fontSize: '11px', fontFamily: 'monospace', margin: 0 }}>{item.detail}</p>
+                          <p style={{ color: 'var(--t-muted)', fontSize: '11px', fontFamily: 'monospace', margin: 0 }}>{item.detail}</p>
                         </div>
                       </div>
                     ))}
@@ -798,7 +1016,7 @@ function VaultPageInner() {
                   <a href={`/deposit?vault=${result.vault_id}`} style={{ display: 'block', width: '100%', background: 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))', color: 'white', textDecoration: 'none', borderRadius: '12px', padding: '18px', fontSize: '16px', fontWeight: 700, fontFamily: 'var(--font-display)', textAlign: 'center' as const, boxSizing: 'border-box' as const, boxShadow: '0 0 30px hsl(205 85% 55% / 0.4)', marginBottom: '10px' }}>
                     ₿ Fund My Account →
                   </a>
-                  <a href="/dashboard" style={{ display: 'block', width: '100%', background: 'none', border: '1px solid hsl(220 10% 16%)', color: 'hsl(0 0% 55%)', textDecoration: 'none', borderRadius: '12px', padding: '14px', fontSize: '14px', fontFamily: 'var(--font-display)', textAlign: 'center' as const, boxSizing: 'border-box' as const }}>
+                  <a href="/dashboard" style={{ display: 'block', width: '100%', background: 'none', border: '1px solid var(--t-border)', color: 'var(--t-muted)', textDecoration: 'none', borderRadius: '12px', padding: '14px', fontSize: '14px', fontFamily: 'var(--font-display)', textAlign: 'center' as const, boxSizing: 'border-box' as const }}>
                     Go to Dashboard
                   </a>
                 </div>

@@ -5,35 +5,83 @@ import { Icons } from '../components/Icons'
 import { useIsMobile } from '../lib/useIsMobile'
 import { loadWallet } from '../lib/wallet/storage'
 
+/* ─── Compact stat pill ───────────────────────────────────────────────────── */
+function StatPill({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: '2px',
+      padding: '12px 18px',
+      background: 'var(--t-surface2)',
+      border: '1px solid var(--t-border-subtle)',
+      borderRadius: '14px',
+      minWidth: '100px',
+    }}>
+      <p className="label" style={{ display: 'block' }}>{label}</p>
+      <p className="number" style={{ color, fontSize: '14px', fontWeight: '700', margin: 0 }}>{value}</p>
+    </div>
+  )
+}
+
+/* ─── Asset row inside a vault card ──────────────────────────────────────── */
+function AssetRow({ icon, name, subtitle, value, color, addHref }: {
+  icon: React.ReactNode; name: string; subtitle: string; value: string | null; color: string; addHref?: string
+}) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: '12px',
+      padding: '12px 14px',
+      background: 'var(--t-surface2)',
+      borderRadius: '14px', marginBottom: '6px',
+    }}>
+      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: color + '1a', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        {icon}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ color: 'var(--t-text)', fontWeight: '600', fontSize: '13px', margin: '0 0 2px' }}>{name}</p>
+        <p className="number" style={{ color: 'var(--t-faint)', fontSize: '11px', margin: 0 }}>{subtitle}</p>
+      </div>
+      {value !== null
+        ? <p className="number" style={{ color, fontWeight: '700', fontSize: '15px', margin: 0, flexShrink: 0 }}>{value}</p>
+        : addHref
+          ? <a href={addHref} style={{
+              display: 'flex', alignItems: 'center', gap: '4px',
+              background: color + '15', border: `1px solid ${color}35`,
+              color, textDecoration: 'none', borderRadius: '8px',
+              padding: '5px 11px', fontSize: '11px', fontWeight: '600',
+              fontFamily: 'var(--font-mono)', flexShrink: 0,
+            }}>
+              {Icons.plus(11, color)} Add
+            </a>
+          : null
+      }
+    </div>
+  )
+}
+
+/* ─── Main dashboard ──────────────────────────────────────────────────────── */
 export default function Dashboard() {
-  const [vaults, setVaults] = useState<any[]>([])
+  const [vaults, setVaults]         = useState<any[]>([])
   const [stablecoins, setStablecoins] = useState<any[]>([])
-  const [btcPrice, setBtcPrice] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [scanning, setScanning] = useState<string | null>(null)
+  const [btcPrice, setBtcPrice]     = useState(0)
+  const [loading, setLoading]       = useState(true)
+  const [scanning, setScanning]     = useState<string | null>(null)
   const [scanResult, setScanResult] = useState<Record<string, string>>({})
   const pollRef = useRef<NodeJS.Timeout | null>(null)
   const isMobile = useIsMobile()
-  const mono: any = { fontFamily: 'var(--font-mono)' }
-  const [hasWallet, setHasWallet] = useState(false)
+  const [hasWallet, setHasWallet]   = useState(false)
 
-  useEffect(() => {
-    setHasWallet(!!localStorage.getItem('ubtc_wallet_address'))
-  }, [])
+  useEffect(() => { setHasWallet(!!localStorage.getItem('ubtc_wallet_address')) }, [])
 
   useEffect(() => {
     loadAll()
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
   }, [])
 
-  // Auto-poll pending vaults every 30 seconds
   useEffect(() => {
     if (pollRef.current) clearInterval(pollRef.current)
-    const hasPending = vaults.some(v => v.status === 'pending_deposit')
-    if (hasPending) {
+    if (vaults.some(v => v.status === 'pending_deposit')) {
       pollRef.current = setInterval(async () => {
-        const pending = vaults.filter(v => v.status === 'pending_deposit')
-        for (const v of pending) {
+        for (const v of vaults.filter(v => v.status === 'pending_deposit')) {
           await scanVault(v.vault_id, true)
         }
       }, 30_000)
@@ -41,21 +89,17 @@ export default function Dashboard() {
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
   }, [vaults])
 
- const loadAll = async () => {
+  const loadAll = async () => {
     setLoading(true)
     try {
       const wallet = await loadWallet()
-     const pubkey = wallet?.publicKeys?.dilithium || ''
-      const dashUrl = pubkey
-        ? `${API_URL}/dashboard?user_pubkey=${encodeURIComponent(pubkey)}`
-        : `${API_URL}/dashboard`
+      const pubkey = wallet?.publicKeys?.dilithium || ''
+      const dashUrl = pubkey ? `${API_URL}/dashboard?user_pubkey=${encodeURIComponent(pubkey)}` : `${API_URL}/dashboard`
       const [dashRes, scRes, priceRes] = await Promise.all([
-        fetch(dashUrl),
-        fetch(`${API_URL}/stablecoins`),
-        fetch(`${API_URL}/price`),
+        fetch(dashUrl), fetch(`${API_URL}/stablecoins`), fetch(`${API_URL}/price`),
       ])
-      const dash = await dashRes.json()
-      const sc = await scRes.json()
+      const dash  = await dashRes.json()
+      const sc    = await scRes.json()
       const price = await priceRes.json()
       setVaults(dash.vaults || [])
       setStablecoins(sc.stablecoins || [])
@@ -67,17 +111,13 @@ export default function Dashboard() {
   const scanVault = async (vaultId: string, silent = false) => {
     if (!silent) setScanning(vaultId)
     try {
-      const res = await fetch(`${API_URL}/deposit/scan`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vault_id: vaultId })
-      })
+      const res  = await fetch(`${API_URL}/deposit/scan`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ vault_id: vaultId }) })
       const data = await res.json()
       if (data.found) {
-        setScanResult(prev => ({ ...prev, [vaultId]: `✅ ${data.amount_btc} BTC detected — vault active` }))
+        setScanResult(prev => ({ ...prev, [vaultId]: `${data.amount_btc} BTC confirmed — vault active` }))
         await loadAll()
-      } else {
-        if (!silent) setScanResult(prev => ({ ...prev, [vaultId]: 'No deposit found yet. Check back in a few minutes.' }))
+      } else if (!silent) {
+        setScanResult(prev => ({ ...prev, [vaultId]: 'No deposit found yet. Try again in a few minutes.' }))
       }
     } catch {
       if (!silent) setScanResult(prev => ({ ...prev, [vaultId]: 'Scan failed — check your connection' }))
@@ -85,131 +125,165 @@ export default function Dashboard() {
     if (!silent) setScanning(null)
   }
 
-  const accountMeta: Record<string, { icon: any; title: string; color: string; tag: string }> = {
-    current: { icon: Icons.currentAccount(22, 'hsl(205 85% 55%)'), title: 'Self-Custody Account', color: 'hsl(205 85% 55%)', tag: 'Self-Custody' },
-  }
+  const getScBal = (type: string, cur: string) =>
+    stablecoins.filter(s => s.account_type === type && s.currency === cur).reduce((s, x) => s + parseFloat(x.balance || '0'), 0)
+  const getScDep = (type: string, cur: string) =>
+    stablecoins.filter(s => s.account_type === type && s.currency === cur).reduce((s, x) => s + parseFloat(x.deposited_amount || '0'), 0)
 
-  const getScBal = (accountType: string, currency: string) =>
-    stablecoins.filter(s => s.account_type === accountType && s.currency === currency)
-      .reduce((s, x) => s + parseFloat(x.balance || '0'), 0)
+  const totalBtcLocked = vaults.reduce((s, v) => s + (v.btc_amount_sats || 0) / 1e8, 0)
+  const totalUbtc      = vaults.reduce((s, v) => s + parseFloat(v.ubtc_minted || '0'), 0)
+  const totalUusdt     = vaults.reduce((s, v) => s + getScBal(v.account_type, 'UUSDT'), 0)
+  const totalUusdc     = vaults.reduce((s, v) => s + getScBal(v.account_type, 'UUSDC'), 0)
+  const totalUsd       = totalBtcLocked * btcPrice
+  const availableToMint = Math.max(0, (totalUsd / 1.5) - totalUbtc)
+  const hasPending     = vaults.some(v => v.status === 'pending_deposit')
 
-  const getScDep = (accountType: string, currency: string) =>
-    stablecoins.filter(s => s.account_type === accountType && s.currency === currency)
-      .reduce((s, x) => s + parseFloat(x.deposited_amount || '0'), 0)
-
-  const totalUbtc = vaults.reduce((s, v) => s + parseFloat(v.ubtc_minted || '0'), 0)
-  const totalUusdt = vaults.reduce((s, v) => s + getScBal(v.account_type, 'UUSDT'), 0)
-  const totalUusdc = vaults.reduce((s, v) => s + getScBal(v.account_type, 'UUSDC'), 0)
-  const totalBtcLocked = vaults.reduce((s, v) => s + (v.btc_amount_sats || 0) / 100_000_000, 0)
+  const fmt    = (n: number, d = 2) => n.toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d })
+  const fmtInt = (n: number) => n.toLocaleString(undefined, { maximumFractionDigits: 0 })
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: 'hsl(0 0% 30%)', fontSize: '14px', ...mono }}>Loading...</p>
+    <div style={{ minHeight: '100vh', background: 'var(--t-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ width: '36px', height: '36px', border: '2.5px solid var(--t-border)', borderTopColor: 'var(--t-accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <p className="number" style={{ color: 'var(--t-faint)', fontSize: '12px' }}>Loading portfolio…</p>
     </div>
   )
 
   return (
-    <div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', fontFamily: 'var(--font-display)', overflowX: 'hidden' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--t-bg)', fontFamily: 'var(--font-display)' }}>
 
-      {/* Summary bar */}
-      <div style={{ background: 'hsl(220 15% 4%)', borderBottom: '1px solid hsl(220 10% 9%)', padding: isMobile ? '20px 16px' : '28px 32px' }}>
-        <div style={{ maxWidth: '1060px', margin: '0 auto', display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'flex-end', gap: isMobile ? '20px' : '0' }}>
-          <div>
-            <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.2em', margin: '0 0 6px' }}>Total Collateral · BTC locked in USD</p>
-            <p style={{ color: 'hsl(0 0% 92%)', fontSize: isMobile ? '32px' : '42px', fontWeight: '700', ...mono, margin: '0 0 4px', lineHeight: '1' }}>
-              ${(totalBtcLocked * btcPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      {/* ── Hero: portfolio value ── */}
+      <div style={{
+        background: 'var(--t-surface)',
+        borderBottom: '1px solid var(--t-border-subtle)',
+        padding: isMobile ? '28px 20px 24px' : '36px 44px 28px',
+      }}>
+        <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
+          <p className="label" style={{ display: 'block', marginBottom: '8px' }}>Total Portfolio · BTC at live price</p>
+          <p className="number" style={{
+            fontSize: isMobile ? '40px' : '58px', fontWeight: '700',
+            color: 'var(--t-text)', lineHeight: '1', margin: '0 0 6px',
+            letterSpacing: '-0.03em',
+          }}>
+            ${fmt(totalUsd)}
+          </p>
+          {availableToMint > 0 && (
+            <p className="number" style={{ color: 'var(--t-green)', fontSize: '13px', fontWeight: '600', margin: '0 0 20px' }}>
+              ${fmt(availableToMint)} available to mint
             </p>
-            <p style={{ color: 'hsl(142 76% 36%)', fontSize: '12px', fontWeight: '600', ...mono, margin: '0 0 2px' }}>
-              ${(totalBtcLocked * btcPrice - totalUbtc).toLocaleString(undefined, { maximumFractionDigits: 2 })} available to mint
-            </p>
-            <p style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', ...mono, margin: 0 }}>
-              {totalBtcLocked.toFixed(6)} BTC locked · {totalUbtc.toLocaleString()} UBTC debt outstanding
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: isMobile ? 'space-between' : 'flex-start' }}>
-            {[
-              { icon: Icons.bitcoin(16, 'hsl(38 92% 50%)'), label: 'UBTC', val: '$' + totalUbtc.toLocaleString(undefined, { maximumFractionDigits: 0 }), color: 'hsl(38 92% 50%)' },
-              { icon: Icons.savings(16, 'hsl(142 76% 36%)'), label: 'UUSDT', val: '$' + totalUusdt.toLocaleString(undefined, { maximumFractionDigits: 0 }), color: 'hsl(142 76% 36%)' },
-              { icon: Icons.savings(16, 'hsl(220 85% 60%)'), label: 'UUSDC', val: '$' + totalUusdc.toLocaleString(undefined, { maximumFractionDigits: 0 }), color: 'hsl(220 85% 60%)' },
-              { icon: Icons.chart(16, 'hsl(0 0% 45%)'), label: 'BTC', val: '$' + btcPrice.toLocaleString(), color: 'hsl(0 0% 45%)' },
-            ].map(item => (
-              <div key={item.label} style={{ background: 'hsl(220 12% 8%)', border: '1px solid hsl(220 10% 13%)', borderRadius: '12px', padding: '12px 16px', textAlign: 'center' as const, minWidth: '90px', flex: isMobile ? '1 1 calc(50% - 5px)' : '0 0 auto' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', justifyContent: 'center', marginBottom: '5px' }}>
-                  {item.icon}
-                  <p style={{ color: 'hsl(0 0% 32%)', fontSize: '9px', ...mono, textTransform: 'uppercase' as const, margin: 0 }}>{item.label}</p>
-                </div>
-                <p style={{ color: item.color, fontWeight: '700', fontSize: '14px', ...mono, margin: 0 }}>{item.val}</p>
-              </div>
-            ))}
+          )}
+
+          {/* Stat pills */}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '16px' }}>
+            <StatPill label="BTC locked"  value={totalBtcLocked.toFixed(6)}       color="var(--t-orange)" />
+            <StatPill label="UBTC minted" value={'$' + fmtInt(totalUbtc)}         color="var(--t-orange)" />
+            <StatPill label="UUSDT"       value={'$' + fmtInt(totalUusdt)}        color="var(--t-green)"  />
+            <StatPill label="UUSDC"       value={'$' + fmtInt(totalUusdc)}        color="var(--t-accent)" />
+            <StatPill label="BTC price"   value={'$' + fmtInt(btcPrice)}          color="var(--t-muted)"  />
           </div>
         </div>
       </div>
 
-      <div style={{ maxWidth: '1060px', margin: '0 auto', padding: isMobile ? '24px 16px' : '28px 28px' }}>
-
-        {/* Account cards */}
-        {vaults.length === 0 ? (
-          <div style={{ background: 'hsl(220 12% 8%)', border: '1px dashed hsl(220 10% 16%)', borderRadius: '20px', padding: isMobile ? '40px 24px' : '60px', textAlign: 'center' as const }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px', opacity: 0.3 }}>
-              {Icons.vault(48, 'hsl(205 85% 55%)')}
+      {/* ── How it works (first time only) ── */}
+      {vaults.length === 0 && (
+        <div style={{ maxWidth: '1080px', margin: '0 auto', padding: isMobile ? '20px 20px 0' : '24px 44px 0' }}>
+          <div style={{
+            background: 'var(--t-surface)',
+            border: '1px dashed var(--t-border)',
+            borderRadius: '20px', padding: isMobile ? '32px 24px' : '48px 40px',
+            textAlign: 'center',
+          }}>
+            <p style={{ color: 'var(--t-muted)', fontSize: '15px', fontWeight: '600', margin: '0 0 8px' }}>Get started in 3 steps</p>
+            <p className="number" style={{ color: 'var(--t-faint)', fontSize: '13px', margin: '0 0 28px' }}>
+              Your first account takes about 2 minutes to set up
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', maxWidth: '560px', margin: '0 auto 28px' }}>
+              {[
+                { n: '1', label: 'Open an account', desc: 'Click "New Account" above', color: 'var(--t-purple)' },
+                { n: '2', label: 'Deposit BTC', desc: 'Send Bitcoin to your vault address', color: 'var(--t-green)' },
+                { n: '3', label: 'Mint UBTC', desc: 'Create stablecoins from your collateral', color: 'var(--t-orange)' },
+              ].map(s => (
+                <div key={s.n} style={{ flex: '1 1 140px', background: 'var(--t-surface2)', borderRadius: '14px', padding: '18px 14px' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: s.color + '20', color: s.color, fontWeight: '700', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px', fontFamily: 'var(--font-mono)' }}>
+                    {s.n}
+                  </div>
+                  <p style={{ color: 'var(--t-text)', fontWeight: '600', fontSize: '13px', margin: '0 0 4px' }}>{s.label}</p>
+                  <p className="number" style={{ color: 'var(--t-faint)', fontSize: '11px', margin: 0 }}>{s.desc}</p>
+                </div>
+              ))}
             </div>
-            <p style={{ color: 'hsl(0 0% 38%)', fontSize: '16px', fontWeight: '600', margin: '0 0 8px' }}>No account yet</p>
-            <p style={{ color: 'hsl(0 0% 28%)', fontSize: '13px', ...mono, margin: '0 0 24px' }}>Open your self-custody account to get started</p>
-            {!hasWallet && (
-              <a href="/vault" style={{ background: 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))', color: 'white', textDecoration: 'none', borderRadius: '12px', padding: '12px 28px', fontSize: '14px', fontWeight: '700', fontFamily: 'var(--font-display)', display: 'inline-block' }}>
-                Open Self-Custody Account →
-              </a>
-            )}
+            <a href="/vault" style={{
+              display: 'inline-flex', alignItems: 'center', gap: '7px',
+              background: 'var(--t-accent-bg)',
+              border: '1.5px solid var(--t-accent-border)',
+              color: 'var(--t-accent)',
+              textDecoration: 'none', borderRadius: '12px',
+              padding: '13px 28px', fontSize: '14px', fontWeight: '700',
+              fontFamily: 'var(--font-display)',
+            }}>
+              Open Your First Account →
+            </a>
           </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(480px, 1fr))', gap: '16px' }}>
+        </div>
+      )}
+
+      {/* ── Vault cards ── */}
+      {vaults.length > 0 && (
+        <div style={{ maxWidth: '1080px', margin: '0 auto', padding: isMobile ? '20px 20px 40px' : '24px 44px 48px' }}>
+          <p className="label" style={{ display: 'block', marginBottom: '14px' }}>Your Vaults</p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(480px, 1fr))', gap: '14px' }}>
             {vaults.map(vault => {
-              const meta = accountMeta[vault.account_type] || { icon: Icons.currentAccount(22, 'hsl(205 85% 55%)'), title: 'Self-Custody Account', color: 'hsl(205 85% 55%)', tag: 'Self-Custody' }
-              const btcLocked = vault.btc_amount_sats / 100_000_000
-              const btcValue = btcLocked * btcPrice
-              const ubtcBal = parseFloat(vault.ubtc_minted || '0')
-              const uusdtBal = getScBal(vault.account_type, 'UUSDT')
-              const uusdcBal = getScBal(vault.account_type, 'UUSDC')
-              const uusdtDep = getScDep(vault.account_type, 'UUSDT')
-              const uusdcDep = getScDep(vault.account_type, 'UUSDC')
-              const total = btcValue
-              const availableToMint = Math.max(0, (btcValue / 1.5) - ubtcBal)
-              const ratio = ubtcBal > 0 ? (btcValue / ubtcBal * 100) : 0
-              const ratioColor = ratio >= 200 ? 'hsl(142 76% 36%)' : ratio >= 150 ? 'hsl(38 92% 50%)' : ratio > 0 ? 'hsl(0 84% 60%)' : 'hsl(0 0% 35%)'
-              const isPending = vault.status === 'pending_deposit'
-              const isScanning = scanning === vault.vault_id
-              const thisScanResult = scanResult[vault.vault_id]
+              const btcLocked    = vault.btc_amount_sats / 1e8
+              const btcValue     = btcLocked * btcPrice
+              const ubtcBal      = parseFloat(vault.ubtc_minted || '0')
+              const uusdtBal     = getScBal(vault.account_type, 'UUSDT')
+              const uusdcBal     = getScBal(vault.account_type, 'UUSDC')
+              const uusdtDep     = getScDep(vault.account_type, 'UUSDT')
+              const uusdcDep     = getScDep(vault.account_type, 'UUSDC')
+              const mintable     = Math.max(0, (btcValue / 1.5) - ubtcBal)
+              const ratio        = ubtcBal > 0 ? (btcValue / ubtcBal * 100) : 0
+              const ratioColor   = ratio >= 200 ? 'var(--t-green)' : ratio >= 150 ? 'var(--t-orange)' : ratio > 0 ? 'var(--t-red)' : 'var(--t-faint)'
+              const isPending    = vault.status === 'pending_deposit'
+              const isScanning   = scanning === vault.vault_id
+              const thisScan     = scanResult[vault.vault_id]
 
               return (
-                <div key={vault.vault_id} style={{ background: 'hsl(220 12% 8%)', border: `1px solid ${isPending ? 'hsl(38 92% 50% / 0.3)' : 'hsl(220 10% 13%)'}`, borderRadius: '20px', overflow: 'hidden' }}>
+                <div key={vault.vault_id} className="card" style={{ borderRadius: '22px', overflow: 'hidden', borderColor: isPending ? 'rgba(255,159,10,0.3)' : 'var(--t-border)' }}>
 
                   {/* Pending deposit banner */}
                   {isPending && (
-                    <div style={{ background: 'hsl(38 92% 50% / 0.08)', borderBottom: '1px solid hsl(38 92% 50% / 0.2)', padding: isMobile ? '12px 14px' : '12px 18px' }}>
-                      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, alignItems: isMobile ? 'stretch' as const : 'center' as const, justifyContent: 'space-between', gap: '12px' }}>
+                    <div style={{ background: 'var(--t-orange-bg)', borderBottom: '1px solid rgba(255,159,10,0.2)', padding: '14px 20px' }}>
+                      <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', flexDirection: isMobile ? 'column' : 'row', gap: '10px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'hsl(38 92% 50%)', animation: 'pulse 2s infinite' }} />
-                          <p style={{ color: 'hsl(38 92% 55%)', fontSize: '12px', ...mono, margin: 0 }}>
-                            Waiting for Bitcoin deposit · auto-checking every 30s
+                          <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--t-orange)', animation: 'pulse-dot 2s ease infinite', flexShrink: 0 }} />
+                          <p className="number" style={{ color: 'var(--t-orange)', fontSize: '12px', margin: 0 }}>
+                            Awaiting Bitcoin deposit · auto-checking every 30s
                           </p>
                         </div>
                         <button
                           onClick={() => scanVault(vault.vault_id)}
                           disabled={isScanning}
-                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', background: 'hsl(38 92% 50%)', color: '#000', border: 'none', borderRadius: '8px', padding: '8px 12px', fontSize: '11px', fontWeight: '700', cursor: isScanning ? 'not-allowed' : 'pointer', ...mono, flexShrink: 0, opacity: isScanning ? 0.7 : 1, width: isMobile ? '100%' : 'auto' }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: '5px',
+                            background: 'var(--t-orange)', color: '#000', border: 'none',
+                            borderRadius: '8px', padding: '7px 13px', fontSize: '11px', fontWeight: '700',
+                            cursor: isScanning ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-mono)',
+                            flexShrink: 0, opacity: isScanning ? 0.65 : 1,
+                            width: isMobile ? '100%' : 'auto', justifyContent: 'center',
+                          }}
                         >
-                          {Icons.refresh(12, '#000')}
-                          {isScanning ? 'Scanning...' : 'Scan Now'}
+                          {Icons.refresh(12, '#000')} {isScanning ? 'Scanning…' : 'Scan Now'}
                         </button>
                       </div>
-                      {thisScanResult && (
-                        <p style={{ color: thisScanResult.startsWith('✅') ? 'hsl(142 76% 45%)' : 'hsl(0 0% 40%)', fontSize: '11px', ...mono, margin: '8px 0 0' }}>
-                          {thisScanResult}
+                      {thisScan && (
+                        <p className="number" style={{ color: thisScan.includes('BTC') ? 'var(--t-green)' : 'var(--t-faint)', fontSize: '11px', margin: '8px 0 0' }}>
+                          {thisScan}
                         </p>
                       )}
-                      <div style={{ marginTop: '10px', background: 'hsl(220 15% 5%)', borderRadius: '8px', padding: '10px 12px' }}>
-                        <p style={{ color: 'hsl(0 0% 28%)', fontSize: '9px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.12em', margin: '0 0 4px' }}>Send BTC to this address</p>
-                        <p style={{ color: 'hsl(205 85% 60%)', fontSize: '11px', ...mono, margin: 0, wordBreak: 'break-all' as const }}>
+                      {/* Deposit address */}
+                      <div style={{ marginTop: '12px', background: 'var(--t-surface)', borderRadius: '10px', padding: '12px 14px', border: '1px solid var(--t-border)' }}>
+                        <p className="label" style={{ display: 'block', marginBottom: '5px' }}>Send BTC here</p>
+                        <p className="number" style={{ color: 'var(--t-accent)', fontSize: '11px', margin: 0, wordBreak: 'break-all' }}>
                           {vault.mast_address || vault.deposit_address}
                         </p>
                       </div>
@@ -217,99 +291,107 @@ export default function Dashboard() {
                   )}
 
                   {/* Card header */}
-                  <div style={{ padding: isMobile ? '16px 16px' : '20px 22px', borderBottom: '1px solid hsl(220 10% 11%)', display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center', gap: isMobile ? '14px' : '0' }}>
+                  <div style={{
+                    padding: isMobile ? '18px 18px' : '20px 22px',
+                    borderBottom: '1px solid var(--t-border-subtle)',
+                    display: 'flex', justifyContent: 'space-between',
+                    alignItems: isMobile ? 'flex-start' : 'center',
+                    flexDirection: isMobile ? 'column' : 'row', gap: '12px',
+                  }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ width: '44px', height: '44px', borderRadius: '13px', background: meta.color + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        {meta.icon}
+                      <div style={{ width: '44px', height: '44px', borderRadius: '13px', background: 'var(--t-accent-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        {Icons.currentAccount(22, 'var(--t-accent)')}
                       </div>
                       <div>
-                        <p style={{ color: 'hsl(0 0% 88%)', fontWeight: '700', fontSize: '15px', margin: '0 0 3px' }}>{meta.title}</p>
+                        <p style={{ color: 'var(--t-text)', fontWeight: '700', fontSize: '15px', margin: '0 0 4px' }}>Self-Custody Vault</p>
                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                          <span style={{ fontSize: '9px', ...mono, color: meta.color, border: `1px solid ${meta.color}35`, borderRadius: '20px', padding: '2px 8px' }}>{meta.tag}</span>
-                          <span style={{ fontSize: '9px', ...mono, color: isPending ? 'hsl(38 92% 50%)' : 'hsl(142 76% 36%)' }}>
+                          <span className="pill" style={{ color: 'var(--t-accent)', borderColor: 'var(--t-accent-border)', background: 'var(--t-accent-bg)' }}>Self-Custody</span>
+                          <span className="pill" style={{
+                            color: isPending ? 'var(--t-orange)' : 'var(--t-green)',
+                            borderColor: isPending ? 'rgba(255,159,10,0.3)' : 'rgba(48,209,88,0.3)',
+                            background: isPending ? 'var(--t-orange-bg)' : 'var(--t-green-bg)',
+                          }}>
                             {isPending ? '○ Awaiting Deposit' : '● Active'}
                           </span>
                         </div>
                       </div>
                     </div>
-                    <div style={{ textAlign: isMobile ? 'left' as const : 'right' as const }}>
-                      <p style={{ color: 'hsl(0 0% 92%)', fontWeight: '700', fontSize: isMobile ? '26px' : '22px', ...mono, margin: '0 0 2px', lineHeight: '1' }}>
-                        ${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
+                      <p className="number" style={{ color: 'var(--t-text)', fontWeight: '700', fontSize: '22px', margin: '0 0 3px', lineHeight: '1' }}>
+                        ${fmt(btcValue)}
                       </p>
-                      <p style={{ color: 'hsl(142 76% 36%)', fontSize: '10px', ...mono, margin: '0 0 1px' }}>BTC collateral · live price</p>
-                      <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, margin: '0 0 1px' }}>{ubtcBal > 0 ? ubtcBal.toFixed(2) + ' UBTC minted' : 'No UBTC minted'}</p>
-                      <p style={{ color: 'hsl(38 92% 50%)', fontSize: '10px', ...mono, margin: 0 }}>${availableToMint.toFixed(2)} available to mint</p>
+                      <p className="number" style={{ color: 'var(--t-faint)', fontSize: '11px', margin: '0 0 2px' }}>{btcLocked.toFixed(6)} BTC locked</p>
+                      {ratio > 0 && <p className="number" style={{ color: ratioColor, fontSize: '11px', margin: '0 0 2px' }}>{ratio.toFixed(0)}% collateral ratio</p>}
+                      {mintable > 0 && <p className="number" style={{ color: 'var(--t-orange)', fontSize: '11px', margin: 0 }}>${fmt(mintable)} mintable</p>}
                     </div>
                   </div>
 
-                  {/* Currency rows */}
-                  <div style={{ padding: '10px 12px' }}>
-                    {/* UBTC */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '11px 12px', background: 'hsl(220 15% 5%)', borderRadius: '12px', marginBottom: '6px' }}>
-                      <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'hsl(38 92% 50% / 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        {Icons.bitcoin(18, 'hsl(38 92% 50%)')}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ color: 'hsl(0 0% 78%)', fontWeight: '600', fontSize: '13px', margin: '0 0 1px' }}>UBTC</p>
-                        <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, margin: 0 }}>
-                          {btcLocked.toFixed(4)} BTC locked
-                          {ratio > 0 && <span style={{ color: ratioColor, marginLeft: '8px' }}>· {ratio.toFixed(0)}% collateral</span>}
-                        </p>
-                      </div>
-                      <p style={{ color: 'hsl(38 92% 50%)', fontWeight: '700', fontSize: '15px', ...mono, margin: 0, flexShrink: 0 }}>
-                        ${ubtcBal.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                      </p>
-                    </div>
+                  {/* Asset rows */}
+                  <div style={{ padding: '12px 14px' }}>
+                    <AssetRow
+                      icon={Icons.bitcoin(18, 'var(--t-orange)')}
+                      name="UBTC"
+                      subtitle={`${btcLocked.toFixed(4)} BTC collateral${ratio > 0 ? ` · ${ratio.toFixed(0)}% ratio` : ''}`}
+                      value={`$${fmtInt(ubtcBal)}`}
+                      color="var(--t-orange)"
+                    />
+                    <AssetRow
+                      icon={Icons.lock(18, 'var(--t-green)')}
+                      name="UUSDT"
+                      subtitle={uusdtDep > 0 ? `$${fmt(uusdtDep)} USDT locked` : 'Not added yet'}
+                      value={uusdtBal > 0 ? `$${fmtInt(uusdtBal)}` : null}
+                      color="var(--t-green)"
+                      addHref={`/deposit?vault=${vault.vault_id}&currency=uusdt`}
+                    />
+                    <AssetRow
+                      icon={Icons.lock(18, 'var(--t-accent)')}
+                      name="UUSDC"
+                      subtitle={uusdcDep > 0 ? `$${fmt(uusdcDep)} USDC locked` : 'Not added yet'}
+                      value={uusdcBal > 0 ? `$${fmtInt(uusdcBal)}` : null}
+                      color="var(--t-accent)"
+                      addHref={`/deposit?vault=${vault.vault_id}&currency=uusdc`}
+                    />
 
-                    {/* UUSDT */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '11px 12px', background: 'hsl(220 15% 5%)', borderRadius: '12px', marginBottom: '6px' }}>
-                      <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'hsl(142 76% 36% / 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        {Icons.lock(18, 'hsl(142 76% 36%)')}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ color: 'hsl(0 0% 78%)', fontWeight: '600', fontSize: '13px', margin: '0 0 1px' }}>UUSDT</p>
-                        <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, margin: 0 }}>
-                          {uusdtDep > 0 ? `$${uusdtDep.toLocaleString()} USDT locked` : 'Not added'}
-                        </p>
-                      </div>
-                      {uusdtBal > 0
-                        ? <p style={{ color: 'hsl(142 76% 36%)', fontWeight: '700', fontSize: '15px', ...mono, margin: 0, flexShrink: 0 }}>${uusdtBal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-                        : <a href={`/deposit?vault=${vault.vault_id}&currency=uusdt`} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'hsl(142 76% 36% / 0.08)', border: '1px solid hsl(142 76% 36% / 0.25)', color: 'hsl(142 76% 36%)', textDecoration: 'none', borderRadius: '8px', padding: '5px 10px', fontSize: '11px', fontWeight: '600', ...mono, flexShrink: 0 }}>
-                            {Icons.plus(12, 'hsl(142 76% 36%)')} Add
-                          </a>
-                      }
+                    {/* In-card action buttons */}
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                      <a href="/mint" style={{
+                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                        background: 'var(--t-orange-bg)', border: '1.5px solid rgba(255,159,10,0.25)',
+                        color: 'var(--t-orange)', textDecoration: 'none',
+                        borderRadius: '12px', padding: '11px', fontSize: '12px', fontWeight: '700',
+                        fontFamily: 'var(--font-display)',
+                      }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                        Mint
+                      </a>
+                      <a href={`/transfer?vault=${vault.vault_id}`} style={{
+                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                        background: 'var(--t-accent-bg)', border: '1.5px solid var(--t-accent-border)',
+                        color: 'var(--t-accent)', textDecoration: 'none',
+                        borderRadius: '12px', padding: '11px', fontSize: '12px', fontWeight: '700',
+                        fontFamily: 'var(--font-display)',
+                      }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        Send
+                      </a>
+                      <a href={`/account/${vault.vault_id}`} style={{
+                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                        background: 'var(--t-surface2)', border: '1.5px solid var(--t-border)',
+                        color: 'var(--t-muted)', textDecoration: 'none',
+                        borderRadius: '12px', padding: '11px', fontSize: '12px', fontWeight: '700',
+                        fontFamily: 'var(--font-display)',
+                      }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        Details
+                      </a>
                     </div>
-
-                    {/* UUSDC */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '11px 12px', background: 'hsl(220 15% 5%)', borderRadius: '12px', marginBottom: '10px' }}>
-                      <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'hsl(220 85% 60% / 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        {Icons.lock(18, 'hsl(220 85% 60%)')}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ color: 'hsl(0 0% 78%)', fontWeight: '600', fontSize: '13px', margin: '0 0 1px' }}>UUSDC</p>
-                        <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, margin: 0 }}>
-                          {uusdcDep > 0 ? `$${uusdcDep.toLocaleString()} USDC locked` : 'Not added'}
-                        </p>
-                      </div>
-                      {uusdcBal > 0
-                        ? <p style={{ color: 'hsl(220 85% 60%)', fontWeight: '700', fontSize: '15px', ...mono, margin: 0, flexShrink: 0 }}>${uusdcBal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-                        : <a href={`/deposit?vault=${vault.vault_id}&currency=uusdc`} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'hsl(220 85% 60% / 0.08)', border: '1px solid hsl(220 85% 60% / 0.25)', color: 'hsl(220 85% 60%)', textDecoration: 'none', borderRadius: '8px', padding: '5px 10px', fontSize: '11px', fontWeight: '600', ...mono, flexShrink: 0 }}>
-                            {Icons.plus(12, 'hsl(220 85% 60%)')} Add
-                          </a>
-                      }
-                    </div>
-
-                    <a href={`/account/${vault.vault_id}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: meta.color + '08', border: `1px solid ${meta.color}22`, borderRadius: '12px', padding: '12px 16px', textDecoration: 'none' }}>
-                      <span style={{ color: meta.color, fontSize: '13px', fontWeight: '600', fontFamily: 'var(--font-display)' }}>View Account</span>
-                      {Icons.chevronRight(18, meta.color)}
-                    </a>
                   </div>
                 </div>
               )
             })}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

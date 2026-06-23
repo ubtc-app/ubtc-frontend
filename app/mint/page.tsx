@@ -12,7 +12,7 @@ function RiskGauge({ pct, collateralRatio, liqPrice, alert120, alert115, ubtcAmo
 }) {
   const CX = 210, CY = 140, R = 115, ZONE = 75
   const isAmber = pct >= ZONE
-  const needleColor = isAmber ? 'hsl(38 92% 50%)' : 'hsl(142 76% 36%)'
+  const needleColor = isAmber ? 'var(--t-orange)' : 'var(--t-green)'
   const mono = 'var(--font-mono)'
   const c = Math.min(Math.max(pct, 0), 100)
 
@@ -28,7 +28,7 @@ function RiskGauge({ pct, collateralRatio, liqPrice, alert120, alert115, ubtcAmo
   const tip = pt(180 - c * 1.8, R - 10)
 
   return (
-    <div style={{ background: 'hsl(220 12% 7%)', border: `1px solid ${isAmber ? 'hsl(38 92% 50% / 0.2)' : 'hsl(220 10% 11%)'}`, borderRadius: '18px', padding: '16px 16px 14px', transition: 'border-color 0.3s' }}>
+    <div style={{ background: 'var(--t-surface2)', border: `1px solid ${isAmber ? 'var(--t-orange-bg)' : 'var(--t-border-subtle)'}`, borderRadius: '18px', padding: '16px 16px 14px', transition: 'border-color 0.3s' }}>
       <svg viewBox="0 -18 420 190" style={{ width: '100%', display: 'block' }}>
         <path d="M 95 140 A 115 115 0 0 1 291 59" fill="none" stroke="hsl(142 40% 8%)" strokeWidth="22" strokeLinecap="butt" />
         <path d="M 291 59 A 115 115 0 0 1 325 140" fill="none" stroke="hsl(38 40% 8%)" strokeWidth="22" strokeLinecap="round" />
@@ -41,26 +41,26 @@ function RiskGauge({ pct, collateralRatio, liqPrice, alert120, alert115, ubtcAmo
             <path d={arcPath(ZONE, c)} fill="none" stroke="hsl(38 92% 50%)" strokeWidth="22" strokeLinecap="round" />
           </>
         )}
-        <path d="M 95 140 A 115 115 0 0 1 96 137" fill="none" stroke={c > 0 ? 'hsl(142 76% 36%)' : 'hsl(220 10% 10%)'} strokeWidth="22" strokeLinecap="round" />
-        <line x1="140" y1="94" x2="124" y2="78" stroke="hsl(220 15% 3%)" strokeWidth="2" />
-        <line x1="210" y1="55" x2="210" y2="33" stroke="hsl(220 15% 3%)" strokeWidth="2" />
-        <line x1="280" y1="94" x2="296" y2="78" stroke="hsl(220 15% 3%)" strokeWidth="2" />
+        <path d="M 95 140 A 115 115 0 0 1 96 137" fill="none" stroke={c > 0 ? 'var(--t-green)' : 'var(--t-border-subtle)'} strokeWidth="22" strokeLinecap="round" />
+        <line x1="140" y1="94" x2="124" y2="78" stroke="var(--t-bg)" strokeWidth="2" />
+        <line x1="210" y1="55" x2="210" y2="33" stroke="var(--t-bg)" strokeWidth="2" />
+        <line x1="280" y1="94" x2="296" y2="78" stroke="var(--t-bg)" strokeWidth="2" />
         <text x="112" y="46" fontSize="9" textAnchor="middle" fill="hsl(0 0% 72%)" fontFamily={mono}>25%</text>
         <text x="210" y="4" fontSize="9" textAnchor="middle" fill="hsl(0 0% 72%)" fontFamily={mono}>50%</text>
         <text x="308" y="46" fontSize="9" textAnchor="middle" fill="hsl(0 0% 72%)" fontFamily={mono}>75%</text>
         <text x="78" y="170" fontSize="10" fontWeight="600" textAnchor="middle" fill="hsl(142 50% 28%)" fontFamily={mono}>Safe</text>
         <text x="342" y="170" fontSize="10" fontWeight="600" textAnchor="start" fill="hsl(38 65% 36%)" fontFamily={mono}>Caution</text>
         {c > 0 && <line x1={CX} y1={CY} x2={tip.x.toFixed(1)} y2={tip.y.toFixed(1)} stroke={needleColor} strokeWidth="2.5" strokeLinecap="round" />}
-        <circle cx={CX} cy={CY} r="5" fill="hsl(220 15% 7%)" stroke={c > 0 ? needleColor : 'hsl(220 10% 15%)'} strokeWidth="2.5" />
+        <circle cx={CX} cy={CY} r="5" fill="var(--t-surface2)" stroke={c > 0 ? needleColor : 'var(--t-border)'} strokeWidth="2.5" />
       </svg>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px', marginTop: '6px' }}>
         {[
-          { label: 'Collateral ratio', value: c > 0 ? `${Math.round(collateralRatio)}%` : '-', color: isAmber ? 'hsl(38 92% 50%)' : 'hsl(142 76% 36%)' },
-          { label: 'UBTC to mint', value: c > 0 ? ubtcAmount.toFixed(2) : '-', color: 'hsl(205 85% 55%)' },
+          { label: 'Collateral ratio', value: c > 0 ? `${Math.round(collateralRatio)}%` : '-', color: isAmber ? 'var(--t-orange)' : 'var(--t-green)' },
+          { label: 'UBTC to mint', value: c > 0 ? ubtcAmount.toFixed(2) : '-', color: 'var(--t-accent)' },
           { label: 'Liquidation if BTC hits', value: c > 0 ? `$${liqPrice.toLocaleString()}` : '-', color: 'hsl(0 84% 62%)' },
         ].map(s => (
-          <div key={s.label} style={{ background: 'hsl(220 15% 5%)', borderRadius: '10px', padding: '8px 10px' }}>
+          <div key={s.label} style={{ background: 'var(--t-surface)', borderRadius: '10px', padding: '8px 10px' }}>
             <p style={{ color: 'hsl(0 0% 62%)', fontSize: '9px', fontFamily: mono, textTransform: 'uppercase' as const, letterSpacing: '0.08em', margin: '0 0 4px' }}>{s.label}</p>
             <p style={{ color: s.color, fontSize: '13px', fontWeight: '700', fontFamily: mono, margin: 0 }}>{s.value}</p>
           </div>
@@ -106,9 +106,9 @@ function MintContent() {
   const mono: any = { fontFamily: 'var(--font-mono)' }
 
   const currencies = [
-    { key: 'ubtc', label: 'UBTC', sub: 'Bitcoin-backed - 150% collateral', color: 'hsl(205 85% 55%)', icon: Icons.bitcoin },
-    { key: 'uusdt', label: 'UUSDT', sub: 'Quantum-wrapped Tether - coming soon', color: 'hsl(142 76% 36%)', icon: Icons.lock },
-    { key: 'uusdc', label: 'UUSDC', sub: 'Quantum-wrapped USD Coin - coming soon', color: 'hsl(220 85% 60%)', icon: Icons.lock },
+    { key: 'ubtc', label: 'UBTC', sub: 'Bitcoin-backed - 150% collateral', color: 'var(--t-accent)', icon: Icons.bitcoin },
+    { key: 'uusdt', label: 'UUSDT', sub: 'Quantum-wrapped Tether - coming soon', color: 'var(--t-green)', icon: Icons.lock },
+    { key: 'uusdc', label: 'UUSDC', sub: 'Quantum-wrapped USD Coin - coming soon', color: 'var(--t-accent)', icon: Icons.lock },
   ]
 
   const cur = currencies.find(c => c.key === activeCurrency) || currencies[0]
@@ -206,10 +206,10 @@ function MintContent() {
     }
   }
 
-  const inputSmall: any = { flex: 1, padding: '10px 12px', background: 'hsl(220 15% 5%)', border: '1px solid hsl(220 10% 16%)', borderRadius: '10px', color: 'hsl(0 0% 80%)', fontSize: '13px', fontFamily: 'var(--font-mono)', outline: 'none', minWidth: 0 }
+  const inputSmall: any = { flex: 1, padding: '10px 12px', background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '10px', color: 'hsl(0 0% 80%)', fontSize: '13px', fontFamily: 'var(--font-mono)', outline: 'none', minWidth: 0 }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', fontFamily: 'var(--font-display)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--t-bg)', fontFamily: 'var(--font-display)' }}>
 
       <PasswordModal
         isOpen={passwordModalOpen}
@@ -219,14 +219,14 @@ function MintContent() {
         subtitle={`Sign the mint of ${amount} ${cur.label} from vault ${vaultId.slice(0, 16)}... with your wallet password.`}
       />
 
-      <div style={{ background: 'hsl(220 15% 5%)', borderBottom: '1px solid hsl(220 10% 10%)', height: '60px', display: 'flex', alignItems: 'center', padding: '0 24px', gap: '16px' }}>
-        <a href={`/account/${vaultId}?currency=${activeCurrency}`} style={{ color: 'hsl(0 0% 40%)', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>{Icons.back(20, 'hsl(0 0% 40%)')}</a>
+      <div style={{ background: 'var(--t-surface)', borderBottom: '1px solid var(--t-border-subtle)', height: '60px', display: 'flex', alignItems: 'center', padding: '0 24px', gap: '16px' }}>
+        <a href={`/account/${vaultId}?currency=${activeCurrency}`} style={{ color: 'var(--t-muted)', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>{Icons.back(20, 'var(--t-muted)')}</a>
         <div style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center' }}>
           {['amount', 'done'].map((s, i) => (
-            <div key={s} style={{ width: step === s ? '24px' : '8px', height: '8px', borderRadius: '4px', background: ['amount', 'done'].indexOf(step) >= i ? cur.color : 'hsl(220 10% 18%)', transition: 'all 0.3s' }} />
+            <div key={s} style={{ width: step === s ? '24px' : '8px', height: '8px', borderRadius: '4px', background: ['amount', 'done'].indexOf(step) >= i ? cur.color : 'var(--t-border)', transition: 'all 0.3s' }} />
           ))}
         </div>
-        <span style={{ color: 'hsl(0 0% 28%)', fontSize: '11px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.1em' }}>
+        <span style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.1em' }}>
           {step === 'amount' ? 'Amount' : 'Done'}
         </span>
       </div>
@@ -237,15 +237,15 @@ function MintContent() {
           <>
             <div style={{ textAlign: 'center' as const, marginBottom: '26px' }}>
               <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: cur.color + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>{cur.icon(28, cur.color)}</div>
-              <h1 style={{ color: 'hsl(0 0% 92%)', fontSize: '26px', fontWeight: '700', margin: '0 0 4px' }}>Mint {cur.label}</h1>
-              <p style={{ color: 'hsl(0 0% 35%)', fontSize: '13px', ...mono, margin: 0 }}>{cur.sub}</p>
+              <h1 style={{ color: 'var(--t-text)', fontSize: '26px', fontWeight: '700', margin: '0 0 4px' }}>Mint {cur.label}</h1>
+              <p style={{ color: 'var(--t-faint)', fontSize: '13px', ...mono, margin: 0 }}>{cur.sub}</p>
             </div>
 
-            <div style={{ display: 'flex', background: 'hsl(220 12% 8%)', borderRadius: '14px', padding: '4px', gap: '4px', marginBottom: '18px' }}>
+            <div style={{ display: 'flex', background: 'var(--t-surface)', borderRadius: '14px', padding: '4px', gap: '4px', marginBottom: '18px' }}>
               {currencies.map(c => (
-                <button key={c.key} onClick={() => { setActiveCurrency(c.key); setAmount(''); setSelectedPct(0); setError(''); setMaxWarningAcknowledged(false) }} style={{ flex: 1, background: activeCurrency === c.key ? 'hsl(220 15% 14%)' : 'transparent', border: activeCurrency === c.key ? `1px solid ${c.color}35` : '1px solid transparent', borderRadius: '10px', padding: '10px 6px', cursor: 'pointer', fontFamily: 'var(--font-display)', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: '5px' }}>
-                  {c.icon(16, activeCurrency === c.key ? c.color : 'hsl(0 0% 35%)')}
-                  <span style={{ fontSize: '11px', fontWeight: '600', color: activeCurrency === c.key ? 'hsl(0 0% 88%)' : 'hsl(0 0% 38%)' }}>{c.label}</span>
+                <button key={c.key} onClick={() => { setActiveCurrency(c.key); setAmount(''); setSelectedPct(0); setError(''); setMaxWarningAcknowledged(false) }} style={{ flex: 1, background: activeCurrency === c.key ? 'var(--t-surface3)' : 'transparent', border: activeCurrency === c.key ? `1px solid ${c.color}35` : '1px solid transparent', borderRadius: '10px', padding: '10px 6px', cursor: 'pointer', fontFamily: 'var(--font-display)', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: '5px' }}>
+                  {c.icon(16, activeCurrency === c.key ? c.color : 'var(--t-faint)')}
+                  <span style={{ fontSize: '11px', fontWeight: '600', color: activeCurrency === c.key ? 'var(--t-text)' : 'var(--t-faint)' }}>{c.label}</span>
                 </button>
               ))}
             </div>
@@ -253,7 +253,7 @@ function MintContent() {
             {isStable && (
               <div style={{ background: 'hsl(38 92% 50% / 0.05)', border: '1px solid hsl(38 92% 50% / 0.2)', borderRadius: '16px', padding: '20px', marginBottom: '14px', textAlign: 'center' as const }}>
                 <p style={{ color: 'hsl(38 92% 60%)', fontSize: '14px', fontWeight: '600', ...mono, margin: '0 0 6px' }}>Coming Soon</p>
-                <p style={{ color: 'hsl(0 0% 45%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.6' }}>
+                <p style={{ color: 'var(--t-muted)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.6' }}>
                   Stablecoin minting is being upgraded with hybrid post-quantum authorization. Available shortly.
                 </p>
               </div>
@@ -261,7 +261,7 @@ function MintContent() {
 
             {!isStable && (
               <>
-                <div style={{ background: 'hsl(220 12% 8%)', border: `1px solid ${cur.color}18`, borderRadius: '20px', padding: '20px', marginBottom: '12px' }}>
+                <div style={{ background: 'var(--t-surface)', border: `1px solid ${cur.color}18`, borderRadius: '20px', padding: '20px', marginBottom: '12px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                     <p style={{ color: 'hsl(0 0% 26%)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: 0 }}>Amount to mint</p>
                     <button onClick={() => handlePct(100)} style={{ background: cur.color + '12', border: `1px solid ${cur.color}28`, color: cur.color, borderRadius: '7px', padding: '4px 10px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', ...mono }}>
@@ -279,7 +279,7 @@ function MintContent() {
                     />
                     <span style={{ color: cur.color, fontSize: '16px', fontWeight: '700', ...mono, flexShrink: 0 }}>{cur.label}</span>
                   </div>
-                  <div style={{ height: '1px', background: 'hsl(220 10% 12%)', marginBottom: '12px' }} />
+                  <div style={{ height: '1px', background: 'var(--t-border)', marginBottom: '12px' }} />
                   <div style={{ display: 'flex', gap: '6px' }}>
                     {[25, 50, 75, 100].map(pct => (
                       <button
@@ -287,8 +287,8 @@ function MintContent() {
                         onClick={() => handlePct(pct)}
                         style={{
                           flex: 1,
-                          background: selectedPct === pct ? cur.color + '18' : 'hsl(220 15% 5%)',
-                          border: selectedPct === pct ? `1px solid ${cur.color}50` : '1px solid hsl(220 10% 12%)',
+                          background: selectedPct === pct ? cur.color + '18' : 'var(--t-surface)',
+                          border: selectedPct === pct ? `1px solid ${cur.color}50` : '1px solid var(--t-border-subtle)',
                           color: selectedPct === pct ? cur.color : 'hsl(0 0% 36%)',
                           borderRadius: '8px', padding: '8px 0', fontSize: '12px', fontWeight: '600',
                           cursor: 'pointer', ...mono, transition: 'all 0.15s'
@@ -312,7 +312,7 @@ function MintContent() {
                 )}
 
                 <div style={{ background: 'hsl(205 85% 55% / 0.06)', border: '1px solid hsl(205 85% 55% / 0.25)', borderRadius: '14px', padding: '14px 16px', marginTop: '12px', marginBottom: '12px' }}>
-                  <p style={{ color: 'hsl(205 85% 65%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.6' }}>
+                  <p style={{ color: 'var(--t-accent)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.6' }}>
                     You will be asked for your wallet password to sign this mint with hybrid post-quantum signatures (ML-DSA-65 + SLH-DSA-SHAKE-256s). Your phrase never leaves this browser.
                   </p>
                 </div>
@@ -320,24 +320,24 @@ function MintContent() {
                 {isMaxAmount && (
                   <div style={{ background: 'hsl(38 92% 50% / 0.05)', border: '1px solid hsl(38 92% 50% / 0.25)', borderRadius: '16px', padding: '18px', marginBottom: '12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                      {Icons.warning(15, 'hsl(38 92% 50%)')}
-                      <p style={{ color: 'hsl(38 92% 50%)', fontWeight: '700', fontSize: '13px', ...mono, margin: 0 }}>Maximum mint - liquidation terms apply</p>
+                      {Icons.warning(15, 'var(--t-orange)')}
+                      <p style={{ color: 'var(--t-orange)', fontWeight: '700', fontSize: '13px', ...mono, margin: 0 }}>Maximum mint - liquidation terms apply</p>
                     </div>
 
-                    <p style={{ color: 'hsl(0 0% 45%)', fontSize: '12px', ...mono, lineHeight: '1.7', margin: '0 0 14px' }}>
-                      If BTC drops to <strong style={{ color: 'hsl(38 92% 55%)' }}>${gaugeLiqPrice.toLocaleString()}</strong>, your vault will automatically liquidate. This is not a loss of your Bitcoin - the remaining BTC, minus a small protocol fee, is returned directly to your wallet.
+                    <p style={{ color: 'var(--t-muted)', fontSize: '12px', ...mono, lineHeight: '1.7', margin: '0 0 14px' }}>
+                      If BTC drops to <strong style={{ color: 'var(--t-orange)' }}>${gaugeLiqPrice.toLocaleString()}</strong>, your vault will automatically liquidate. This is not a loss of your Bitcoin - the remaining BTC, minus a small protocol fee, is returned directly to your wallet.
                     </p>
 
-                    <div style={{ background: 'hsl(220 15% 5%)', borderRadius: '12px', overflow: 'hidden', marginBottom: '14px' }}>
+                    <div style={{ background: 'var(--t-surface)', borderRadius: '12px', overflow: 'hidden', marginBottom: '14px' }}>
                       {[
                         { label: 'First alert', sublabel: 'BTC drops to', price: gaugeAlert120, color: 'hsl(142 60% 38%)', bg: 'hsl(142 40% 6%)' },
                         { label: 'Top up urgently', sublabel: 'BTC drops to', price: gaugeAlert115, color: 'hsl(38 80% 48%)', bg: 'hsl(38 40% 6%)' },
                         { label: 'Auto-liquidation', sublabel: 'BTC drops to', price: gaugeLiqPrice, color: 'hsl(0 75% 58%)', bg: 'hsl(0 40% 6%)' },
                       ].map((item, i) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 14px', background: item.bg, borderBottom: i < 2 ? '1px solid hsl(220 10% 10%)' : 'none' }}>
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 14px', background: item.bg, borderBottom: i < 2 ? '1px solid var(--t-border-subtle)' : 'none' }}>
                           <div>
                             <p style={{ color: item.color, fontSize: '12px', fontWeight: '700', ...mono, margin: 0 }}>{item.label}</p>
-                            <p style={{ color: 'hsl(0 0% 30%)', fontSize: '10px', ...mono, margin: '2px 0 0' }}>{item.sublabel}</p>
+                            <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, margin: '2px 0 0' }}>{item.sublabel}</p>
                           </div>
                           <p style={{ color: item.color, fontSize: '18px', fontWeight: '700', ...mono, margin: 0 }}>${item.price.toLocaleString()}</p>
                         </div>
@@ -346,7 +346,7 @@ function MintContent() {
 
                     {!alertSaved ? (
                       <>
-                        <p style={{ color: 'hsl(0 0% 30%)', fontSize: '11px', ...mono, margin: '0 0 8px' }}>
+                        <p style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono, margin: '0 0 8px' }}>
                           Add your contact details to receive alerts before each threshold
                         </p>
                         <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
@@ -355,27 +355,27 @@ function MintContent() {
                           <button
                             onClick={() => { if (alertEmail || alertPhone) setAlertSaved(true) }}
                             disabled={!alertEmail && !alertPhone}
-                            style={{ padding: '10px 14px', background: alertEmail || alertPhone ? 'hsl(38 92% 50%)' : 'hsl(220 10% 12%)', border: 'none', borderRadius: '10px', color: alertEmail || alertPhone ? 'hsl(220 15% 5%)' : 'hsl(0 0% 28%)', fontSize: '12px', fontWeight: '700', ...mono, cursor: alertEmail || alertPhone ? 'pointer' : 'not-allowed', flexShrink: 0 }}
+                            style={{ padding: '10px 14px', background: alertEmail || alertPhone ? 'var(--t-orange)' : 'var(--t-border)', border: 'none', borderRadius: '10px', color: alertEmail || alertPhone ? 'var(--t-surface)' : 'var(--t-faint)', fontSize: '12px', fontWeight: '700', ...mono, cursor: alertEmail || alertPhone ? 'pointer' : 'not-allowed', flexShrink: 0 }}
                           >
                             Save
                           </button>
                         </div>
                       </>
                     ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: 'hsl(142 76% 36% / 0.08)', border: '1px solid hsl(142 76% 36% / 0.25)', borderRadius: '10px', marginBottom: '10px' }}>
-                        {Icons.check(13, 'hsl(142 76% 36%)')}
-                        <p style={{ color: 'hsl(142 76% 36%)', fontSize: '12px', ...mono, margin: 0 }}>Alerts saved - we will notify you at each threshold</p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: 'var(--t-green-bg)', border: '1px solid hsl(142 76% 36% / 0.25)', borderRadius: '10px', marginBottom: '10px' }}>
+                        {Icons.check(13, 'var(--t-green)')}
+                        <p style={{ color: 'var(--t-green)', fontSize: '12px', ...mono, margin: 0 }}>Alerts saved - we will notify you at each threshold</p>
                       </div>
                     )}
 
                     <div
                       onClick={() => setMaxWarningAcknowledged(!maxWarningAcknowledged)}
-                      style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', cursor: 'pointer', padding: '11px 12px', background: maxWarningAcknowledged ? 'hsl(142 76% 36% / 0.07)' : 'hsl(220 15% 5%)', border: maxWarningAcknowledged ? '1px solid hsl(142 76% 36% / 0.35)' : '1px solid hsl(220 10% 14%)', borderRadius: '10px' }}
+                      style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', cursor: 'pointer', padding: '11px 12px', background: maxWarningAcknowledged ? 'hsl(142 76% 36% / 0.07)' : 'var(--t-surface)', border: maxWarningAcknowledged ? '1px solid hsl(142 76% 36% / 0.35)' : '1px solid var(--t-border)', borderRadius: '10px' }}
                     >
-                      <div style={{ width: '18px', height: '18px', borderRadius: '5px', border: maxWarningAcknowledged ? '2px solid hsl(142 76% 36%)' : '2px solid hsl(220 10% 26%)', background: maxWarningAcknowledged ? 'hsl(142 76% 36%)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
+                      <div style={{ width: '18px', height: '18px', borderRadius: '5px', border: maxWarningAcknowledged ? '2px solid hsl(142 76% 36%)' : '2px solid var(--t-border)', background: maxWarningAcknowledged ? 'var(--t-green)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
                         {maxWarningAcknowledged && Icons.check(11, 'white')}
                       </div>
-                      <p style={{ color: 'hsl(0 0% 50%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.6' }}>
+                      <p style={{ color: 'var(--t-muted)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.6' }}>
                         I understand my vault auto-liquidates if BTC drops to <strong style={{ color: 'hsl(38 92% 58%)' }}>${gaugeLiqPrice.toLocaleString()}</strong> and I will receive the remaining BTC back minus the protocol fee.
                       </p>
                     </div>
@@ -385,15 +385,15 @@ function MintContent() {
             )}
 
             {error && (
-              <div style={{ background: 'hsl(0 84% 60% / 0.08)', border: '1px solid hsl(0 84% 60% / 0.25)', borderRadius: '12px', padding: '12px 14px', marginBottom: '14px' }}>
-                <p style={{ color: 'hsl(0 84% 60%)', fontSize: '13px', ...mono, margin: 0 }}>{error}</p>
+              <div style={{ background: 'var(--t-red-bg)', border: '1px solid hsl(0 84% 60% / 0.25)', borderRadius: '12px', padding: '12px 14px', marginBottom: '14px' }}>
+                <p style={{ color: 'var(--t-red)', fontSize: '13px', ...mono, margin: 0 }}>{error}</p>
               </div>
             )}
 
             <button
               onClick={handleMintClick}
               disabled={!canProceed || loading || isStable}
-              style={{ width: '100%', background: canProceed && !loading ? `linear-gradient(135deg, ${cur.color}, ${cur.color}bb)` : 'hsl(220 10% 12%)', color: canProceed && !loading ? 'white' : 'hsl(0 0% 28%)', border: 'none', borderRadius: '16px', padding: '18px', fontSize: '16px', fontWeight: '700', cursor: canProceed && !loading ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              style={{ width: '100%', background: canProceed && !loading ? `linear-gradient(135deg, ${cur.color}, ${cur.color}bb)` : 'var(--t-border)', color: canProceed && !loading ? 'white' : 'var(--t-faint)', border: 'none', borderRadius: '16px', padding: '18px', fontSize: '16px', fontWeight: '700', cursor: canProceed && !loading ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
             >
               {loading
                 ? signingStage === 'signing' ? 'Signing locally...' : signingStage === 'broadcasting' ? 'Broadcasting on Bitcoin...' : 'Processing...'
@@ -409,12 +409,12 @@ function MintContent() {
         {step === 'done' && (
           <>
             <div style={{ textAlign: 'center' as const, marginBottom: '28px' }}>
-              <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'hsl(142 76% 36% / 0.1)', border: '2px solid hsl(142 76% 36% / 0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>{Icons.check(36, 'hsl(142 76% 36%)')}</div>
-              <h1 style={{ color: 'hsl(0 0% 92%)', fontSize: '26px', fontWeight: '700', margin: '0 0 6px' }}>Minted Successfully</h1>
+              <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--t-green-bg)', border: '2px solid hsl(142 76% 36% / 0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>{Icons.check(36, 'var(--t-green)')}</div>
+              <h1 style={{ color: 'var(--t-text)', fontSize: '26px', fontWeight: '700', margin: '0 0 6px' }}>Minted Successfully</h1>
               <p style={{ color: cur.color, fontSize: '14px', ...mono, margin: 0 }}>{parseFloat(amount).toLocaleString()} {cur.label} - Hybrid PQ-authorized</p>
             </div>
-            <div style={{ background: 'hsl(220 12% 8%)', borderRadius: '16px', padding: '18px', marginBottom: '14px' }}>
-              <p style={{ color: 'hsl(0 0% 28%)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 12px' }}>Mint Summary</p>
+            <div style={{ background: 'var(--t-surface)', borderRadius: '16px', padding: '18px', marginBottom: '14px' }}>
+              <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 12px' }}>Mint Summary</p>
               {[
                 { label: 'Minted', value: parseFloat(amount).toLocaleString() + ' ' + cur.label },
                 { label: 'Vault', value: vaultId },
@@ -422,8 +422,8 @@ function MintContent() {
                 { label: 'Authorization', value: 'ML-DSA-65 + SLH-DSA-SHAKE-256s' },
                 ...(mintResult?.collateral_ratio ? [{ label: 'Collateral ratio', value: mintResult.collateral_ratio + '%' }] : []),
               ].map(item => (
-                <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 0', borderBottom: '1px solid hsl(220 10% 11%)', gap: '12px', alignItems: 'center' }}>
-                  <p style={{ color: 'hsl(0 0% 32%)', fontSize: '12px', ...mono, margin: 0 }}>{item.label}</p>
+                <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 0', borderBottom: '1px solid var(--t-border-subtle)', gap: '12px', alignItems: 'center' }}>
+                  <p style={{ color: 'var(--t-faint)', fontSize: '12px', ...mono, margin: 0 }}>{item.label}</p>
                   <p style={{ color: 'hsl(0 0% 75%)', fontSize: '12px', fontWeight: '600', ...mono, margin: 0, textAlign: 'right' as const, wordBreak: 'break-all' as const }}>{item.value}</p>
                 </div>
               ))}
@@ -439,7 +439,7 @@ function MintContent() {
 
 export default function MintPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'hsl(220 15% 3%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'hsl(0 0% 28%)', fontFamily: 'var(--font-mono)' }}>Loading...</div>}>
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'var(--t-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--t-faint)', fontFamily: 'var(--font-mono)' }}>Loading...</div>}>
       <MintContent />
     </Suspense>
   )
