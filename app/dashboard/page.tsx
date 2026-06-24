@@ -1,9 +1,15 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
+import { motion } from 'framer-motion'
 import { API_URL } from '../lib/supabase'
 import { Icons } from '../components/Icons'
 import { useIsMobile } from '../lib/useIsMobile'
 import { loadWallet } from '../lib/wallet/storage'
+
+const fadeUp = { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.5 } }
+const fadeIn = { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { duration: 0.4 } }
+const stagger = { animate: { transition: { staggerChildren: 0.08 } } }
+const cardVariant = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0, transition: { duration: 0.4 } } }
 
 /* ─── Compact stat pill ───────────────────────────────────────────────────── */
 function StatPill({ label, value, color }: { label: string; value: string; color: string }) {
@@ -152,20 +158,20 @@ export default function Dashboard() {
     <div style={{ minHeight: '100vh', background: 'var(--t-bg)', fontFamily: 'var(--font-display)' }}>
 
       {/* ── Hero: portfolio value ── */}
-      <div style={{
+      <motion.div {...fadeIn} style={{
         background: 'var(--t-surface)',
         borderBottom: '1px solid var(--t-border-subtle)',
         padding: isMobile ? '28px 20px 24px' : '36px 44px 28px',
       }}>
         <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
-          <p className="label" style={{ display: 'block', marginBottom: '8px' }}>Total Portfolio · BTC at live price</p>
-          <p className="number" style={{
+          <motion.p {...fadeUp} className="label" style={{ display: 'block', marginBottom: '8px' }}>Total Portfolio · BTC at live price</motion.p>
+          <motion.p initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.1 }} className="number" style={{
             fontSize: isMobile ? '40px' : '58px', fontWeight: '700',
             color: 'var(--t-text)', lineHeight: '1', margin: '0 0 6px',
             letterSpacing: '-0.03em',
           }}>
             ${fmt(totalUsd)}
-          </p>
+          </motion.p>
           {availableToMint > 0 && (
             <p className="number" style={{ color: 'var(--t-green)', fontSize: '13px', fontWeight: '600', margin: '0 0 20px' }}>
               ${fmt(availableToMint)} available to mint
@@ -181,11 +187,11 @@ export default function Dashboard() {
             <StatPill label="BTC price"   value={'$' + fmtInt(btcPrice)}          color="var(--t-muted)"  />
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* ── How it works (first time only) ── */}
       {vaults.length === 0 && (
-        <div style={{ maxWidth: '1080px', margin: '0 auto', padding: isMobile ? '20px 20px 0' : '24px 44px 0' }}>
+        <motion.div {...fadeUp} transition={{ duration: 0.5, delay: 0.2 }} style={{ maxWidth: '1080px', margin: '0 auto', padding: isMobile ? '20px 20px 0' : '24px 44px 0' }}>
           <div style={{
             background: 'var(--t-surface)',
             border: '1px dashed var(--t-border)',
@@ -223,7 +229,7 @@ export default function Dashboard() {
               Open Your First Account →
             </a>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* ── Vault cards ── */}
@@ -231,7 +237,7 @@ export default function Dashboard() {
         <div style={{ maxWidth: '1080px', margin: '0 auto', padding: isMobile ? '20px 20px 40px' : '24px 44px 48px' }}>
           <p className="label" style={{ display: 'block', marginBottom: '14px' }}>Your Vaults</p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(480px, 1fr))', gap: '14px' }}>
+          <motion.div variants={stagger} initial="initial" animate="animate" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(480px, 1fr))', gap: '14px' }}>
             {vaults.map(vault => {
               const btcLocked    = vault.btc_amount_sats / 1e8
               const btcValue     = btcLocked * btcPrice
@@ -248,7 +254,7 @@ export default function Dashboard() {
               const thisScan     = scanResult[vault.vault_id]
 
               return (
-                <div key={vault.vault_id} className="card" style={{ borderRadius: '22px', overflow: 'hidden', borderColor: isPending ? 'rgba(255,159,10,0.3)' : 'var(--t-border)' }}>
+                <motion.div key={vault.vault_id} variants={cardVariant} className="card" style={{ borderRadius: '22px', overflow: 'hidden', borderColor: isPending ? 'rgba(255,159,10,0.3)' : 'var(--t-border)' }}>
 
                   {/* Pending deposit banner */}
                   {isPending && (
@@ -386,10 +392,10 @@ export default function Dashboard() {
                       </a>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               )
             })}
-          </div>
+          </motion.div>
         </div>
       )}
     </div>

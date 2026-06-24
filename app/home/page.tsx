@@ -1,5 +1,6 @@
 'use client'
 import { useEffect } from 'react'
+import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { Icons } from '../components/Icons'
 import { SiteLogo } from '../components/SiteLogo'
@@ -33,12 +34,12 @@ export default function Home() {
     }}>
 
       {/* Logo */}
-      <div style={{ marginBottom: '32px', animation: 'fade-in 0.5s ease both' }}>
+      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6 }} style={{ marginBottom: '32px' }}>
         <SiteLogo height={44} />
-      </div>
+      </motion.div>
 
       {/* Headline */}
-      <div style={{ textAlign: 'center', marginBottom: '40px', animation: 'fade-up 0.5s ease 0.05s both' }}>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }} style={{ textAlign: 'center', marginBottom: '40px' }}>
         <h1 style={{ fontSize: 'clamp(28px, 5vw, 40px)', fontWeight: '700', margin: '0 0 12px', letterSpacing: '-0.03em', lineHeight: '1.1', color: 'var(--t-text)' }}>
           Bitcoin-Native Banking{' '}
           <span style={{ background: 'linear-gradient(135deg, var(--t-accent), hsl(190 80% 50%))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
@@ -56,13 +57,13 @@ export default function Home() {
             </span>
           ))}
         </div>
-      </div>
+      </motion.div>
 
       {/* Action cards */}
-      <div style={{
+      <motion.div initial={{ opacity: 0, y: 25 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }} style={{
         display: 'flex', gap: '14px', width: '100%', maxWidth: '720px',
         flexWrap: 'wrap', justifyContent: 'center',
-        marginBottom: '40px', animation: 'fade-up 0.5s ease 0.12s both',
+        marginBottom: '40px',
       }}>
 
         {/* Go to Accounts */}
@@ -114,15 +115,17 @@ export default function Home() {
           </div>
         </button>
 
-      </div>
+      </motion.div>
 
       {/* Sign out */}
-      <button
+      <motion.button
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.4 }}
+        whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
         onClick={() => { sessionStorage.removeItem('wlb_auth'); router.push('/') }}
         style={{ background: 'none', border: 'none', color: 'var(--t-faint)', fontSize: '11px', fontFamily: 'var(--font-mono)', cursor: 'pointer', letterSpacing: '0.1em', padding: '8px 16px' }}
       >
         Sign out
-      </button>
+      </motion.button>
     </div>
   )
 }

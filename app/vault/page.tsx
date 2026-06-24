@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, Suspense } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useSearchParams } from 'next/navigation'
 import { API_URL } from '../lib/supabase'
 import { isInTelegram } from '../lib/telegram'
