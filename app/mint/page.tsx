@@ -428,6 +428,11 @@ function MintContent() {
                 </div>
               ))}
             </div>
+            {mintResult?.bitcoin_txid && (
+              <a href={`https://mempool.space/testnet4/tx/${mintResult.bitcoin_txid}`} target="_blank" rel="noopener noreferrer" style={{ display: 'block', width: '100%', boxSizing: 'border-box' as const, textAlign: 'center' as const, background: 'var(--t-surface)', border: '1px solid var(--t-border-subtle)', color: 'hsl(205,85%,65%)', textDecoration: 'none', borderRadius: '12px', padding: '14px', fontSize: '13px', fontWeight: '600', fontFamily: 'var(--font-mono)', marginBottom: '10px', wordBreak: 'break-all' as const }}>
+                View QUANTUM:MINT on Bitcoin →
+              </a>
+            )}
             <a href={`/account/${vaultId}?currency=${activeCurrency}`} style={{ display: 'block', width: '100%', boxSizing: 'border-box' as const, textAlign: 'center' as const, background: 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))', color: 'white', textDecoration: 'none', borderRadius: '16px', padding: '18px', fontSize: '16px', fontWeight: '700', fontFamily: 'var(--font-display)' }}>View Account</a>
           </>
         )}
