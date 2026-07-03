@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { API_URL } from '../lib/supabase'
 import { Icons } from '../components/Icons'
 import { useIsMobile } from '../lib/useIsMobile'
-import { loadWallet } from '../lib/wallet/storage'
+import { loadWallet, hasStoredWallet } from '../lib/wallet/storage'
 
 const fadeUp = { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.5 } }
 const fadeIn = { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { duration: 0.4 } }
@@ -76,7 +76,9 @@ export default function Dashboard() {
   const isMobile = useIsMobile()
   const [hasWallet, setHasWallet]   = useState(false)
 
-  useEffect(() => { setHasWallet(!!localStorage.getItem('ubtc_wallet_address')) }, [])
+  useEffect(() => {
+    hasStoredWallet().then(setHasWallet)
+  }, [])
 
   useEffect(() => {
     loadAll()
@@ -189,46 +191,49 @@ export default function Dashboard() {
         </div>
       </motion.div>
 
-      {/* ── How it works (first time only) ── */}
+      {/* ── Empty state ── */}
       {vaults.length === 0 && (
         <motion.div {...fadeUp} transition={{ duration: 0.5, delay: 0.2 }} style={{ maxWidth: '1080px', margin: '0 auto', padding: isMobile ? '20px 20px 0' : '24px 44px 0' }}>
-          <div style={{
-            background: 'var(--t-surface)',
-            border: '1px dashed var(--t-border)',
-            borderRadius: '20px', padding: isMobile ? '32px 24px' : '48px 40px',
-            textAlign: 'center',
-          }}>
-            <p style={{ color: 'var(--t-muted)', fontSize: '15px', fontWeight: '600', margin: '0 0 8px' }}>Get started in 3 steps</p>
-            <p className="number" style={{ color: 'var(--t-faint)', fontSize: '13px', margin: '0 0 28px' }}>
-              Your first account takes about 2 minutes to set up
-            </p>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', maxWidth: '560px', margin: '0 auto 28px' }}>
-              {[
-                { n: '1', label: 'Open an account', desc: 'Click "New Account" above', color: 'var(--t-purple)' },
-                { n: '2', label: 'Deposit BTC', desc: 'Send Bitcoin to your vault address', color: 'var(--t-green)' },
-                { n: '3', label: 'Mint UBTC', desc: 'Create stablecoins from your collateral', color: 'var(--t-orange)' },
-              ].map(s => (
-                <div key={s.n} style={{ flex: '1 1 140px', background: 'var(--t-surface2)', borderRadius: '14px', padding: '18px 14px' }}>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: s.color + '20', color: s.color, fontWeight: '700', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px', fontFamily: 'var(--font-mono)' }}>
-                    {s.n}
-                  </div>
-                  <p style={{ color: 'var(--t-text)', fontWeight: '600', fontSize: '13px', margin: '0 0 4px' }}>{s.label}</p>
-                  <p className="number" style={{ color: 'var(--t-faint)', fontSize: '11px', margin: 0 }}>{s.desc}</p>
-                </div>
-              ))}
+          {hasWallet ? (
+            /* Wallet exists but no vaults — setup was interrupted */
+            <div style={{ background: 'hsl(38 92% 50% / 0.07)', border: '1px solid hsl(38 92% 50% / 0.25)', borderRadius: '20px', padding: isMobile ? '28px 20px' : '40px 36px', textAlign: 'center' as const }}>
+              <div style={{ fontSize: '36px', marginBottom: '14px' }}>⚠️</div>
+              <p style={{ color: 'var(--t-orange)', fontSize: '16px', fontWeight: '700', margin: '0 0 8px' }}>Your wallet is set up — just missing an account</p>
+              <p style={{ color: 'hsl(0 0% 45%)', fontSize: '13px', fontFamily: 'var(--font-mono)', margin: '0 0 24px', lineHeight: '1.7' }}>
+                It looks like account setup didn't complete. Your keys are safe — just open an account to continue.
+              </p>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' as const }}>
+                <a href="/vault" style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'var(--t-orange)', color: '#000', textDecoration: 'none', borderRadius: '12px', padding: '14px 28px', fontSize: '14px', fontWeight: '700', fontFamily: 'var(--font-display)' }}>
+                  Open Account →
+                </a>
+                <button onClick={loadAll} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'none', border: '1px solid var(--t-border)', color: 'var(--t-muted)', borderRadius: '12px', padding: '14px 20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
+                  {Icons.refresh(14, 'var(--t-muted)')} Refresh
+                </button>
+              </div>
             </div>
-            <a href="/vault" style={{
-              display: 'inline-flex', alignItems: 'center', gap: '7px',
-              background: 'var(--t-accent-bg)',
-              border: '1.5px solid var(--t-accent-border)',
-              color: 'var(--t-accent)',
-              textDecoration: 'none', borderRadius: '12px',
-              padding: '13px 28px', fontSize: '14px', fontWeight: '700',
-              fontFamily: 'var(--font-display)',
-            }}>
-              Open Your First Account →
-            </a>
-          </div>
+          ) : (
+            /* No wallet at all — fresh user */
+            <div style={{ background: 'var(--t-surface)', border: '1px dashed var(--t-border)', borderRadius: '20px', padding: isMobile ? '32px 24px' : '48px 40px', textAlign: 'center' as const }}>
+              <p style={{ color: 'var(--t-muted)', fontSize: '15px', fontWeight: '600', margin: '0 0 8px' }}>Get started in 3 steps</p>
+              <p className="number" style={{ color: 'var(--t-faint)', fontSize: '13px', margin: '0 0 28px' }}>Your first account takes about 2 minutes to set up</p>
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' as const, maxWidth: '560px', margin: '0 auto 28px' }}>
+                {[
+                  { n: '1', label: 'Open an account', desc: 'Takes about 30 seconds', color: 'var(--t-purple)' },
+                  { n: '2', label: 'Deposit BTC', desc: 'Send Bitcoin to your vault address', color: 'var(--t-green)' },
+                  { n: '3', label: 'Create UBTC', desc: 'Mint stablecoins from your collateral', color: 'var(--t-orange)' },
+                ].map(s => (
+                  <div key={s.n} style={{ flex: '1 1 140px', background: 'var(--t-surface2)', borderRadius: '14px', padding: '18px 14px' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: s.color + '20', color: s.color, fontWeight: '700', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px', fontFamily: 'var(--font-mono)' }}>{s.n}</div>
+                    <p style={{ color: 'var(--t-text)', fontWeight: '600', fontSize: '13px', margin: '0 0 4px' }}>{s.label}</p>
+                    <p className="number" style={{ color: 'var(--t-faint)', fontSize: '11px', margin: 0 }}>{s.desc}</p>
+                  </div>
+                ))}
+              </div>
+              <a href="/vault" style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'var(--t-accent-bg)', border: '1.5px solid var(--t-accent-border)', color: 'var(--t-accent)', textDecoration: 'none', borderRadius: '12px', padding: '13px 28px', fontSize: '14px', fontWeight: '700', fontFamily: 'var(--font-display)' }}>
+                Open Your First Account →
+              </a>
+            </div>
+          )}
         </motion.div>
       )}
 

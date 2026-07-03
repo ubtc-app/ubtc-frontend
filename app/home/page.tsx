@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { Icons } from '../components/Icons'
 import { SiteLogo } from '../components/SiteLogo'
+import { hasStoredWallet } from '../lib/wallet/storage'
 
 const tags = [
   { label: 'UBTC',           color: 'var(--t-orange)' },
@@ -19,7 +20,17 @@ export default function Home() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const auth = sessionStorage.getItem('wlb_auth')
-      if (!auth) router.replace('/unlock')
+      if (auth) return
+      // If user has a stored wallet, restore their session automatically —
+      // they already proved identity when they created the wallet.
+      hasStoredWallet().then(has => {
+        if (has) {
+          sessionStorage.setItem('wlb_auth', '1')
+          // Already on /home, nothing to redirect
+        } else {
+          router.replace('/unlock')
+        }
+      })
     }
   }, [])
 
