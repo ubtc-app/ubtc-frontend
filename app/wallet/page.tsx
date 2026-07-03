@@ -418,154 +418,199 @@ function WalletContent() {
         </div>
       )}
 
-      {/* Header */}
-      <div style={{ background: 'var(--q-surface)', borderBottom: '1px solid var(--q-border)', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', backdropFilter: 'blur(20px)' }}>
-        <a href="/dashboard" style={{ color: 'var(--q-text-3)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontFamily: 'var(--font-mono)', letterSpacing: '0.08em' }}>
-          {Icons.back(14, 'var(--q-text-3)')} ACCOUNTS
+      <style>{`
+        @keyframes w-pulse { 0%,100%{opacity:.5;transform:scale(1)} 50%{opacity:1;transform:scale(1.04)} }
+        @keyframes w-scan { 0%{transform:translateY(-100%)} 100%{transform:translateY(100vh)} }
+        @keyframes w-fadein { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+        .w-card { animation: w-fadein .4s ease both }
+        .w-action-btn:hover { transform: translateY(-2px); filter: brightness(1.15) }
+        .w-action-btn { transition: transform .18s ease, filter .18s ease }
+        .w-asset-row:hover { border-color: rgba(0,212,255,0.25) !important; background: rgba(0,212,255,0.04) !important }
+        .w-asset-row { transition: border-color .2s, background .2s }
+        .w-tx-row:hover { background: rgba(0,212,255,0.04) !important }
+        .w-tx-row { transition: background .2s }
+      `}</style>
+
+      {/* Scanline effect */}
+      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 2, overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg,transparent,rgba(0,212,255,0.06),transparent)', animation: 'w-scan 8s linear infinite' }} />
+      </div>
+
+      {/* Back nav — sits below global header */}
+      <div style={{ position: 'relative', zIndex: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 24px 0' }}>
+        <a href="/dashboard" style={{ color: 'var(--q-text-3)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          {Icons.back(12, 'var(--q-text-3)')} Accounts
         </a>
-        <span style={{ color: 'var(--q-text)', fontFamily: 'var(--font-syne)', fontWeight: 700, fontSize: '14px', letterSpacing: '0.1em', textTransform: 'uppercase' }}>UBTC Wallet</span>
-        <button onClick={() => loadWallet(walletData?.wallet_address || walletAddress)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--q-text-3)' }}>
-          {Icons.refresh(16, 'var(--q-text-3)')}
+        <button onClick={() => loadWallet(walletData?.wallet_address || walletAddress)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--q-text-3)', opacity: 0.6, padding: 4 }}>
+          {Icons.refresh(15, 'var(--q-text-3)')}
         </button>
       </div>
 
-      {/* Balance hero */}
-      <div style={{ background: 'var(--q-bg)', padding: '40px 24px 32px', textAlign: 'center' as const, borderBottom: '1px solid var(--q-border)' }}>
-        <p style={{ color: 'var(--q-electric)', fontSize: '10px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' as const, letterSpacing: '0.25em', margin: '0 0 6px', opacity: 0.8 }}>@{walletData?.username}</p>
-        <p style={{ color: 'var(--q-text)', fontSize: '44px', fontWeight: '700', fontFamily: 'var(--font-mono)', margin: '0 0 4px', lineHeight: '1' }}>
-          ${(balance + uusdtBalance + uusdcBalance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      {/* ── BALANCE HERO ── */}
+      <div className="w-card" style={{ textAlign: 'center', padding: '32px 24px 28px', position: 'relative', zIndex: 3 }}>
+        {/* Glow orb behind balance */}
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 320, height: 320, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
+
+        <p style={{ color: 'var(--q-electric)', fontSize: '10px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.3em', margin: '0 0 4px', opacity: 0.7 }}>
+          {walletData?.username || 'Wallet'}
         </p>
-        <p style={{ color: 'var(--t-faint)', fontSize: '12px', ...mono, margin: '0 0 24px' }}>Total Balance</p>
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', maxWidth: '380px', margin: '0 auto' }}>
+
+        {/* Big balance */}
+        <div style={{ position: 'relative', display: 'inline-block', margin: '8px 0 4px' }}>
+          <p style={{ color: 'var(--q-text)', fontSize: 'clamp(42px,8vw,64px)', fontWeight: 800, fontFamily: 'var(--font-mono)', margin: 0, lineHeight: 1, letterSpacing: '-0.02em', textShadow: '0 0 40px rgba(0,212,255,0.25)' }}>
+            ${(balance + uusdtBalance + uusdcBalance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </p>
+          {/* Underline glow */}
+          <div style={{ position: 'absolute', bottom: -6, left: '10%', right: '10%', height: 1, background: 'linear-gradient(90deg,transparent,rgba(0,212,255,0.4),transparent)' }} />
+        </div>
+        <p style={{ color: 'var(--q-text-3)', fontSize: '11px', fontFamily: 'var(--font-mono)', margin: '10px 0 0', letterSpacing: '0.2em', textTransform: 'uppercase' }}>Total Portfolio</p>
+
+        {copied === 'recv' && (
+          <p style={{ color: 'var(--q-cyan)', fontSize: '11px', fontFamily: 'var(--font-mono)', margin: '8px 0 0', letterSpacing: '0.1em' }}>Address copied to clipboard</p>
+        )}
+      </div>
+
+      {/* ── ACTION BUTTONS ── */}
+      <div className="w-card" style={{ display: 'flex', gap: 10, padding: '0 20px 28px', maxWidth: 480, margin: '0 auto', animationDelay: '.05s' }}>
+        {[
+          { label: 'Send', icon: Icons.send(20, '#00D4FF'), href: `/transfer?from_wallet=${walletData?.wallet_address}&ubtc=${balance}&uusdt=${uusdtBalance}&uusdc=${uusdcBalance}`, color: '#00D4FF', glow: 'rgba(0,212,255,0.2)' },
+          { label: 'Receive', icon: Icons.receive(20, '#00FFE0'), action: () => copy(walletData?.wallet_address || '', 'recv'), color: '#00FFE0', glow: 'rgba(0,255,224,0.2)' },
+          { label: 'Redeem', icon: Icons.redeem(20, '#F59E0B'), href: '/redeem/proof', color: '#F59E0B', glow: 'rgba(245,158,11,0.25)' },
+          { label: 'Tokens', icon: Icons.settings(20, '#7C3AFF'), action: () => setShowManageTokens(true), color: '#7C3AFF', glow: 'rgba(124,58,255,0.2)' },
+        ].map(btn => {
+          const inner = (
+            <div className="w-action-btn" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '16px 6px', borderRadius: 18, background: 'rgba(2,8,28,0.6)', border: `1px solid rgba(255,255,255,0.07)`, backdropFilter: 'blur(20px)', boxShadow: `0 0 20px ${btn.glow}, inset 0 1px 0 rgba(255,255,255,0.06)`, cursor: 'pointer' }}>
+              <div style={{ width: 44, height: 44, borderRadius: 14, background: `${btn.color}14`, border: `1px solid ${btn.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 16px ${btn.glow}` }}>
+                {btn.icon}
+              </div>
+              <span style={{ color: 'var(--q-text-2)', fontSize: '11px', fontFamily: 'var(--font-mono)', fontWeight: 600, letterSpacing: '0.08em' }}>{btn.label}</span>
+            </div>
+          )
+          return btn.href
+            ? <a key={btn.label} href={btn.href} style={{ flex: 1, textDecoration: 'none' }}>{inner}</a>
+            : <button key={btn.label} onClick={(btn as any).action} style={{ flex: 1, background: 'none', border: 'none', padding: 0, fontFamily: 'var(--font-display)' }}>{inner}</button>
+        })}
+      </div>
+
+      {/* ── CONTENT ── */}
+      <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 16px 40px', position: 'relative', zIndex: 3 }}>
+
+        {/* ASSETS */}
+        <p className="w-card" style={{ color: 'var(--q-electric)', fontSize: '9px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.3em', margin: '0 0 10px', opacity: 0.6, animationDelay: '.1s' }}>Assets</p>
+        <div className="w-card" style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(0,212,255,0.1)', backdropFilter: 'blur(24px)', background: 'rgba(2,8,28,0.55)', marginBottom: 16, animationDelay: '.12s' }}>
           {[
-            { label: 'Send', icon: Icons.send(18, 'var(--t-muted)'), href: `/transfer?from_wallet=${walletData?.wallet_address}&ubtc=${balance}&uusdt=${uusdtBalance}&uusdc=${uusdcBalance}` },
-            { label: 'Receive', icon: Icons.receive(18, 'var(--t-muted)'), action: () => copy(walletData?.wallet_address || '', 'recv') },
-            { label: 'Redeem', icon: Icons.redeem(18, 'var(--t-orange)'), href: '/redeem/proof', highlight: true },
-            { label: 'Tokens', icon: Icons.settings(18, 'var(--t-muted)'), action: () => setShowManageTokens(true) },
-          ].map(btn => (
-            btn.href
-              ? <a key={btn.label} href={btn.href} style={{ flex: 1, background: (btn as any).highlight ? 'var(--t-orange-bg)' : 'var(--t-surface2)', border: `1px solid ${(btn as any).highlight ? 'hsl(38 92% 50% / 0.3)' : 'var(--t-border)'}`, borderRadius: '14px', padding: '14px 8px', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: '6px', textDecoration: 'none' }}>
-                {btn.icon}
-                <span style={{ color: (btn as any).highlight ? 'var(--t-orange)' : 'hsl(0 0% 48%)', fontSize: '11px', fontWeight: '600', ...mono }}>{btn.label}</span>
-              </a>
-              : <button key={btn.label} onClick={(btn as any).action} style={{ flex: 1, background: 'var(--t-surface2)', border: '1px solid var(--t-border)', borderRadius: '14px', padding: '14px 8px', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: '6px', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
-                {btn.icon}
-                <span style={{ color: 'hsl(0 0% 48%)', fontSize: '11px', fontWeight: '600', ...mono }}>{btn.label}</span>
-              </button>
+            { show: true,         name: 'UBTC',  sub: 'Bitcoin-backed',       color: '#F59E0B', bal: balance,       unit: 'UBTC'  },
+            { show: tokens.uusdt, name: 'UUSDT', sub: '1:1 USDT · BTC-native', color: '#22C55E', bal: uusdtBalance, unit: 'UUSDT' },
+            { show: tokens.uusdc, name: 'UUSDC', sub: '1:1 USDC · BTC-native', color: '#00D4FF', bal: uusdcBalance, unit: 'UUSDC' },
+          ].filter(t => t.show).map((t, i, arr) => (
+            <div key={t.name} className="w-asset-row" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px', borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+              {/* Token dot */}
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: `${t.color}14`, border: `1px solid ${t.color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: t.color, boxShadow: `0 0 10px ${t.color}` }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <p style={{ color: 'var(--q-text)', fontWeight: 700, fontSize: 14, margin: '0 0 2px', fontFamily: 'var(--font-syne)' }}>{t.name}</p>
+                <p style={{ color: 'var(--q-text-3)', fontSize: 11, fontFamily: 'var(--font-mono)', margin: 0 }}>{t.sub}</p>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <p style={{ color: t.color, fontWeight: 700, fontSize: 18, fontFamily: 'var(--font-mono)', margin: '0 0 1px', textShadow: `0 0 12px ${t.color}60` }}>
+                  ${t.bal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+                <p style={{ color: 'var(--q-text-3)', fontSize: 10, fontFamily: 'var(--font-mono)', margin: 0 }}>{t.unit}</p>
+              </div>
+            </div>
           ))}
         </div>
-      </div>
-      {copied === 'recv' && <p style={{ color: 'var(--t-green)', fontSize: '12px', ...mono, margin: '12px 0 0', textAlign: 'center' as const }}>Address copied</p>}
 
-      <div style={{ maxWidth: '480px', margin: '0 auto', padding: '24px 16px' }}>
-
-        {/* Assets */}
-        <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 10px' }}>Assets</p>
-        {[
-          { show: true, name: 'UBTC', sub: 'Bitcoin-backed', color: 'var(--t-orange)', bal: '$' + balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), unit: 'UBTC' },
-          { show: tokens.uusdt, name: 'UUSDT', sub: '1:1 USDT · Bitcoin-native', color: 'var(--t-green)', bal: '$' + uusdtBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), unit: 'UUSDT' },
-          { show: tokens.uusdc, name: 'UUSDC', sub: '1:1 USDC · Bitcoin-native', color: 'var(--t-accent)', bal: '$' + uusdcBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), unit: 'UUSDC' },
-        ].filter(t => t.show).map(t => (
-          <div key={t.name} style={{ background: 'var(--t-surface)', border: `1px solid ${t.color}1a`, borderRadius: '14px', padding: '16px 18px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <div style={{ flex: 1 }}>
-              <p style={{ color: 'var(--t-text)', fontWeight: '600', fontSize: '14px', margin: '0 0 2px' }}>{t.name}</p>
-              <p style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono, margin: 0 }}>{t.sub}</p>
-            </div>
-            <div style={{ textAlign: 'right' as const }}>
-              <p style={{ color: t.color, fontWeight: '700', fontSize: '18px', ...mono, margin: '0 0 1px' }}>{t.bal}</p>
-              <p style={{ color: 'hsl(0 0% 24%)', fontSize: '10px', ...mono, margin: 0 }}>{t.unit}</p>
-            </div>
-          </div>
-        ))}
-
-        {/* Wallet address */}
+        {/* WALLET ADDRESS */}
         {walletData && (
-          <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border-subtle)', borderRadius: '14px', padding: '16px', margin: '16px 0' }}>
-            <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 8px' }}>Wallet Address</p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <p style={{ color: 'var(--t-accent)', fontSize: '11px', ...mono, margin: 0, flex: 1, wordBreak: 'break-all' as const }}>{walletData.wallet_address}</p>
+          <div className="w-card" style={{ borderRadius: 16, padding: '14px 18px', background: 'rgba(2,8,28,0.55)', border: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(20px)', marginBottom: 16, animationDelay: '.15s' }}>
+            <p style={{ color: 'var(--q-text-3)', fontSize: '9px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.25em', margin: '0 0 8px' }}>Wallet Address</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <p style={{ color: 'var(--q-electric)', fontSize: 11, fontFamily: 'var(--font-mono)', margin: 0, flex: 1, wordBreak: 'break-all', opacity: 0.8 }}>{walletData.wallet_address}</p>
               <CopyBtn text={walletData.wallet_address} id="wal-addr" />
             </div>
           </div>
         )}
 
-        {/* Pending Proof Files */}
+        {/* PENDING PROOFS */}
         {pendingProofs.length > 0 && (
-          <div style={{ background: 'var(--t-surface)', border: '2px solid hsl(38 92% 50% / 0.6)', borderRadius: '16px', padding: '20px', margin: '16px 0', boxShadow: '0 0 24px hsl(38 92% 50% / 0.15)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-              <span style={{ fontSize: '18px' }}>📥</span>
-              <p style={{ color: 'var(--t-orange)', fontSize: '12px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: 0, fontWeight: 700 }}>
-                {pendingProofs.length} Incoming Proof File{pendingProofs.length > 1 ? 's' : ''} — Action Required
+          <div className="w-card" style={{ borderRadius: 20, padding: 20, background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.35)', backdropFilter: 'blur(20px)', marginBottom: 16, boxShadow: '0 0 30px rgba(245,158,11,0.1)', animationDelay: '.18s' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#F59E0B', boxShadow: '0 0 8px #F59E0B', animation: 'w-pulse 2s ease infinite' }} />
+              <p style={{ color: '#F59E0B', fontSize: 11, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.2em', margin: 0, fontWeight: 700 }}>
+                {pendingProofs.length} Proof File{pendingProofs.length > 1 ? 's' : ''} — Action Required
               </p>
             </div>
-            <p style={{ color: 'var(--t-muted)', fontSize: '11px', ...mono, margin: '0 0 16px', lineHeight: '1.7' }}>
-              You have received UBTC. Enter your recovery phrase to redeem directly to Bitcoin.
+            <p style={{ color: 'var(--q-text-3)', fontSize: 11, fontFamily: 'var(--font-mono)', margin: '0 0 14px', lineHeight: 1.7 }}>
+              You have received UBTC. Redeem to Bitcoin or download your proof file.
             </p>
             {pendingProofs.map((proof: any) => {
               const isDownloaded = !!proof.downloaded
-              const accentColor = isDownloaded ? 'var(--t-faint)' : 'hsl(190 80% 50%)'
-              const borderColor = isDownloaded ? 'var(--t-border)' : 'hsl(190 80% 50% / 0.35)'
               return (
-              <div key={proof.proof_id} style={{ background: 'var(--t-surface)', borderRadius: '10px', padding: '14px', marginBottom: '10px', border: `1px solid ${borderColor}` }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
-                      <p style={{ color: 'hsl(0 0% 75%)', fontSize: '13px', ...mono, margin: 0, fontWeight: 700 }}>{proof.proof_data?.ownership?.ubtc_amount || '?'} UBTC</p>
-                      {!isDownloaded && (
-                        <span style={{ background: 'hsl(190 80% 50% / 0.15)', color: 'hsl(190 80% 65%)', fontSize: '9px', ...mono, fontWeight: 700, letterSpacing: '0.08em', padding: '3px 7px', borderRadius: '999px', textTransform: 'uppercase' }}>New</span>
-                      )}
-                      {isDownloaded && (
-                        <span style={{ background: 'var(--t-border-subtle)', color: 'var(--t-muted)', fontSize: '9px', ...mono, fontWeight: 700, letterSpacing: '0.08em', padding: '3px 7px', borderRadius: '999px', textTransform: 'uppercase' }}>Saved</span>
-                      )}
+                <div key={proof.proof_id} style={{ background: 'rgba(2,8,28,0.6)', borderRadius: 12, padding: '12px 14px', marginBottom: 8, border: `1px solid ${isDownloaded ? 'rgba(255,255,255,0.06)' : 'rgba(0,212,255,0.2)'}` }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                        <p style={{ color: 'var(--q-text)', fontSize: 14, fontFamily: 'var(--font-mono)', margin: 0, fontWeight: 700 }}>{proof.proof_data?.ownership?.ubtc_amount || '?'} UBTC</p>
+                        <span style={{ background: isDownloaded ? 'rgba(255,255,255,0.06)' : 'rgba(0,212,255,0.12)', color: isDownloaded ? 'var(--q-text-3)' : 'var(--q-electric)', fontSize: 9, fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', padding: '2px 7px', borderRadius: 999, textTransform: 'uppercase' }}>
+                          {isDownloaded ? 'Saved' : 'New'}
+                        </span>
+                      </div>
+                      <p style={{ color: 'var(--q-text-3)', fontSize: 10, fontFamily: 'var(--font-mono)', margin: 0 }}>
+                        {new Date(proof.created_at).toLocaleString()}
+                      </p>
                     </div>
-                    <p style={{ color: accentColor, fontSize: '10px', ...mono, margin: 0 }}>from {proof.sender_vault_id} · {new Date(proof.created_at).toLocaleString()}</p>
-                    {isDownloaded && proof.downloaded_at && (
-                      <p style={{ color: 'var(--t-faint)', fontSize: '9px', ...mono, margin: '2px 0 0' }}>Saved to your device · {new Date(proof.downloaded_at).toLocaleString()}</p>
-                    )}
-                  </div>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                   {!isInTelegram() && (
-                    <button onClick={() => downloadProof(proof)} title={isDownloaded ? 'Re-download proof file' : 'Download proof file'} style={{ background: 'transparent', color: 'var(--t-muted)', ...mono, fontSize: '11px', fontWeight: 600, padding: '10px 12px', border: '1px solid var(--t-border)', borderRadius: '8px', cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
-                      {isDownloaded ? '↻ Re-download' : '↓ Download'}
-                    </button>
-                    )}
-                    <button onClick={() => window.location.href = `/redeem/proof?proof_id=${proof.proof_id}&vault_id=${proof.sender_vault_id}&amount=${proof.proof_data?.ownership?.ubtc_amount}`} style={{ background: 'var(--t-green)', color: 'white', ...mono, fontSize: '11px', fontWeight: 700, padding: '10px 16px', border: 'none', borderRadius: '8px', cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
-                      ⚡ Redeem to Bitcoin
-                    </button>
+                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                      {!isInTelegram() && (
+                        <button onClick={() => downloadProof(proof)} style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--q-text-3)', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600, padding: '8px 10px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                          {isDownloaded ? '↻' : '↓'}
+                        </button>
+                      )}
+                      <button onClick={() => window.location.href = `/redeem/proof?proof_id=${proof.proof_id}&vault_id=${proof.sender_vault_id}&amount=${proof.proof_data?.ownership?.ubtc_amount}`} style={{ background: 'linear-gradient(135deg,#22C55E,#16A34A)', color: '#000', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, padding: '8px 12px', border: 'none', borderRadius: 8, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        ⚡ Redeem
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <p style={{ color: 'hsl(0 0% 22%)', fontSize: '9px', ...mono, margin: 0 }}>ID: {proof.proof_id}</p>
-              </div>
               )
             })}
-			</div>
+          </div>
         )}
 
-        {/* Transactions */}
-        <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '16px 0 10px' }}>Transactions</p>
-        {walletTxs.length === 0 ? (
-          <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border-subtle)', borderRadius: '14px', padding: '40px', textAlign: 'center' as const }}>
-            <p style={{ color: 'var(--t-faint)', fontSize: '13px', ...mono, margin: 0 }}>No transactions yet</p>
-          </div>
-        ) : walletTxs.map((tx: any) => {
-          const isIn = tx.is_incoming
-          const color = isIn ? 'var(--t-green)' : 'var(--t-red)'
-          return (
-            <div key={tx.id} style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border-subtle)', borderRadius: '12px', padding: '14px 16px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: color + '12', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                {isIn ? Icons.receive(16, color) : Icons.send(16, color)}
-              </div>
-              <div style={{ flex: 1 }}>
-                <p style={{ color: 'hsl(0 0% 82%)', fontWeight: '600', fontSize: '13px', margin: '0 0 2px' }}>{tx.description}</p>
-                <p style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono, margin: 0 }}>{new Date(tx.created_at).toLocaleString()}</p>
-              </div>
-              <p style={{ color, fontWeight: '700', fontSize: '14px', ...mono, margin: 0 }}>{isIn ? '+' : '-'}{parseFloat(tx.amount).toLocaleString()} UBTC</p>
+        {/* TRANSACTIONS */}
+        <p className="w-card" style={{ color: 'var(--q-electric)', fontSize: '9px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.3em', margin: '0 0 10px', opacity: 0.6, animationDelay: '.2s' }}>Transactions</p>
+        <div className="w-card" style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(24px)', background: 'rgba(2,8,28,0.55)', marginBottom: 20, animationDelay: '.22s' }}>
+          {walletTxs.length === 0 ? (
+            <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+              <p style={{ color: 'var(--q-text-3)', fontSize: 12, fontFamily: 'var(--font-mono)', margin: 0, letterSpacing: '0.1em' }}>No transactions yet</p>
             </div>
-          )
-        })}
+          ) : walletTxs.map((tx: any, i: number) => {
+            const isIn = tx.is_incoming
+            const color = isIn ? '#22C55E' : '#EF4444'
+            return (
+              <div key={tx.id} className="w-tx-row" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', borderBottom: i < walletTxs.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+                <div style={{ width: 38, height: 38, borderRadius: 12, background: `${color}14`, border: `1px solid ${color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {isIn ? Icons.receive(16, color) : Icons.send(16, color)}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ color: 'var(--q-text)', fontWeight: 600, fontSize: 13, margin: '0 0 2px', fontFamily: 'var(--font-display)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.description}</p>
+                  <p style={{ color: 'var(--q-text-3)', fontSize: 10, fontFamily: 'var(--font-mono)', margin: 0 }}>{new Date(tx.created_at).toLocaleString()}</p>
+                </div>
+                <p style={{ color, fontWeight: 700, fontSize: 14, fontFamily: 'var(--font-mono)', margin: 0, textShadow: `0 0 10px ${color}60` }}>
+                  {isIn ? '+' : '-'}{parseFloat(tx.amount).toLocaleString()} UBTC
+                </p>
+              </div>
+            )
+          })}
+        </div>
 
-        <button onClick={() => { localStorage.removeItem('ubtc_wallet_address'); setWalletData(null); setView('landing') }} style={{ width: '100%', background: 'none', border: '1px solid var(--t-border-subtle)', color: 'hsl(0 0% 22%)', borderRadius: '12px', padding: '12px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', ...mono, marginTop: '16px' }}>
-          Sign out of wallet
+        {/* SIGN OUT */}
+        <button onClick={() => { localStorage.removeItem('ubtc_wallet_address'); setWalletData(null); setView('landing') }} style={{ width: '100%', background: 'none', border: '1px solid rgba(255,255,255,0.06)', color: 'var(--q-text-3)', borderRadius: 12, padding: '11px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase', transition: 'border-color .2s, color .2s' }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(239,68,68,0.3)'; e.currentTarget.style.color = '#EF4444' }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'var(--q-text-3)' }}
+        >
+          Disconnect Wallet
         </button>
       </div>
     </div>
