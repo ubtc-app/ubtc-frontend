@@ -138,7 +138,7 @@ function RedeemContent() {
     parseFloat(amount) <= activeBalance && !loading
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--t-bg)', fontFamily: 'var(--font-display)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--q-bg)', fontFamily: 'var(--font-display)' }}>
 
       <MnemonicModal
         isOpen={mnemonicModalOpen}
@@ -157,7 +157,7 @@ function RedeemContent() {
       />
 
       {/* Nav */}
-      <div style={{ background: 'var(--t-surface)', borderBottom: '1px solid var(--t-border-subtle)', padding: '16px 28px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+      <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', borderBottom: '1px solid rgba(0,212,255,0.12)', padding: '16px 28px', display: 'flex', alignItems: 'center', gap: '14px' }}>
         <a href={`/account/${vaultId}?currency=${activeCurrency}`} style={{ color: 'var(--t-muted)', textDecoration: 'none', fontSize: '13px', ...mono, background: 'var(--t-surface2)', border: '1px solid var(--t-border)', borderRadius: '8px', padding: '8px 14px' }}>← Back</a>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: tokenColor + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: '700', color: tokenColor }}>{tokenIcon}</div>
@@ -177,7 +177,7 @@ function RedeemContent() {
               <h2 style={{ color: 'var(--t-text)', fontSize: '26px', fontWeight: '700', margin: '0 0 6px' }}>Redemption Complete</h2>
               <p style={{ color: 'var(--t-muted)', fontSize: '14px', ...mono, margin: 0 }}>{amount} {utokenName} burned · {tokenName} sent on-chain</p>
             </div>
-            <div style={{ width: '100%', background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '18px', padding: '22px' }}>
+            <div style={{ width: '100%', background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '18px', padding: '22px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
               {[
                 { label: 'UBTC Burned', value: result.ubtc_burned + ' UBTC' },
                 { label: 'BTC Released', value: result.btc_released_btc + ' BTC (' + result.btc_released_sats + ' sats)' },
@@ -213,7 +213,7 @@ function RedeemContent() {
           <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '14px' }}>
 
             {/* Currency tabs */}
-            <div style={{ display: 'flex', gap: '4px', background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '16px', padding: '4px' }}>
+            <div style={{ display: 'flex', gap: '4px', background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '16px', padding: '4px' }}>
               {[
                 { key: 'ubtc', icon: '₿', label: 'UBTC → BTC', bal: ubtcBalance, color: 'var(--t-orange)' },
                 { key: 'uusdt', icon: '₮', label: 'UUSDT → USDT', bal: uusdtBal, color: 'var(--t-green)' },
@@ -260,7 +260,7 @@ function RedeemContent() {
             </div>
 
             {/* Amount */}
-            <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '18px', padding: '20px' }}>
+            <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '18px', padding: '20px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                 <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: 0 }}>Amount to Redeem</p>
                 <button onClick={() => setAmount(activeBalance.toFixed(2))}
@@ -290,13 +290,13 @@ function RedeemContent() {
             </div>
 
             {/* Destination */}
-            <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '18px', padding: '20px' }}>
+            <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '18px', padding: '20px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
               <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 12px' }}>
                 {isStable ? `Destination ${tokenName} Address` : 'Destination Bitcoin Address'}
               </p>
               <input value={destination} onChange={e => setDestination(e.target.value)}
                 placeholder={isStable ? '0x... Ethereum address' : 'tb1q... or bc1q... Bitcoin address'}
-                style={{ ...inputBase, marginBottom: '8px' }} />
+                style={{ ...inputBase, background: 'rgba(0,5,20,0.8)', border: '1px solid rgba(0,212,255,0.15)', color: '#f0f6ff', marginBottom: '8px' }} />
               <p style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono, margin: 0, lineHeight: '1.5' }}>
                 {isStable
                   ? `Your ${tokenName} will be released from the vault and sent to this address.`
@@ -348,7 +348,18 @@ function RedeemContent() {
 
 export default function RedeemPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'var(--t-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-mono)', color: 'var(--t-faint)' }}>Loading...</div>}>
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24 }}>
+        <div style={{ position: 'relative', width: 80, height: 80 }}>
+          <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '1px solid rgba(0,212,255,0.15)', borderTopColor: '#00D4FF', animation: 'q-spin 1s linear infinite' }} />
+          <div style={{ position: 'absolute', inset: 8, borderRadius: '50%', border: '1px solid rgba(124,58,255,0.15)', borderTopColor: '#7C3AFF', animation: 'q-spin .7s linear infinite reverse' }} />
+          <div style={{ position: 'absolute', inset: 16, borderRadius: '50%', border: '1px solid rgba(0,255,224,0.15)', borderTopColor: '#00FFE0', animation: 'q-spin 1.3s linear infinite' }} />
+          <div style={{ position: 'absolute', inset: '50%', transform: 'translate(-50%,-50%)', width: 8, height: 8, borderRadius: '50%', background: '#00D4FF', boxShadow: '0 0 12px #00D4FF' }} />
+        </div>
+        <p style={{ color: 'rgba(0,212,255,0.6)', fontSize: 11, fontFamily: 'var(--font-mono)', letterSpacing: '0.3em', textTransform: 'uppercase', margin: 0 }}>Loading...</p>
+        <style>{`@keyframes q-spin { to { transform: rotate(360deg) } }`}</style>
+      </div>
+    }>
       <RedeemContent />
     </Suspense>
   )

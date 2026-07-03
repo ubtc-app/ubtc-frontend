@@ -199,6 +199,7 @@ input[type=number] { -moz-appearance: textfield; }
 
 /* ─── Animations ─────────────────────────────────────────────────────────── */
 @keyframes spin       { to { transform: rotate(360deg); } }
+@keyframes q-spin     { to { transform: rotate(360deg); } }
 @keyframes spin-slow  { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 @keyframes spin-rev   { to { transform: rotate(-360deg); } }
 @keyframes pulse-ring {

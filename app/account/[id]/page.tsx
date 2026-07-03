@@ -11,12 +11,10 @@ import { useIsMobile } from '../../lib/useIsMobile'
 const mono: any = { fontFamily: 'var(--font-mono)' }
 
 const glass = (extra?: string) => ({
-  background: 'var(--q-surface)',
-  border: '1px solid var(--q-border)',
+  background: 'linear-gradient(135deg,#050f20,#020810)',
+  border: '1px solid rgba(0,212,255,0.12)',
   borderRadius: '20px',
-  backdropFilter: 'blur(40px)',
-  WebkitBackdropFilter: 'blur(40px)',
-  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 32px rgba(0,0,0,0.25)',
+  boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(0,212,255,0.08)',
   ...(extra ? {} : {}),
 })
 
@@ -235,9 +233,14 @@ function AccountContent() {
   }
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', background: 'var(--q-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '16px' }}>
-      <div style={{ width: '36px', height: '36px', border: '2px solid rgba(0,212,255,0.15)', borderTopColor: 'var(--q-electric)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', boxShadow: '0 0 20px rgba(0,212,255,0.2)' }} />
-      <p style={{ color: 'var(--q-text-3)', fontSize: '10px', ...mono, letterSpacing: '0.2em', textTransform: 'uppercase' }}>Loading account</p>
+    <div style={{ minHeight: '100vh', background: 'var(--q-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ position: 'relative', width: 80, height: 80 }}>
+        <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '1px solid rgba(0,212,255,0.15)', borderTopColor: '#00D4FF', animation: 'q-spin 1s linear infinite' }} />
+        <div style={{ position: 'absolute', inset: 8, borderRadius: '50%', border: '1px solid rgba(124,58,255,0.15)', borderTopColor: '#7C3AFF', animation: 'q-spin .7s linear infinite reverse' }} />
+        <div style={{ position: 'absolute', inset: 16, borderRadius: '50%', border: '1px solid rgba(0,255,224,0.15)', borderTopColor: '#00FFE0', animation: 'q-spin 1.3s linear infinite' }} />
+        <div style={{ position: 'absolute', inset: '50%', transform: 'translate(-50%,-50%)', width: 8, height: 8, borderRadius: '50%', background: '#00D4FF', boxShadow: '0 0 12px #00D4FF' }} />
+      </div>
+      <p style={{ color: 'rgba(0,212,255,0.6)', fontSize: 11, fontFamily: 'var(--font-mono)', letterSpacing: '0.3em', textTransform: 'uppercase', margin: 0 }}>Loading account</p>
     </div>
   )
   if (!vault) return (
@@ -335,7 +338,7 @@ function AccountContent() {
       {/* ── MOVE TO WALLET MODAL ── */}
       {showMoveModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,2,10,0.92)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', backdropFilter: 'blur(20px)' }}>
-          <div style={{ ...glass(), padding: '36px', maxWidth: '440px', width: '100%', border: '1px solid rgba(255,184,0,0.22)' }}>
+          <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(255,184,0,0.22)', borderRadius: '20px', padding: '36px', maxWidth: '440px', width: '100%', boxShadow: '0 24px 80px rgba(0,0,0,0.8)' }}>
             {!moveDone ? (
               <>
                 <div style={{ textAlign: 'center', marginBottom: '28px' }}>
@@ -440,7 +443,7 @@ function AccountContent() {
       {/* ── ADD STABLECOIN MODAL ── */}
       {showAddModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,2,10,0.92)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', overflowY: 'auto', backdropFilter: 'blur(20px)' }}>
-          <div style={{ ...glass(), padding: '36px', maxWidth: '520px', width: '100%', border: `1px solid ${scColor}22` }}>
+          <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: `1px solid ${scColor}22`, borderRadius: '20px', padding: '36px', maxWidth: '520px', width: '100%', boxShadow: '0 24px 80px rgba(0,0,0,0.8)' }}>
             {/* Progress */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '32px' }}>
               {['deposit','quantum','done'].map((s, i) => {
@@ -933,8 +936,15 @@ function AccountContent() {
 export default function AccountPage() {
   return (
     <Suspense fallback={
-      <div style={{ minHeight: '100vh', background: 'var(--q-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '16px' }}>
-        <div style={{ width: '32px', height: '32px', border: '2px solid rgba(0,212,255,0.15)', borderTopColor: 'var(--q-electric)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24 }}>
+        <div style={{ position: 'relative', width: 80, height: 80 }}>
+          <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '1px solid rgba(0,212,255,0.15)', borderTopColor: '#00D4FF', animation: 'q-spin 1s linear infinite' }} />
+          <div style={{ position: 'absolute', inset: 8, borderRadius: '50%', border: '1px solid rgba(124,58,255,0.15)', borderTopColor: '#7C3AFF', animation: 'q-spin .7s linear infinite reverse' }} />
+          <div style={{ position: 'absolute', inset: 16, borderRadius: '50%', border: '1px solid rgba(0,255,224,0.15)', borderTopColor: '#00FFE0', animation: 'q-spin 1.3s linear infinite' }} />
+          <div style={{ position: 'absolute', inset: '50%', transform: 'translate(-50%,-50%)', width: 8, height: 8, borderRadius: '50%', background: '#00D4FF', boxShadow: '0 0 12px #00D4FF' }} />
+        </div>
+        <p style={{ color: 'rgba(0,212,255,0.6)', fontSize: 11, fontFamily: 'var(--font-mono)', letterSpacing: '0.3em', textTransform: 'uppercase', margin: 0 }}>Loading...</p>
+        <style>{`@keyframes q-spin { to { transform: rotate(360deg) } }`}</style>
       </div>
     }>
       <AccountContent />

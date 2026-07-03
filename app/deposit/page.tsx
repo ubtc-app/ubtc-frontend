@@ -103,10 +103,10 @@ function DepositContent() {
   const inputStyle: any = { width: '100%', padding: '14px 16px', background: 'transparent', border: 'none', color: tokenColor, fontSize: '40px', fontWeight: '700', fontFamily: 'var(--font-mono)', outline: 'none', boxSizing: 'border-box' as const }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--t-bg)', fontFamily: 'var(--font-display)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--q-bg)', fontFamily: 'var(--font-display)' }}>
 
       {/* Header */}
-      <div style={{ background: 'var(--t-surface)', borderBottom: '1px solid var(--t-border-subtle)', padding: '0 28px', height: '64px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+      <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', borderBottom: '1px solid rgba(0,212,255,0.12)', padding: '0 28px', height: '64px', display: 'flex', alignItems: 'center', gap: '16px' }}>
         <a href={`/account/${vaultId}?currency=${activeCurrency}`} style={{ color: 'var(--t-muted)', textDecoration: 'none', fontSize: '13px', ...mono }}>← Back</a>
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
           <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: tokenColor + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '700', color: tokenColor }}>{tokenIcon}</div>
@@ -127,7 +127,7 @@ function DepositContent() {
                 {isStable ? `$${parseFloat(amount).toLocaleString()} ${tokenName} locked in vault` : `${amount} BTC deposited`}
               </p>
             </div>
-            <div style={{ width: '100%', background: 'var(--t-surface)', borderRadius: '20px', padding: '22px' }}>
+            <div style={{ width: '100%', background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '20px', padding: '22px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
             {(isStable ? [
                 { label: `${tokenName} Locked`, value: '$' + parseFloat(amount).toLocaleString() + ' ' + tokenName },
                 { label: 'Vault ID', value: result.vault_id },
@@ -148,14 +148,14 @@ function DepositContent() {
               <a href={`/mint?vault=${vaultId}&currency=${activeCurrency}`} style={{ flex: 1, background: `linear-gradient(135deg, ${tokenColor}, ${tokenColor}bb)`, color: 'white', textDecoration: 'none', borderRadius: '14px', padding: '15px', fontSize: '15px', fontWeight: '700', fontFamily: 'var(--font-display)', textAlign: 'center' as const, display: 'block', boxShadow: `0 0 30px ${tokenColor}40` }}>
                 {isStable ? `Mint ${utokenName} →` : 'Mint UBTC →'}
               </a>
-              <a href={`/account/${vaultId}?currency=${activeCurrency}`} style={{ flex: 1, background: 'var(--t-surface2)', border: '1px solid var(--t-border)', color: 'var(--t-muted)', textDecoration: 'none', borderRadius: '14px', padding: '15px', fontSize: '15px', fontWeight: '600', fontFamily: 'var(--font-display)', textAlign: 'center' as const, display: 'block' }}>Account</a>
+              <a href={`/account/${vaultId}?currency=${activeCurrency}`} style={{ flex: 1, background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.15)', color: 'rgba(0,212,255,0.7)', textDecoration: 'none', borderRadius: '14px', padding: '15px', fontSize: '15px', fontWeight: '600', fontFamily: 'var(--font-display)', textAlign: 'center' as const, display: 'block' }}>Account</a>
             </div>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '14px' }}>
 
             {/* Currency tabs */}
-            <div style={{ display: 'flex', background: 'var(--t-surface)', borderRadius: '16px', padding: '4px', gap: '4px' }}>
+            <div style={{ display: 'flex', background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '16px', padding: '4px', gap: '4px' }}>
               {[
                 { key: 'ubtc', icon: '₿', label: 'Bitcoin', sub: 'Collateral for UBTC', color: 'var(--t-orange)' },
                 { key: 'uusdt', icon: '₮', label: 'USDT', sub: 'ERC-20 only', color: 'var(--t-green)' },
@@ -170,7 +170,7 @@ function DepositContent() {
             </div>
 
             {/* Deposit address */}
-            <div style={{ background: 'var(--t-surface)', borderRadius: '20px', padding: '22px' }}>
+            <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '20px', padding: '22px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
               <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 14px' }}>
                 {isStable ? `Your ${tokenName} Deposit Address` : 'Your Bitcoin Deposit Address'}
               </p>
@@ -207,7 +207,7 @@ function DepositContent() {
             </div>
 
             {/* Amount — simulate deposit */}
-            <div style={{ background: 'var(--t-surface)', borderRadius: '20px', padding: '20px 24px' }}>
+            <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '20px', padding: '20px 24px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
               <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 14px' }}>
                 {isStable ? `Amount of ${tokenName} Deposited` : 'Amount (Bitcoin)'}
               </p>
@@ -274,7 +274,18 @@ function DepositContent() {
 
 export default function DepositPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'var(--t-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--t-faint)', fontFamily: 'var(--font-mono)' }}>Loading...</div>}>
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24 }}>
+        <div style={{ position: 'relative', width: 80, height: 80 }}>
+          <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '1px solid rgba(0,212,255,0.15)', borderTopColor: '#00D4FF', animation: 'q-spin 1s linear infinite' }} />
+          <div style={{ position: 'absolute', inset: 8, borderRadius: '50%', border: '1px solid rgba(124,58,255,0.15)', borderTopColor: '#7C3AFF', animation: 'q-spin .7s linear infinite reverse' }} />
+          <div style={{ position: 'absolute', inset: 16, borderRadius: '50%', border: '1px solid rgba(0,255,224,0.15)', borderTopColor: '#00FFE0', animation: 'q-spin 1.3s linear infinite' }} />
+          <div style={{ position: 'absolute', inset: '50%', transform: 'translate(-50%,-50%)', width: 8, height: 8, borderRadius: '50%', background: '#00D4FF', boxShadow: '0 0 12px #00D4FF' }} />
+        </div>
+        <p style={{ color: 'rgba(0,212,255,0.6)', fontSize: 11, fontFamily: 'var(--font-mono)', letterSpacing: '0.3em', textTransform: 'uppercase', margin: 0 }}>Loading...</p>
+        <style>{`@keyframes q-spin { to { transform: rotate(360deg) } }`}</style>
+      </div>
+    }>
       <DepositContent />
     </Suspense>
   )

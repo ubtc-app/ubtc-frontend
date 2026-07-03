@@ -14,12 +14,11 @@ function StatPill({ label, value, color, glow }: { label: string; value: string;
     <div style={{
       display: 'flex', flexDirection: 'column', gap: '4px',
       padding: '14px 18px',
-      background: color + '08',
-      border: `1px solid ${color}20`,
+      background: `linear-gradient(135deg,${color}10,${color}05)`,
+      border: `1px solid ${color}28`,
       borderRadius: '14px',
-      backdropFilter: 'blur(20px)',
       minWidth: '110px',
-      boxShadow: `inset 0 1px 0 rgba(255,255,255,0.04)`,
+      boxShadow: `0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 ${color}15`,
     }}>
       <p className="label" style={{ color: 'var(--q-text-3)', display: 'block' }}>{label}</p>
       <p className="number" style={{ color, fontSize: '15px', fontWeight: '700', margin: 0, textShadow: `0 0 20px ${glow}` }}>{value}</p>
@@ -34,9 +33,10 @@ function AssetRow({ icon, name, subtitle, value, color, addHref }: {
     <div style={{
       display: 'flex', alignItems: 'center', gap: '12px',
       padding: '13px 16px',
-      background: 'rgba(255,255,255,0.02)',
+      background: 'linear-gradient(135deg,#050f20,#020810)',
       borderRadius: '14px', marginBottom: '6px',
-      border: '1px solid rgba(255,255,255,0.04)',
+      border: '1px solid rgba(0,212,255,0.08)',
+      boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
       transition: 'background 0.2s',
     }}>
       <div style={{
@@ -148,9 +148,14 @@ export default function Dashboard() {
   const fmtInt = (n: number) => n.toLocaleString(undefined, { maximumFractionDigits: 0 })
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', background: 'var(--q-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '16px' }}>
-      <div style={{ width: '36px', height: '36px', border: '2px solid rgba(0,212,255,0.15)', borderTopColor: 'var(--q-electric)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', boxShadow: '0 0 20px rgba(0,212,255,0.2)' }} />
-      <p className="number" style={{ color: 'var(--q-text-3)', fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase' }}>Loading portfolio</p>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24 }}>
+      <div style={{ position: 'relative', width: 80, height: 80 }}>
+        <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '1px solid rgba(0,212,255,0.15)', borderTopColor: '#00D4FF', animation: 'q-spin 1s linear infinite' }} />
+        <div style={{ position: 'absolute', inset: 8, borderRadius: '50%', border: '1px solid rgba(124,58,255,0.15)', borderTopColor: '#7C3AFF', animation: 'q-spin .7s linear infinite reverse' }} />
+        <div style={{ position: 'absolute', inset: 16, borderRadius: '50%', border: '1px solid rgba(0,255,224,0.15)', borderTopColor: '#00FFE0', animation: 'q-spin 1.3s linear infinite' }} />
+        <div style={{ position: 'absolute', inset: '50%', transform: 'translate(-50%,-50%)', width: 8, height: 8, borderRadius: '50%', background: '#00D4FF', boxShadow: '0 0 12px #00D4FF' }} />
+      </div>
+      <p style={{ color: 'rgba(0,212,255,0.6)', fontSize: 11, fontFamily: 'var(--font-mono)', letterSpacing: '0.3em', textTransform: 'uppercase', margin: 0 }}>Loading portfolio</p>
     </div>
   )
 
@@ -354,12 +359,10 @@ export default function Dashboard() {
 
                   return (
                     <motion.div key={vault.vault_id} variants={cardVariant} style={{
-                      background: 'rgba(5,12,35,0.65)',
-                      border: `1px solid ${isPending ? 'rgba(255,184,0,0.25)' : 'rgba(0,212,255,0.1)'}`,
+                      background: isPending ? 'linear-gradient(135deg,#1a1000,#0d0800)' : 'linear-gradient(135deg,#050f20,#020810)',
+                      border: `1px solid ${isPending ? 'rgba(255,184,0,0.25)' : 'rgba(0,212,255,0.12)'}`,
                       borderRadius: '22px',
-                      backdropFilter: 'blur(40px)',
-                      WebkitBackdropFilter: 'blur(40px)',
-                      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04), 0 12px 40px rgba(0,0,0,0.5)',
+                      boxShadow: `0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 ${isPending ? 'rgba(255,184,0,0.08)' : 'rgba(0,212,255,0.08)'}`,
                       overflow: 'hidden',
                     }}>
 

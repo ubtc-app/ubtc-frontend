@@ -135,7 +135,7 @@ export default function RedeemProofPage() {
     setLoading(false)
   }
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--t-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--q-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
       <div style={{ width: '100%', maxWidth: '480px' }}>
 
         {/* Header */}
@@ -159,14 +159,14 @@ export default function RedeemProofPage() {
           })}
         </div>
 
-        <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '20px', padding: '28px' }}>
+        <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.15)', borderRadius: '20px', padding: '28px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
 
           {/* Step 1 — Upload proof */}
           {step === 'upload' && (
             <div>
               <p style={{ color: 'var(--t-text)', fontSize: '16px', fontWeight: 600, margin: '0 0 8px' }}>Upload your proof file</p>
               <p style={{ color: 'var(--t-faint)', fontSize: '12px', ...mono, margin: '0 0 20px', lineHeight: '1.7' }}>Download your .ubtc proof file from your wallet, then upload it here.</p>
-              <label style={{ display: 'block', border: '2px dashed var(--t-border)', borderRadius: '12px', padding: '32px', textAlign: 'center' as const, cursor: 'pointer' }}>
+              <label style={{ display: 'block', border: '2px dashed rgba(0,212,255,0.2)', borderRadius: '12px', padding: '32px', textAlign: 'center' as const, cursor: 'pointer', background: 'rgba(0,212,255,0.02)' }}>
                 <p style={{ color: 'var(--t-muted)', fontSize: '13px', ...mono, margin: '0 0 8px' }}>Click to upload .ubtc file</p>
                 <p style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono, margin: 0 }}>Your proof file from the wallet page</p>
                 <input type="file" accept=".ubtc,.json" onChange={handleProofUpload} style={{ display: 'none' }} />
@@ -190,7 +190,7 @@ export default function RedeemProofPage() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && decryptWithPassword()}
-                style={{ width: '100%', padding: '14px', background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '10px', color: 'var(--t-text)', fontSize: '14px', fontFamily: 'monospace', marginBottom: '12px', boxSizing: 'border-box' as const, outline: 'none' }}
+                style={{ width: '100%', padding: '14px', background: 'rgba(0,5,20,0.8)', border: `1px solid ${password ? 'rgba(0,212,255,0.4)' : 'rgba(0,212,255,0.15)'}`, borderRadius: '10px', color: '#f0f6ff', fontSize: '14px', fontFamily: 'monospace', marginBottom: '12px', boxSizing: 'border-box' as const, outline: 'none', boxShadow: password ? '0 0 0 3px rgba(0,212,255,0.08)' : 'none' }}
               />
               {error && <p style={{ color: 'var(--t-red)', fontSize: '12px', ...mono, margin: '0 0 12px' }}>{error}</p>}
               <button onClick={decryptWithPassword} disabled={loading || !password} style={{ width: '100%', background: loading ? 'var(--t-border)' : 'var(--t-green)', color: 'white', border: 'none', borderRadius: '10px', padding: '14px', fontSize: '14px', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-display)' }}>
@@ -214,7 +214,7 @@ export default function RedeemProofPage() {
                 placeholder="tb1q... or bc1q..."
                 value={btcAddress}
                 onChange={e => setBtcAddress(e.target.value)}
-                style={{ width: '100%', padding: '14px', background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '10px', color: 'var(--t-text)', fontSize: '13px', fontFamily: 'monospace', marginBottom: '12px', boxSizing: 'border-box' as const, outline: 'none' }}
+                style={{ width: '100%', padding: '14px', background: 'rgba(0,5,20,0.8)', border: `1px solid ${btcAddress ? 'rgba(0,212,255,0.4)' : 'rgba(0,212,255,0.15)'}`, borderRadius: '10px', color: '#f0f6ff', fontSize: '13px', fontFamily: 'monospace', marginBottom: '12px', boxSizing: 'border-box' as const, outline: 'none' }}
               />
               {error && <p style={{ color: 'var(--t-red)', fontSize: '12px', ...mono, margin: '0 0 12px' }}>{error}</p>}
               <button onClick={handleRedeem} disabled={loading || !btcAddress} style={{ width: '100%', background: loading ? 'var(--t-border)' : 'var(--t-orange)', color: '#000', border: 'none', borderRadius: '10px', padding: '14px', fontSize: '14px', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-display)' }}>
@@ -229,7 +229,7 @@ export default function RedeemProofPage() {
               <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
               <p style={{ color: 'var(--t-text)', fontSize: '20px', fontWeight: 700, margin: '0 0 8px' }}>Redemption Complete</p>
               <p style={{ color: 'var(--t-faint)', fontSize: '12px', ...mono, margin: '0 0 24px' }}>BTC is on its way to your address</p>
-              <div style={{ background: 'var(--t-surface)', borderRadius: '10px', padding: '16px', textAlign: 'left' as const }}>
+              <div style={{ background: 'rgba(0,5,20,0.8)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '10px', padding: '16px', textAlign: 'left' as const }}>
                 <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 4px' }}>Bitcoin Transaction</p>
                 <p style={{ color: 'var(--t-accent)', fontSize: '11px', ...mono, margin: '0 0 12px', wordBreak: 'break-all' as const }}>{result.txid}</p>
                 <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 4px' }}>Amount</p>

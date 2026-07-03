@@ -28,7 +28,7 @@ function RiskGauge({ pct, collateralRatio, liqPrice, alert120, alert115, ubtcAmo
   const tip = pt(180 - c * 1.8, R - 10)
 
   return (
-    <div style={{ background: 'var(--t-surface2)', border: `1px solid ${isAmber ? 'var(--t-orange-bg)' : 'var(--t-border-subtle)'}`, borderRadius: '18px', padding: '16px 16px 14px', transition: 'border-color 0.3s' }}>
+    <div style={{ background: 'linear-gradient(135deg,#080c1a,#04080e)', border: `1px solid ${isAmber ? 'rgba(255,184,0,0.25)' : 'rgba(0,212,255,0.12)'}`, borderRadius: '18px', padding: '16px 16px 14px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', transition: 'border-color 0.3s' }}>
       <svg viewBox="0 -18 420 190" style={{ width: '100%', display: 'block' }}>
         <path d="M 95 140 A 115 115 0 0 1 291 59" fill="none" stroke="hsl(142 40% 8%)" strokeWidth="22" strokeLinecap="butt" />
         <path d="M 291 59 A 115 115 0 0 1 325 140" fill="none" stroke="hsl(38 40% 8%)" strokeWidth="22" strokeLinecap="round" />
@@ -209,7 +209,7 @@ function MintContent() {
   const inputSmall: any = { flex: 1, padding: '10px 12px', background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '10px', color: 'hsl(0 0% 80%)', fontSize: '13px', fontFamily: 'var(--font-mono)', outline: 'none', minWidth: 0 }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--t-bg)', fontFamily: 'var(--font-display)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--q-bg)', fontFamily: 'var(--font-display)' }}>
 
       <PasswordModal
         isOpen={passwordModalOpen}
@@ -219,7 +219,7 @@ function MintContent() {
         subtitle={`Sign the mint of ${amount} ${cur.label} from vault ${vaultId.slice(0, 16)}... with your wallet password.`}
       />
 
-      <div style={{ background: 'var(--t-surface)', borderBottom: '1px solid var(--t-border-subtle)', height: '60px', display: 'flex', alignItems: 'center', padding: '0 24px', gap: '16px' }}>
+      <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', borderBottom: '1px solid rgba(0,212,255,0.12)', height: '60px', display: 'flex', alignItems: 'center', padding: '0 24px', gap: '16px' }}>
         <a href={`/account/${vaultId}?currency=${activeCurrency}`} style={{ color: 'var(--t-muted)', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>{Icons.back(20, 'var(--t-muted)')}</a>
         <div style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center' }}>
           {['amount', 'done'].map((s, i) => (
@@ -241,7 +241,7 @@ function MintContent() {
               <p style={{ color: 'var(--t-faint)', fontSize: '13px', ...mono, margin: 0 }}>{cur.sub}</p>
             </div>
 
-            <div style={{ display: 'flex', background: 'var(--t-surface)', borderRadius: '14px', padding: '4px', gap: '4px', marginBottom: '18px' }}>
+            <div style={{ display: 'flex', background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '14px', padding: '4px', gap: '4px', marginBottom: '18px' }}>
               {currencies.map(c => (
                 <button key={c.key} onClick={() => { setActiveCurrency(c.key); setAmount(''); setSelectedPct(0); setError(''); setMaxWarningAcknowledged(false) }} style={{ flex: 1, background: activeCurrency === c.key ? 'var(--t-surface3)' : 'transparent', border: activeCurrency === c.key ? `1px solid ${c.color}35` : '1px solid transparent', borderRadius: '10px', padding: '10px 6px', cursor: 'pointer', fontFamily: 'var(--font-display)', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: '5px' }}>
                   {c.icon(16, activeCurrency === c.key ? c.color : 'var(--t-faint)')}
@@ -261,7 +261,7 @@ function MintContent() {
 
             {!isStable && (
               <>
-                <div style={{ background: 'var(--t-surface)', border: `1px solid ${cur.color}18`, borderRadius: '20px', padding: '20px', marginBottom: '12px' }}>
+                <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: `1px solid ${cur.color}28`, borderRadius: '20px', padding: '20px', marginBottom: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                     <p style={{ color: 'hsl(0 0% 26%)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: 0 }}>Amount to mint</p>
                     <button onClick={() => handlePct(100)} style={{ background: cur.color + '12', border: `1px solid ${cur.color}28`, color: cur.color, borderRadius: '7px', padding: '4px 10px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', ...mono }}>
@@ -413,7 +413,7 @@ function MintContent() {
               <h1 style={{ color: 'var(--t-text)', fontSize: '26px', fontWeight: '700', margin: '0 0 6px' }}>Minted Successfully</h1>
               <p style={{ color: cur.color, fontSize: '14px', ...mono, margin: 0 }}>{parseFloat(amount).toLocaleString()} {cur.label} - Hybrid PQ-authorized</p>
             </div>
-            <div style={{ background: 'var(--t-surface)', borderRadius: '16px', padding: '18px', marginBottom: '14px' }}>
+            <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '16px', padding: '18px', marginBottom: '14px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
               <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 12px' }}>Mint Summary</p>
               {[
                 { label: 'Minted', value: parseFloat(amount).toLocaleString() + ' ' + cur.label },
@@ -444,7 +444,18 @@ function MintContent() {
 
 export default function MintPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'var(--t-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--t-faint)', fontFamily: 'var(--font-mono)' }}>Loading...</div>}>
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24 }}>
+        <div style={{ position: 'relative', width: 80, height: 80 }}>
+          <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '1px solid rgba(0,212,255,0.15)', borderTopColor: '#00D4FF', animation: 'q-spin 1s linear infinite' }} />
+          <div style={{ position: 'absolute', inset: 8, borderRadius: '50%', border: '1px solid rgba(124,58,255,0.15)', borderTopColor: '#7C3AFF', animation: 'q-spin .7s linear infinite reverse' }} />
+          <div style={{ position: 'absolute', inset: 16, borderRadius: '50%', border: '1px solid rgba(0,255,224,0.15)', borderTopColor: '#00FFE0', animation: 'q-spin 1.3s linear infinite' }} />
+          <div style={{ position: 'absolute', inset: '50%', transform: 'translate(-50%,-50%)', width: 8, height: 8, borderRadius: '50%', background: '#00D4FF', boxShadow: '0 0 12px #00D4FF' }} />
+        </div>
+        <p style={{ color: 'rgba(0,212,255,0.6)', fontSize: 11, fontFamily: 'var(--font-mono)', letterSpacing: '0.3em', textTransform: 'uppercase', margin: 0 }}>Loading...</p>
+        <style>{`@keyframes q-spin { to { transform: rotate(360deg) } }`}</style>
+      </div>
+    }>
       <MintContent />
     </Suspense>
   )

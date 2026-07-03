@@ -3,10 +3,10 @@ import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { API_URL } from '../lib/supabase'
 
-const btnPrimary: any = { background: 'linear-gradient(135deg, hsl(205, 85%, 55%), hsl(190, 80%, 50%))', color: 'white', border: 'none', borderRadius: '10px', padding: '14px 32px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)', boxShadow: '0 0 30px hsl(205 85% 55% / 0.4)', width: '100%' }
-const btnRed: any = { background: 'var(--t-red)', color: 'white', border: 'none', borderRadius: '10px', padding: '14px 32px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)', width: '100%' }
-const btnGhost: any = { background: 'none', border: '1px solid var(--t-border)', color: 'var(--t-muted)', borderRadius: '10px', padding: '14px 32px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)', width: '100%' }
-const btnDisabled: any = { background: 'var(--t-border)', color: 'var(--t-muted)', border: 'none', borderRadius: '10px', padding: '14px 32px', fontSize: '14px', fontWeight: '600', cursor: 'not-allowed', fontFamily: 'var(--font-display)', width: '100%' }
+const btnPrimary: any = { background: 'linear-gradient(135deg,#0066cc,#0044aa)', color: 'white', border: 'none', borderRadius: '10px', padding: '14px 32px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)', boxShadow: '0 0 30px rgba(0,212,255,0.3)', width: '100%', transition: 'transform 0.2s, box-shadow 0.2s' }
+const btnRed: any = { background: 'linear-gradient(135deg,#cc2200,#991a00)', color: 'white', border: 'none', borderRadius: '10px', padding: '14px 32px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)', width: '100%', boxShadow: '0 0 20px rgba(255,56,96,0.25)' }
+const btnGhost: any = { background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.15)', color: 'rgba(0,212,255,0.6)', borderRadius: '10px', padding: '14px 32px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)', width: '100%' }
+const btnDisabled: any = { background: 'rgba(255,255,255,0.04)', color: 'rgba(120,160,220,0.3)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '14px 32px', fontSize: '14px', fontWeight: '600', cursor: 'not-allowed', fontFamily: 'var(--font-display)', width: '100%' }
 
 function WithdrawContent() {
   const searchParams = useSearchParams()
@@ -29,7 +29,7 @@ function WithdrawContent() {
   const [vaultWallets, setVaultWallets] = useState<any[]>([])
 
   const mono: any = { fontFamily: 'var(--font-mono)' }
-  const inputStyle: any = { display: 'block', width: '100%', padding: '14px 16px', background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '10px', color: 'var(--t-text)', fontSize: '13px', fontFamily: 'var(--font-mono)', marginBottom: '20px', boxSizing: 'border-box', outline: 'none' }
+  const inputStyle: any = { display: 'block', width: '100%', padding: '14px 16px', background: 'rgba(0,5,20,0.8)', border: '1px solid rgba(0,212,255,0.15)', borderRadius: '10px', color: '#f0f6ff', fontSize: '13px', fontFamily: 'var(--font-mono)', marginBottom: '20px', boxSizing: 'border-box', outline: 'none' }
 
   const loadVaultInfo = async (id: string) => {
     if (!id) return
@@ -125,7 +125,7 @@ function WithdrawContent() {
   const canProceed = vaultId && amount && destination && withdrawAmount > 0 && withdrawAmount <= outstanding
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--t-surface)', padding: '40px 24px', fontFamily: 'var(--font-display)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--q-bg)', padding: '40px 24px', fontFamily: 'var(--font-display)' }}>
       <div style={{ maxWidth: '560px', margin: '0 auto' }}>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
@@ -148,7 +148,7 @@ function WithdrawContent() {
           ))}
         </div>
 
-        <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '16px', padding: '28px' }}>
+        <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '16px', padding: '28px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
 
           {step === 'form' && (
             <>
@@ -421,7 +421,18 @@ function WithdrawContent() {
 
 export default function WithdrawPage() {
   return (
-    <Suspense fallback={<div style={{ color: 'var(--t-muted)', padding: '40px', fontFamily: 'var(--font-mono)' }}>Loading...</div>}>
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24 }}>
+        <div style={{ position: 'relative', width: 80, height: 80 }}>
+          <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '1px solid rgba(0,212,255,0.15)', borderTopColor: '#00D4FF', animation: 'q-spin 1s linear infinite' }} />
+          <div style={{ position: 'absolute', inset: 8, borderRadius: '50%', border: '1px solid rgba(124,58,255,0.15)', borderTopColor: '#7C3AFF', animation: 'q-spin .7s linear infinite reverse' }} />
+          <div style={{ position: 'absolute', inset: 16, borderRadius: '50%', border: '1px solid rgba(0,255,224,0.15)', borderTopColor: '#00FFE0', animation: 'q-spin 1.3s linear infinite' }} />
+          <div style={{ position: 'absolute', inset: '50%', transform: 'translate(-50%,-50%)', width: 8, height: 8, borderRadius: '50%', background: '#00D4FF', boxShadow: '0 0 12px #00D4FF' }} />
+        </div>
+        <p style={{ color: 'rgba(0,212,255,0.6)', fontSize: 11, fontFamily: 'var(--font-mono)', letterSpacing: '0.3em', textTransform: 'uppercase', margin: 0 }}>Loading...</p>
+        <style>{`@keyframes q-spin { to { transform: rotate(360deg) } }`}</style>
+      </div>
+    }>
       <WithdrawContent />
     </Suspense>
   )

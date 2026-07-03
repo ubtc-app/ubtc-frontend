@@ -291,12 +291,12 @@ function TransferContent() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--t-bg)', fontFamily: 'var(--font-display)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--q-bg)', fontFamily: 'var(--font-display)' }}>
 
       {/* Own wallet modal */}
       {showOwnWalletQuestion && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-          <div style={{ background: 'var(--t-surface2)', border: '1px solid var(--t-border)', borderRadius: '24px', padding: '36px', maxWidth: '400px', width: '100%' }}>
+          <div style={{ background: 'linear-gradient(135deg,#070d20,#030812)', border: '1px solid rgba(0,212,255,0.15)', borderRadius: '24px', padding: '36px', maxWidth: '400px', width: '100%', boxShadow: '0 24px 80px rgba(0,0,0,0.8)' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
               <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'var(--t-accent-bg)', border: '2px solid hsl(205 85% 55% / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {Icons.wallet(28, 'var(--t-accent)')}
@@ -325,7 +325,7 @@ function TransferContent() {
       {/* Collateral warning modal */}
       {showWarning && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-          <div style={{ background: 'var(--t-surface2)', border: `2px solid ${isOwnWallet ? 'var(--t-accent-border)' : 'hsl(0 84% 60% / 0.4)'}`, borderRadius: '24px', padding: '32px', maxWidth: '420px', width: '100%', maxHeight: '90vh', overflowY: 'auto' as const }}>
+          <div style={{ background: 'linear-gradient(135deg,#070d20,#030812)', border: `2px solid ${isOwnWallet ? 'rgba(0,212,255,0.3)' : 'rgba(255,56,96,0.4)'}`, borderRadius: '24px', padding: '32px', maxWidth: '420px', width: '100%', maxHeight: '90vh', overflowY: 'auto' as const, boxShadow: '0 24px 80px rgba(0,0,0,0.8)' }}>
             {isOwnWallet ? (
               <div>
                 <div style={{ textAlign: 'center' as const, marginBottom: '20px' }}>
@@ -408,7 +408,7 @@ function TransferContent() {
       )}
 
       {/* Header */}
-      <div style={{ background: 'var(--t-surface)', borderBottom: '1px solid var(--t-border-subtle)', height: '60px', display: 'flex', alignItems: 'center', padding: '0 24px', gap: '16px' }}>
+      <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', borderBottom: '1px solid rgba(0,212,255,0.12)', height: '60px', display: 'flex', alignItems: 'center', padding: '0 24px', gap: '16px' }}>
         <a href={backHref} style={{ color: 'var(--t-muted)', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
           {Icons.back(20, 'var(--t-muted)')}
         </a>
@@ -435,7 +435,7 @@ function TransferContent() {
               <h2 style={{ color: 'var(--t-text)', fontSize: '28px', fontWeight: '700', margin: '0 0 6px' }}>Sent!</h2>
               <p style={{ color: 'var(--t-faint)', fontSize: '15px', ...mono, margin: 0 }}>{parseFloat(result.amount).toLocaleString()} {result.currency} transferred</p>
             </div>
-            <div style={{ width: '100%', background: 'var(--t-surface)', borderRadius: '20px', padding: '22px' }}>
+            <div style={{ width: '100%', background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '20px', padding: '22px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
               {[
                 { label: 'Amount', value: `${parseFloat(result.amount).toLocaleString()} ${result.currency}` },
                 { label: 'To', value: result.to },
@@ -488,8 +488,14 @@ function TransferContent() {
             </div>
           </div>
         ) : dataLoading ? (
-          <div style={{ textAlign: 'center' as const, padding: '80px' }}>
-            <p style={{ color: 'var(--t-faint)', fontSize: '14px', ...mono }}>Loading...</p>
+          <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24 }}>
+            <div style={{ position: 'relative', width: 80, height: 80 }}>
+              <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '1px solid rgba(0,212,255,0.15)', borderTopColor: '#00D4FF', animation: 'q-spin 1s linear infinite' }} />
+              <div style={{ position: 'absolute', inset: 8, borderRadius: '50%', border: '1px solid rgba(124,58,255,0.15)', borderTopColor: '#7C3AFF', animation: 'q-spin .7s linear infinite reverse' }} />
+              <div style={{ position: 'absolute', inset: 16, borderRadius: '50%', border: '1px solid rgba(0,255,224,0.15)', borderTopColor: '#00FFE0', animation: 'q-spin 1.3s linear infinite' }} />
+              <div style={{ position: 'absolute', inset: '50%', transform: 'translate(-50%,-50%)', width: 8, height: 8, borderRadius: '50%', background: '#00D4FF', boxShadow: '0 0 12px #00D4FF' }} />
+            </div>
+            <p style={{ color: 'rgba(0,212,255,0.6)', fontSize: 11, fontFamily: 'var(--font-mono)', letterSpacing: '0.3em', textTransform: 'uppercase', margin: 0 }}>Loading...</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '12px' }}>
@@ -527,9 +533,9 @@ function TransferContent() {
                 </div>
               </div>
             ) : fromOptions.length > 0 ? (
-              <div style={{ background: 'var(--t-surface)', borderRadius: '20px', overflow: 'hidden' }}>
+              <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
                 <div style={{ padding: '16px 20px 10px' }}>
-                  <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.2em', margin: 0 }}>From Account</p>
+                  <p style={{ color: 'rgba(0,212,255,0.5)', fontSize: '9px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.35em', margin: 0 }}>From Account</p>
                 </div>
                 <div style={{ padding: '4px 10px 10px' }}>
                   {fromOptions.map((opt, i) => {
@@ -558,9 +564,9 @@ function TransferContent() {
             )}
 
             {/* AMOUNT */}
-            <div style={{ background: 'var(--t-surface)', borderRadius: '20px', padding: '22px 24px' }}>
+            <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '20px', padding: '22px 24px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.2em', margin: 0 }}>Amount</p>
+                <p style={{ color: 'rgba(0,212,255,0.5)', fontSize: '9px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.35em', margin: 0 }}>Amount</p>
                 <button onClick={() => setAmount(activeBalance.toFixed(2))} style={{ background: tokenColor + '12', border: `1px solid ${tokenColor}28`, color: tokenColor, borderRadius: '8px', padding: '4px 10px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', ...mono }}>
                   Max ${activeBalance.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </button>
@@ -581,8 +587,8 @@ function TransferContent() {
             </div>
 
             {/* TO — search only, UBTC wallets only */}
-            <div style={{ background: 'var(--t-surface)', borderRadius: '20px', padding: '20px' }}>
-              <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.2em', margin: '0 0 6px' }}>To</p>
+            <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '20px', padding: '20px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+              <p style={{ color: 'rgba(0,212,255,0.5)', fontSize: '9px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.35em', margin: '0 0 6px' }}>To</p>
               <p style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono, margin: '0 0 12px' }}>
                 Search by <strong style={{ color: 'var(--t-muted)' }}>@username</strong> or paste a <strong style={{ color: 'var(--t-accent)' }}>ubtc...</strong> address
               </p>
@@ -590,7 +596,7 @@ function TransferContent() {
                 value={searchQuery}
                 onChange={e => handleSearch(e.target.value)}
                 placeholder="@username or ubtc1..."
-                style={{ width: '100%', padding: '13px 14px', background: 'var(--t-surface)', border: `1px solid ${searchError ? 'hsl(0 84% 60% / 0.6)' : (selectedWallet || isManualUbtcAddress) ? 'hsl(142 76% 36% / 0.5)' : 'var(--t-border)'}`, borderRadius: '12px', color: 'var(--t-text)', fontSize: '13px', fontFamily: 'var(--font-mono)', outline: 'none', boxSizing: 'border-box' as const }}
+                style={{ width: '100%', padding: '13px 14px', background: 'rgba(0,5,20,0.8)', border: `1px solid ${searchError ? 'rgba(255,56,96,0.5)' : (selectedWallet || isManualUbtcAddress) ? 'rgba(0,255,157,0.4)' : 'rgba(0,212,255,0.15)'}`, borderRadius: '12px', color: '#f0f6ff', fontSize: '13px', fontFamily: 'var(--font-mono)', outline: 'none', boxSizing: 'border-box' as const, boxShadow: (selectedWallet || isManualUbtcAddress) ? '0 0 0 3px rgba(0,255,157,0.08)' : 'none' }}
               />
 
               {searchError && (
@@ -643,7 +649,7 @@ function TransferContent() {
 
             {/* QSK — vault sends only */}
             {!isWalletSend && !isStable && (
-              <div style={{ background: 'var(--t-surface)', border: '1px solid hsl(205 85% 55% / 0.2)', borderRadius: '20px', padding: '22px 24px' }}>
+              <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.2)', borderRadius: '20px', padding: '22px 24px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                   {Icons.quantum(14, 'var(--t-accent)')}
                   <p style={{ color: 'var(--t-accent)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.2em', margin: 0 }}>Quantum Signing Key Required</p>
@@ -652,14 +658,14 @@ function TransferContent() {
                   📁 Load Key File
                   <input type="file" accept=".json" style={{ display: 'none' }} onChange={loadKeyFile} />
                 </label>
-                <textarea value={qsk} onChange={e => { setQsk(e.target.value); setQskError('') }} placeholder="Or paste your Quantum Signing Key..." rows={3} style={{ width: '100%', padding: '12px 14px', background: 'var(--t-surface)', border: `1px solid ${qskError ? 'hsl(0 84% 60% / 0.5)' : 'var(--t-border)'}`, borderRadius: '10px', color: 'hsl(0 0% 75%)', fontSize: '11px', fontFamily: 'var(--font-mono)', outline: 'none', resize: 'none' as const, boxSizing: 'border-box' as const }} />
+                <textarea value={qsk} onChange={e => { setQsk(e.target.value); setQskError('') }} placeholder="Or paste your Quantum Signing Key..." rows={3} style={{ width: '100%', padding: '12px 14px', background: 'rgba(0,5,20,0.8)', border: `1px solid ${qskError ? 'rgba(255,56,96,0.5)' : 'rgba(0,212,255,0.15)'}`, borderRadius: '10px', color: '#f0f6ff', fontSize: '11px', fontFamily: 'var(--font-mono)', outline: 'none', resize: 'none' as const, boxSizing: 'border-box' as const }} />
                 {qskError && <p style={{ color: 'var(--t-red)', fontSize: '12px', ...mono, margin: '8px 0 0' }}>{qskError}</p>}
               </div>
             )}
 
             {/* Protocol Second Key for wallet sends */}
             {isWalletSend && (
-              <div style={{ background: 'var(--t-surface)', border: '1px solid hsl(205 85% 55% / 0.2)', borderRadius: '16px', padding: '18px 20px' }}>
+              <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.2)', borderRadius: '16px', padding: '18px 20px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
                 <p style={{ color: 'var(--t-accent)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.2em', margin: '0 0 4px' }}>🔒 Authorise Transfer</p>
                 <p style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono, margin: '0 0 12px', lineHeight: '1.6' }}>{isInTelegram() ? 'Paste your Protocol Second Key to authorise this transfer. This proves you are the vault owner.' : 'Upload your Protocol Second Key to authorise this transfer. This proves you are the vault owner.'}</p>
                 {!isInTelegram() && (
@@ -776,7 +782,18 @@ function TransferContent() {
 
 export default function TransferPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'var(--t-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--t-faint)', fontFamily: 'var(--font-mono)' }}>Loading...</div>}>
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24 }}>
+        <div style={{ position: 'relative', width: 80, height: 80 }}>
+          <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '1px solid rgba(0,212,255,0.15)', borderTopColor: '#00D4FF', animation: 'q-spin 1s linear infinite' }} />
+          <div style={{ position: 'absolute', inset: 8, borderRadius: '50%', border: '1px solid rgba(124,58,255,0.15)', borderTopColor: '#7C3AFF', animation: 'q-spin .7s linear infinite reverse' }} />
+          <div style={{ position: 'absolute', inset: 16, borderRadius: '50%', border: '1px solid rgba(0,255,224,0.15)', borderTopColor: '#00FFE0', animation: 'q-spin 1.3s linear infinite' }} />
+          <div style={{ position: 'absolute', inset: '50%', transform: 'translate(-50%,-50%)', width: 8, height: 8, borderRadius: '50%', background: '#00D4FF', boxShadow: '0 0 12px #00D4FF' }} />
+        </div>
+        <p style={{ color: 'rgba(0,212,255,0.6)', fontSize: 11, fontFamily: 'var(--font-mono)', letterSpacing: '0.3em', textTransform: 'uppercase', margin: 0 }}>Loading...</p>
+        <style>{`@keyframes q-spin { to { transform: rotate(360deg) } }`}</style>
+      </div>
+    }>
       <TransferContent />
     </Suspense>
   )
