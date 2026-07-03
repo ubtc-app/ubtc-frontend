@@ -59,7 +59,7 @@ function HoloCard({ id, href, label, desc, accent, glow, border, bg, icon }: {
       onMouseLeave={onLeave}
       className="q-holo"
       style={{
-        background: bg,
+        background: `color-mix(in srgb, var(--q-surface) 70%, transparent), ${bg}`,
         border: `1px solid ${border}`,
         borderRadius: 24,
         padding: '32px 26px',
@@ -67,7 +67,7 @@ function HoloCard({ id, href, label, desc, accent, glow, border, bg, icon }: {
         cursor: 'pointer', textAlign: 'left',
         backdropFilter: 'blur(40px) saturate(200%)',
         WebkitBackdropFilter: 'blur(40px) saturate(200%)',
-        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.06), 0 10px 40px rgba(0,0,0,0.6)`,
+        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.06), 0 10px 40px var(--q-shadow, rgba(0,0,0,0.4))`,
         transition: 'transform 0.08s ease, box-shadow 0.25s',
         transformStyle: 'preserve-3d',
         willChange: 'transform',
@@ -150,7 +150,7 @@ export default function Home() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: '#000510',
+      background: 'var(--q-bg)',
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       padding: '80px 24px',
@@ -244,7 +244,7 @@ export default function Home() {
 
         {/* Action cards */}
         <div className="warp-in-d2" style={{
-          display: 'grid', gridTemplateColumns: 'repeat(2,1fr)',
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
           gap: 16, marginBottom: 40,
         }}>
           <HoloCard

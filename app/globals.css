@@ -38,6 +38,7 @@
   --q-red-dim:         rgba(255, 56, 96, 0.12);
 
   /* ── Shadows — layered depth ── */
+  --q-shadow:      rgba(0,0,0,0.55);
   --q-shadow-sm:   0 2px 8px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3);
   --q-shadow-md:   0 8px 32px rgba(0,0,0,0.65), 0 2px 8px rgba(0,0,0,0.4);
   --q-shadow-lg:   0 20px 60px rgba(0,0,0,0.75), 0 4px 16px rgba(0,0,0,0.5);
@@ -119,6 +120,7 @@
   --q-green-dim:       rgba(5, 150, 105, 0.1);
   --q-red:             #DC2626;
   --q-red-dim:         rgba(220, 38, 38, 0.1);
+  --q-shadow:      rgba(0,20,80,0.1);
   --q-shadow-sm:   0 1px 4px rgba(0,30,80,0.08), 0 1px 2px rgba(0,20,60,0.05);
   --q-shadow-md:   0 4px 20px rgba(0,30,80,0.1), 0 2px 6px rgba(0,20,60,0.06);
   --q-shadow-lg:   0 12px 48px rgba(0,30,80,0.12), 0 4px 14px rgba(0,20,60,0.08);
@@ -427,6 +429,16 @@ input[type=number] { -moz-appearance: textfield; }
   background: var(--q-electric-dim);
 }
 
+/* ─── Mobile responsive utilities ───────────────────────────────────────── */
+@media (max-width: 640px) {
+  .sm-hidden { display: none !important; }
+  .sm-stack  { flex-direction: column !important; }
+  .sm-full   { width: 100% !important; max-width: 100% !important; }
+  .sm-pad    { padding: 20px 16px !important; }
+  .sm-text-sm { font-size: 13px !important; }
+  .sm-grid-1 { grid-template-columns: 1fr !important; }
+}
+
 /* ─── Dot grid background helper ───────────────────────────────────────── */
 .dot-grid {
   background-image: radial-gradient(rgba(0,212,255,0.12) 1px, transparent 1px);
@@ -435,6 +447,119 @@ input[type=number] { -moz-appearance: textfield; }
 [data-theme="light"] .dot-grid {
   background-image: radial-gradient(rgba(0,80,180,0.08) 1px, transparent 1px);
 }
+
+/* ─── Light theme body & page backgrounds ───────────────────────────────── */
+[data-theme="light"] body {
+  background: linear-gradient(160deg, #f8fbff 0%, #eef2ff 50%, #f3f0ff 100%);
+  background-attachment: fixed;
+}
+
+/* ─── Light theme vortex scene adaptations ──────────────────────────────── */
+[data-theme="light"] .q-vortex-scene { opacity: 0.55; }
+
+[data-theme="light"] .q-ring-1 {
+  border-color: rgba(0,102,204,0.12);
+  box-shadow: none;
+}
+[data-theme="light"] .q-ring-1::before {
+  background: #0066CC;
+  box-shadow: 0 0 14px 5px rgba(0,102,204,0.5);
+}
+[data-theme="light"] .q-ring-2 {
+  border-color: rgba(79,70,229,0.12);
+  box-shadow: none;
+}
+[data-theme="light"] .q-ring-2::before {
+  background: #4F46E5;
+  box-shadow: 0 0 10px 4px rgba(79,70,229,0.5);
+}
+[data-theme="light"] .q-ring-2::after {
+  background: #0891B2;
+  box-shadow: 0 0 8px 3px rgba(8,145,178,0.5);
+}
+[data-theme="light"] .q-ring-3 {
+  border-color: rgba(0,102,204,0.1);
+}
+[data-theme="light"] .q-ring-3::before {
+  background: #059669;
+  box-shadow: 0 0 8px 3px rgba(5,150,105,0.5);
+}
+[data-theme="light"] .q-vortex-core {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(0,100,220,0.06) 40deg,
+    rgba(79,70,229,0.08) 80deg,
+    transparent 120deg,
+    rgba(8,145,178,0.04) 180deg,
+    transparent 220deg,
+    rgba(0,100,220,0.07) 280deg,
+    rgba(79,70,229,0.05) 320deg,
+    transparent 360deg
+  );
+  opacity: 0.8;
+}
+[data-theme="light"] .q-energy-ring {
+  border-color: rgba(0,102,204,0.18);
+}
+[data-theme="light"] .q-energy-ring:nth-child(2) { border-color: rgba(79,70,229,0.15); }
+[data-theme="light"] .q-energy-ring:nth-child(3) { border-color: rgba(8,145,178,0.12); }
+
+[data-theme="light"] .q-circuit-grid {
+  background-image:
+    linear-gradient(rgba(0,80,200,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,80,200,0.05) 1px, transparent 1px),
+    radial-gradient(rgba(0,80,200,0.07) 1px, transparent 1px);
+  background-size: 80px 80px, 80px 80px, 40px 40px;
+}
+[data-theme="light"] .q-glow-node { opacity: 0.35; filter: blur(100px); }
+
+[data-theme="light"] .q-scanline {
+  background: linear-gradient(90deg, transparent 0%, rgba(0,102,204,0.3) 30%, rgba(79,70,229,0.4) 50%, rgba(0,102,204,0.3) 70%, transparent 100%);
+}
+
+/* Holographic shimmer is brighter on light bg */
+[data-theme="light"] .q-holo::after {
+  background: linear-gradient(
+    108deg,
+    transparent 20%,
+    rgba(0,100,220,0.04) 35%,
+    rgba(255,255,255,0.25) 47%,
+    rgba(79,70,229,0.06) 55%,
+    rgba(0,150,220,0.03) 65%,
+    transparent 80%
+  );
+}
+
+/* Glass card adapts for light */
+[data-theme="light"] .glass {
+  background: rgba(255,255,255,0.75);
+  border-color: rgba(0,80,200,0.12);
+  box-shadow: 0 4px 24px rgba(0,30,100,0.08), inset 0 1px 0 rgba(255,255,255,0.9);
+}
+[data-theme="light"] .glass:hover {
+  border-color: rgba(0,102,204,0.25);
+  box-shadow: 0 8px 40px rgba(0,30,100,0.12), inset 0 1px 0 rgba(255,255,255,0.9);
+}
+
+/* Frosted nav in light mode — quantum white */
+[data-theme="light"] .frosted-nav {
+  background: rgba(248,251,255,0.88);
+  border-bottom: 1px solid rgba(0,80,180,0.1);
+  box-shadow: 0 1px 20px rgba(0,30,100,0.06);
+}
+
+/* Chromatic text looks better on light bg with darker colours */
+[data-theme="light"] .q-chromatic {
+  animation: chromatic-text-light 4s ease-in-out infinite;
+}
+@keyframes chromatic-text-light {
+  0%,100% { text-shadow: -2px 0 1px rgba(79,70,229,0.3), 2px 0 1px rgba(0,102,204,0.3); }
+  50%      { text-shadow:  2px 0 1px rgba(79,70,229,0.3),-2px 0 1px rgba(0,102,204,0.3); }
+}
+
+/* Particle colours on light — shift toward darker blues */
+[data-theme="light"] .q-particle { opacity: 0.6; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    QUANTUM VORTEX SYSTEM — 3D · HOLOGRAPHIC · MOTION

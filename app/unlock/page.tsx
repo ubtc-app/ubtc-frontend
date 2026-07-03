@@ -63,10 +63,10 @@ export default function Unlock() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: '#000510',
+      background: 'var(--q-bg)',
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
-      padding: '40px 24px',
+      padding: '40px 16px',
       position: 'relative', overflow: 'hidden',
       fontFamily: 'var(--font-display)',
     }}>
@@ -158,10 +158,10 @@ export default function Unlock() {
           onMouseLeave={onMouseLeave}
           className={`q-holo warp-in-d1 ${shake ? 'q-border-pulse' : ''}`}
           style={{
-            background: 'rgba(3, 8, 28, 0.85)',
-            border: `1px solid ${error ? 'rgba(255,56,96,0.4)' : focused ? 'rgba(0,212,255,0.4)' : 'rgba(0,212,255,0.15)'}`,
+            background: 'var(--q-surface)',
+            border: `1px solid ${error ? 'rgba(255,56,96,0.4)' : focused ? 'var(--q-electric)' : 'var(--q-border)'}`,
             borderRadius: 28,
-            padding: '52px 44px 44px',
+            padding: 'clamp(28px, 6vw, 52px) clamp(20px, 8vw, 44px) clamp(24px, 5vw, 44px)',
             backdropFilter: 'blur(60px) saturate(200%)',
             WebkitBackdropFilter: 'blur(60px) saturate(200%)',
             boxShadow: `
