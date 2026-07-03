@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { API_URL } from '../lib/supabase'
+import { QuantumLoader } from '../components/QuantumLoader'
 import { Icons } from '../components/Icons'
 import { useIsMobile } from '../lib/useIsMobile'
 import { loadWallet, hasStoredWallet } from '../lib/wallet/storage'
@@ -147,17 +148,7 @@ export default function Dashboard() {
   const fmt    = (n: number, d = 2) => n.toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d })
   const fmtInt = (n: number) => n.toLocaleString(undefined, { maximumFractionDigits: 0 })
 
-  if (loading) return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24 }}>
-      <div style={{ position: 'relative', width: 80, height: 80 }}>
-        <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '1px solid rgba(0,212,255,0.15)', borderTopColor: '#00D4FF', animation: 'q-spin 1s linear infinite' }} />
-        <div style={{ position: 'absolute', inset: 8, borderRadius: '50%', border: '1px solid rgba(124,58,255,0.15)', borderTopColor: '#7C3AFF', animation: 'q-spin .7s linear infinite reverse' }} />
-        <div style={{ position: 'absolute', inset: 16, borderRadius: '50%', border: '1px solid rgba(0,255,224,0.15)', borderTopColor: '#00FFE0', animation: 'q-spin 1.3s linear infinite' }} />
-        <div style={{ position: 'absolute', inset: '50%', transform: 'translate(-50%,-50%)', width: 8, height: 8, borderRadius: '50%', background: '#00D4FF', boxShadow: '0 0 12px #00D4FF' }} />
-      </div>
-      <p style={{ color: 'rgba(0,212,255,0.6)', fontSize: 11, fontFamily: 'var(--font-mono)', letterSpacing: '0.3em', textTransform: 'uppercase', margin: 0 }}>Loading portfolio</p>
-    </div>
-  )
+  if (loading) return <QuantumLoader text="Loading portfolio" />
 
   const accountTypeLabel: Record<string, string> = {
     current: 'Current', savings: 'Savings', yield: 'Yield',

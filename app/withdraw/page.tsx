@@ -2,6 +2,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { API_URL } from '../lib/supabase'
+import { QuantumLoader } from '../components/QuantumLoader'
 
 const btnPrimary: any = { background: 'linear-gradient(135deg,#0066cc,#0044aa)', color: 'white', border: 'none', borderRadius: '10px', padding: '14px 32px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)', boxShadow: '0 0 30px rgba(0,212,255,0.3)', width: '100%', transition: 'transform 0.2s, box-shadow 0.2s' }
 const btnRed: any = { background: 'linear-gradient(135deg,#cc2200,#991a00)', color: 'white', border: 'none', borderRadius: '10px', padding: '14px 32px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)', width: '100%', boxShadow: '0 0 20px rgba(255,56,96,0.25)' }
@@ -421,18 +422,7 @@ function WithdrawContent() {
 
 export default function WithdrawPage() {
   return (
-    <Suspense fallback={
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24 }}>
-        <div style={{ position: 'relative', width: 80, height: 80 }}>
-          <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '1px solid rgba(0,212,255,0.15)', borderTopColor: '#00D4FF', animation: 'q-spin 1s linear infinite' }} />
-          <div style={{ position: 'absolute', inset: 8, borderRadius: '50%', border: '1px solid rgba(124,58,255,0.15)', borderTopColor: '#7C3AFF', animation: 'q-spin .7s linear infinite reverse' }} />
-          <div style={{ position: 'absolute', inset: 16, borderRadius: '50%', border: '1px solid rgba(0,255,224,0.15)', borderTopColor: '#00FFE0', animation: 'q-spin 1.3s linear infinite' }} />
-          <div style={{ position: 'absolute', inset: '50%', transform: 'translate(-50%,-50%)', width: 8, height: 8, borderRadius: '50%', background: '#00D4FF', boxShadow: '0 0 12px #00D4FF' }} />
-        </div>
-        <p style={{ color: 'rgba(0,212,255,0.6)', fontSize: 11, fontFamily: 'var(--font-mono)', letterSpacing: '0.3em', textTransform: 'uppercase', margin: 0 }}>Loading...</p>
-        <style>{`@keyframes q-spin { to { transform: rotate(360deg) } }`}</style>
-      </div>
-    }>
+    <Suspense fallback={<QuantumLoader />}>
       <WithdrawContent />
     </Suspense>
   )
