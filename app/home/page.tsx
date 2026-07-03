@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { Icons } from '../components/Icons'
 import { SiteLogo } from '../components/SiteLogo'
@@ -27,11 +27,11 @@ const PARTICLES = Array.from({ length: 18 }, (_, i) => ({
 function HoloCard({ id, href, label, desc, accent, glow, border, bg, icon }: {
   id: string; href: string; label: string; desc: string
   accent: string; glow: string; border: string; bg: string
-  icon: (c: string) => JSX.Element
+  icon: (c: string) => ReactNode
 }) {
   const router  = useRouter()
   const ref     = useRef<HTMLButtonElement>(null)
-  const rafRef  = useRef<number>()
+  const rafRef  = useRef<number | null>(null)
 
   const onMove = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     const el = ref.current; if (!el) return

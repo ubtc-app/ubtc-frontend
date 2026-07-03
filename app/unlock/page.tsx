@@ -16,7 +16,7 @@ const PARTICLES = Array.from({ length: 22 }, (_, i) => ({
 export default function Unlock() {
   const router    = useRouter()
   const cardRef   = useRef<HTMLDivElement>(null)
-  const rafRef    = useRef<number>()
+  const rafRef    = useRef<number | null>(null)
   const [password, setPassword] = useState('')
   const [error,    setError]    = useState('')
   const [loading,  setLoading]  = useState(false)
