@@ -272,7 +272,7 @@ export default function LandingPage() {
           onClick={handleEnter}
           style={{
             pointerEvents: entering ? 'none' : 'auto',
-            background: 'transparent',
+            background: 'rgba(0,30,60,0.3)',
             border: '1px solid rgba(0,160,255,0.4)',
             color: 'rgba(100,200,255,0.9)',
             borderRadius: '50px',
@@ -284,7 +284,6 @@ export default function LandingPage() {
             cursor: 'pointer',
             fontFamily: 'monospace',
             backdropFilter: 'blur(8px)',
-            background: 'rgba(0,30,60,0.3)' as any,
             boxShadow: '0 0 30px rgba(0,100,255,0.15), inset 0 1px 0 rgba(100,200,255,0.1)',
             opacity: entering ? 0 : 1,
             transition: 'opacity 0.4s, box-shadow 0.3s',
