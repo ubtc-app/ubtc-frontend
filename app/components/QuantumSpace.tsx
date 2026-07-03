@@ -235,7 +235,7 @@ export function QuantumSpace() {
       <Canvas
         camera={{ position: [0, 0, 22], fov: 58 }}
         gl={{ antialias: !mobile, alpha: false, powerPreference: 'high-performance' }}
-        dpr={mobile ? 1 : Math.min(window.devicePixelRatio, 2)}
+        dpr={mobile ? 1 : Math.min(typeof window !== 'undefined' ? window.devicePixelRatio : 1, 2)}
         style={{ background: '#000208' }}
         frameloop="always"
       >
