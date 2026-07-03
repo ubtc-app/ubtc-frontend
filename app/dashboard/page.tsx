@@ -358,37 +358,17 @@ export default function Dashboard() {
                       addHref={`/deposit?vault=${vault.vault_id}&currency=uusdc`}
                     />
 
-                    {/* In-card action buttons */}
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                      <a href="/mint" style={{
-                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
-                        background: 'var(--t-orange-bg)', border: '1.5px solid rgba(255,159,10,0.25)',
-                        color: 'var(--t-orange)', textDecoration: 'none',
-                        borderRadius: '12px', padding: '11px', fontSize: '12px', fontWeight: '700',
-                        fontFamily: 'var(--font-display)',
-                      }}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                        Mint
-                      </a>
-                      <a href={`/transfer?vault=${vault.vault_id}`} style={{
-                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
-                        background: 'var(--t-accent-bg)', border: '1.5px solid var(--t-accent-border)',
-                        color: 'var(--t-accent)', textDecoration: 'none',
-                        borderRadius: '12px', padding: '11px', fontSize: '12px', fontWeight: '700',
-                        fontFamily: 'var(--font-display)',
-                      }}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                        Send
-                      </a>
+                    {/* Open account button */}
+                    <div style={{ marginTop: '4px' }}>
                       <a href={`/account/${vault.vault_id}`} style={{
-                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
-                        background: 'var(--t-surface2)', border: '1.5px solid var(--t-border)',
-                        color: 'var(--t-muted)', textDecoration: 'none',
-                        borderRadius: '12px', padding: '11px', fontSize: '12px', fontWeight: '700',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                        background: 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))',
+                        color: 'white', textDecoration: 'none',
+                        borderRadius: '12px', padding: '13px', fontSize: '13px', fontWeight: '700',
                         fontFamily: 'var(--font-display)',
                       }}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                        Details
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                        Open Account
                       </a>
                     </div>
                   </div>
