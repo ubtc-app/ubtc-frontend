@@ -1,308 +1,314 @@
 'use client'
-import { useEffect, useState, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-
-function ParticleField() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-    let animId: number
-    const particles: { x: number; y: number; vx: number; vy: number; size: number; alpha: number; pulse: number }[] = []
-
-    function resize() {
-      canvas!.width = window.innerWidth
-      canvas!.height = window.innerHeight
-    }
-    resize()
-    window.addEventListener('resize', resize)
-
-    for (let i = 0; i < 80; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: (Math.random() - 0.5) * 0.3,
-        size: Math.random() * 2 + 0.5,
-        alpha: Math.random() * 0.5 + 0.1,
-        pulse: Math.random() * Math.PI * 2,
-      })
-    }
-
-    function draw() {
-      ctx!.clearRect(0, 0, canvas!.width, canvas!.height)
-      particles.forEach((p, i) => {
-        p.x += p.vx
-        p.y += p.vy
-        p.pulse += 0.02
-        if (p.x < 0) p.x = canvas!.width
-        if (p.x > canvas!.width) p.x = 0
-        if (p.y < 0) p.y = canvas!.height
-        if (p.y > canvas!.height) p.y = 0
-
-        const glow = p.alpha * (0.5 + 0.5 * Math.sin(p.pulse))
-        ctx!.beginPath()
-        ctx!.arc(p.x, p.y, p.size, 0, Math.PI * 2)
-        ctx!.fillStyle = `rgba(0, 191, 255, ${glow})`
-        ctx!.fill()
-
-        particles.slice(i + 1).forEach(p2 => {
-          const dx = p.x - p2.x
-          const dy = p.y - p2.y
-          const dist = Math.sqrt(dx * dx + dy * dy)
-          if (dist < 120) {
-            ctx!.beginPath()
-            ctx!.moveTo(p.x, p.y)
-            ctx!.lineTo(p2.x, p2.y)
-            ctx!.strokeStyle = `rgba(0, 191, 255, ${0.06 * (1 - dist / 120)})`
-            ctx!.lineWidth = 0.5
-            ctx!.stroke()
-          }
-        })
-      })
-      animId = requestAnimationFrame(draw)
-    }
-    draw()
-    return () => { cancelAnimationFrame(animId); window.removeEventListener('resize', resize) }
-  }, [])
-  return <canvas ref={canvasRef} style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }} />
-}
-
-function QuantumRing({ delay = 0, size = 300, duration = 20 }: { delay?: number; size?: number; duration?: number }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.8, rotateX: 75, rotateZ: 0 }}
-      animate={{ opacity: [0, 0.15, 0.15, 0], scale: [0.8, 1, 1.1, 1.2], rotateZ: 360 }}
-      transition={{ duration, delay, repeat: Infinity, ease: 'linear' }}
-      style={{
-        position: 'absolute', width: size, height: size,
-        border: '1px solid rgba(0, 191, 255, 0.2)',
-        borderRadius: '50%',
-        transformStyle: 'preserve-3d',
-      }}
-    />
-  )
-}
-
-function GlowOrb() {
-  return (
-    <motion.div
-      animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
-      transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-      style={{
-        position: 'absolute',
-        width: 400, height: 400,
-        background: 'radial-gradient(circle, rgba(0,191,255,0.15) 0%, transparent 70%)',
-        borderRadius: '50%', filter: 'blur(40px)',
-      }}
-    />
-  )
-}
-
-const textReveal: any = {
-  hidden: { opacity: 0, y: 30 },
-  visible: (i: number) => ({
-    opacity: 1, y: 0,
-    transition: { duration: 0.8, delay: i * 0.15, ease: [0.25, 0.4, 0.25, 1] }
-  }),
-}
-
-const letterReveal: any = {
-  hidden: { opacity: 0, y: 50 },
-  visible: (i: number) => ({
-    opacity: 1, y: 0,
-    transition: { duration: 0.5, delay: 0.8 + i * 0.03, ease: [0.25, 0.4, 0.25, 1] }
-  }),
-}
+import * as THREE from 'three'
 
 export default function LandingPage() {
+  const mountRef = useRef<HTMLDivElement>(null)
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null)
+  const sceneRef = useRef<THREE.Scene | null>(null)
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null)
+  const frameRef = useRef<number>(0)
+  const mouseRef = useRef({ x: 0, y: 0 })
+  const enteringRef = useRef(false)
   const router = useRouter()
-  const [entered, setEntered] = useState(false)
-  const [hovering, setHovering] = useState(false)
-  const title = 'World Local Bank'
-  const techStack = ['Taproot', 'ML-DSA-65', 'SLH-DSA', 'ML-KEM-1024', 'FROST', 'BIP340']
+  const [ready, setReady] = useState(false)
+  const [entering, setEntering] = useState(false)
+
+  useEffect(() => {
+    const mount = mountRef.current
+    if (!mount) return
+
+    // ── Scene ──────────────────────────────────────────────────────────────
+    const scene = new THREE.Scene()
+    scene.fog = new THREE.FogExp2(0x000408, 0.018)
+    sceneRef.current = scene
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 400)
+    camera.position.set(0, 0, 28)
+    cameraRef.current = camera
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+    renderer.setSize(window.innerWidth, window.innerHeight)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.setClearColor(0x000408, 1)
+    mount.appendChild(renderer.domElement)
+    rendererRef.current = renderer
+
+    // ── Starfield ──────────────────────────────────────────────────────────
+    const starGeo = new THREE.BufferGeometry()
+    const starCount = 2800
+    const starPositions = new Float32Array(starCount * 3)
+    for (let i = 0; i < starCount * 3; i++) {
+      starPositions[i] = (Math.random() - 0.5) * 300
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3))
+    const starMat = new THREE.PointsMaterial({ color: 0x99ccff, size: 0.18, transparent: true, opacity: 0.7 })
+    const stars = new THREE.Points(starGeo, starMat)
+    scene.add(stars)
+
+    // ── Central glow sphere (logo stand-in core) ───────────────────────────
+    const coreGeo = new THREE.SphereGeometry(1.2, 64, 64)
+    const coreMat = new THREE.MeshStandardMaterial({
+      color: 0x0088ff,
+      emissive: 0x0044cc,
+      emissiveIntensity: 1.2,
+      metalness: 0.8,
+      roughness: 0.1,
+      transparent: true,
+      opacity: 0.92,
+    })
+    const core = new THREE.Mesh(coreGeo, coreMat)
+    scene.add(core)
+
+    // Inner pulse sphere
+    const pulseGeo = new THREE.SphereGeometry(1.6, 32, 32)
+    const pulseMat = new THREE.MeshBasicMaterial({ color: 0x0066ff, transparent: true, opacity: 0.08, side: THREE.BackSide })
+    const pulse = new THREE.Mesh(pulseGeo, pulseMat)
+    scene.add(pulse)
+
+    // ── UBTC texture canvas ────────────────────────────────────────────────
+    const texCanvas = document.createElement('canvas')
+    texCanvas.width = 512; texCanvas.height = 512
+    const ctx = texCanvas.getContext('2d')!
+    ctx.clearRect(0, 0, 512, 512)
+    // Outer ring
+    ctx.beginPath()
+    ctx.arc(256, 256, 240, 0, Math.PI * 2)
+    ctx.strokeStyle = 'rgba(0,160,255,0.35)'
+    ctx.lineWidth = 2
+    ctx.stroke()
+    // UBTC text
+    ctx.fillStyle = 'rgba(120,200,255,0.95)'
+    ctx.font = 'bold 96px monospace'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText('UBTC', 256, 256)
+    // Subtitle
+    ctx.fillStyle = 'rgba(80,150,220,0.6)'
+    ctx.font = '22px monospace'
+    ctx.fillText('QUANTUM SECURED', 256, 340)
+    const logoTex = new THREE.CanvasTexture(texCanvas)
+
+    // Floating logo plane (always faces camera)
+    const logoGeo = new THREE.PlaneGeometry(4.5, 4.5)
+    const logoMat = new THREE.MeshBasicMaterial({ map: logoTex, transparent: true, depthWrite: false })
+    const logo = new THREE.Mesh(logoGeo, logoMat)
+    logo.position.z = 1.3
+    scene.add(logo)
+
+    // ── Quantum orbital rings ───────────────────────────────────────────────
+    const rings: { mesh: THREE.Mesh; speed: number; axis: THREE.Vector3; tilt: THREE.Euler }[] = []
+
+    const ringConfigs = [
+      { radius: 3.8, tube: 0.022, color: 0x00aaff, speed: 0.38, tilt: new THREE.Euler(0.4, 0, 0) },
+      { radius: 5.2, tube: 0.018, color: 0x0066dd, speed: -0.25, tilt: new THREE.Euler(1.1, 0.3, 0) },
+      { radius: 6.8, tube: 0.016, color: 0x0044bb, speed: 0.18, tilt: new THREE.Euler(0.2, 1.0, 0.5) },
+      { radius: 8.5, tube: 0.014, color: 0x003399, speed: -0.13, tilt: new THREE.Euler(1.5, 0.6, 0.2) },
+      { radius: 10.2, tube: 0.012, color: 0x002266, speed: 0.09, tilt: new THREE.Euler(0.8, 1.4, 0.9) },
+      { radius: 3.4, tube: 0.020, color: 0x44ccff, speed: -0.52, tilt: new THREE.Euler(Math.PI / 2, 0, 0.7) },
+      { radius: 4.6, tube: 0.015, color: 0x2299ee, speed: 0.31, tilt: new THREE.Euler(Math.PI / 3, 0.5, 0) },
+    ]
+
+    ringConfigs.forEach(cfg => {
+      const geo = new THREE.TorusGeometry(cfg.radius, cfg.tube, 8, 128)
+      const mat = new THREE.MeshBasicMaterial({ color: cfg.color, transparent: true, opacity: 0.65 })
+      const mesh = new THREE.Mesh(geo, mat)
+      mesh.setRotationFromEuler(cfg.tilt)
+      scene.add(mesh)
+      rings.push({ mesh, speed: cfg.speed, axis: new THREE.Vector3(0.2, 1, 0.1).normalize(), tilt: cfg.tilt })
+    })
+
+    // ── Orbiting particles on rings ────────────────────────────────────────
+    const orbitParticles: { mesh: THREE.Mesh; ring: number; angle: number; speed: number }[] = []
+    const particleGeo = new THREE.SphereGeometry(0.06, 8, 8)
+
+    ringConfigs.forEach((cfg, ri) => {
+      const count = 3 + ri
+      for (let i = 0; i < count; i++) {
+        const mat = new THREE.MeshBasicMaterial({ color: cfg.color })
+        const mesh = new THREE.Mesh(particleGeo, mat)
+        scene.add(mesh)
+        orbitParticles.push({ mesh, ring: ri, angle: (i / count) * Math.PI * 2, speed: cfg.speed * 1.4 })
+      }
+    })
+
+    // ── Ambient / point lights ─────────────────────────────────────────────
+    scene.add(new THREE.AmbientLight(0x112244, 2))
+    const pl = new THREE.PointLight(0x0088ff, 6, 30)
+    pl.position.set(0, 0, 0)
+    scene.add(pl)
+    const pl2 = new THREE.PointLight(0x004488, 3, 50)
+    pl2.position.set(10, 8, 5)
+    scene.add(pl2)
+
+    // ── Mouse tracking ─────────────────────────────────────────────────────
+    const onMouse = (e: MouseEvent) => {
+      mouseRef.current = {
+        x: (e.clientX / window.innerWidth - 0.5) * 2,
+        y: -(e.clientY / window.innerHeight - 0.5) * 2,
+      }
+    }
+    window.addEventListener('mousemove', onMouse)
+
+    // ── Resize ────────────────────────────────────────────────────────────
+    const onResize = () => {
+      camera.aspect = window.innerWidth / window.innerHeight
+      camera.updateProjectionMatrix()
+      renderer.setSize(window.innerWidth, window.innerHeight)
+    }
+    window.addEventListener('resize', onResize)
+
+    // ── Animation loop ────────────────────────────────────────────────────
+    let t = 0
+    const animate = () => {
+      frameRef.current = requestAnimationFrame(animate)
+      t += 0.008
+
+      // Rotate rings
+      rings.forEach((r, i) => {
+        r.mesh.rotation.y += r.speed * 0.012
+        r.mesh.rotation.x += r.speed * 0.006
+      })
+
+      // Update orbiting particles
+      orbitParticles.forEach(p => {
+        p.angle += p.speed * 0.015
+        const cfg = ringConfigs[p.ring]
+        const ringMesh = rings[p.ring].mesh
+        // Position on ring in local space then transform
+        const local = new THREE.Vector3(
+          Math.cos(p.angle) * cfg.radius,
+          Math.sin(p.angle) * cfg.radius,
+          0
+        )
+        local.applyEuler(ringMesh.rotation)
+        p.mesh.position.copy(local)
+      })
+
+      // Core pulse
+      const pScale = 1 + 0.12 * Math.sin(t * 2.5)
+      pulse.scale.setScalar(pScale)
+      pulseMat.opacity = 0.06 + 0.04 * Math.sin(t * 2.5)
+
+      // Logo always faces camera
+      logo.lookAt(camera.position)
+
+      // Subtle core rotation glow
+      core.rotation.y += 0.003
+      ;(coreMat as THREE.MeshStandardMaterial).emissiveIntensity = 1.0 + 0.4 * Math.sin(t * 1.8)
+
+      // Stars slow drift
+      stars.rotation.y += 0.0001
+      stars.rotation.x += 0.00005
+
+      // Mouse parallax on camera (subtle)
+      if (!enteringRef.current) {
+        camera.position.x += (mouseRef.current.x * 1.5 - camera.position.x) * 0.03
+        camera.position.y += (mouseRef.current.y * 1.0 - camera.position.y) * 0.03
+        camera.lookAt(0, 0, 0)
+      }
+
+      // ── Enter animation: fly through to logo ──
+      if (enteringRef.current) {
+        camera.position.z -= 0.7
+        camera.position.x *= 0.96
+        camera.position.y *= 0.96
+        camera.lookAt(0, 0, 0)
+        // Fade to white then route
+        if (camera.position.z < -2) {
+          router.push('/unlock')
+        }
+      }
+
+      renderer.render(scene, camera)
+    }
+    animate()
+
+    // Fade in
+    setTimeout(() => setReady(true), 300)
+
+    return () => {
+      cancelAnimationFrame(frameRef.current)
+      window.removeEventListener('mousemove', onMouse)
+      window.removeEventListener('resize', onResize)
+      renderer.dispose()
+      if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement)
+    }
+  }, [])
+
+  const handleEnter = () => {
+    if (enteringRef.current) return
+    enteringRef.current = true
+    setEntering(true)
+  }
 
   return (
-    <div style={{
-      minHeight: '100vh', background: '#04040a', overflow: 'hidden',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      position: 'relative', fontFamily: "'Inter', -apple-system, sans-serif",
-    }}>
-      <ParticleField />
+    <div style={{ position: 'fixed', inset: 0, background: '#000408', overflow: 'hidden', cursor: entering ? 'none' : 'default' }}>
+      {/* Three.js canvas mount */}
+      <div ref={mountRef} style={{ position: 'absolute', inset: 0 }} />
 
-      <div style={{ position: 'absolute', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <QuantumRing delay={0} size={500} duration={25} />
-        <QuantumRing delay={2} size={400} duration={20} />
-        <QuantumRing delay={4} size={300} duration={15} />
-        <GlowOrb />
+      {/* Flash-to-white on enter */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        background: 'white',
+        opacity: entering ? 1 : 0,
+        transition: entering ? 'opacity 0.6s ease 0.9s' : 'none',
+        zIndex: 30,
+      }} />
+
+      {/* UI overlay */}
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 10,
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'flex-end',
+        padding: '0 0 60px',
+        opacity: ready ? 1 : 0,
+        transition: 'opacity 1.2s ease',
+        pointerEvents: 'none',
+      }}>
+        {/* Enter button */}
+        <button
+          onClick={handleEnter}
+          style={{
+            pointerEvents: entering ? 'none' : 'auto',
+            background: 'transparent',
+            border: '1px solid rgba(0,160,255,0.4)',
+            color: 'rgba(100,200,255,0.9)',
+            borderRadius: '50px',
+            padding: '16px 64px',
+            fontSize: '12px',
+            fontWeight: '700',
+            letterSpacing: '0.3em',
+            textTransform: 'uppercase',
+            cursor: 'pointer',
+            fontFamily: 'monospace',
+            backdropFilter: 'blur(8px)',
+            background: 'rgba(0,30,60,0.3)' as any,
+            boxShadow: '0 0 30px rgba(0,100,255,0.15), inset 0 1px 0 rgba(100,200,255,0.1)',
+            opacity: entering ? 0 : 1,
+            transition: 'opacity 0.4s, box-shadow 0.3s',
+          }}
+          onMouseEnter={e => { (e.target as HTMLElement).style.boxShadow = '0 0 50px rgba(0,140,255,0.35), inset 0 1px 0 rgba(100,200,255,0.2)' }}
+          onMouseLeave={e => { (e.target as HTMLElement).style.boxShadow = '0 0 30px rgba(0,100,255,0.15), inset 0 1px 0 rgba(100,200,255,0.1)' }}
+        >
+          Enter
+        </button>
+
+        {/* Tiny tagline */}
+        <p style={{
+          marginTop: '20px',
+          color: 'rgba(60,120,180,0.5)',
+          fontSize: '9px',
+          fontFamily: 'monospace',
+          letterSpacing: '0.2em',
+          textTransform: 'uppercase',
+          opacity: entering ? 0 : 1,
+          transition: 'opacity 0.3s',
+        }}>
+          FIPS 204 · FIPS 205 · FIPS 203 · Post-Quantum
+        </p>
       </div>
-
-      <AnimatePresence mode="wait">
-        {!entered ? (
-          <motion.div
-            key="landing"
-            exit={{ opacity: 0, scale: 0.95, filter: 'blur(20px)' }}
-            transition={{ duration: 0.6 }}
-            style={{ position: 'relative', zIndex: 10, textAlign: 'center', padding: '0 24px', maxWidth: 680 }}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.5, rotateY: -180 }}
-              animate={{ opacity: 1, scale: 1, rotateY: 0 }}
-              transition={{ duration: 1.2, ease: [0.25, 0.4, 0.25, 1] }}
-              style={{ marginBottom: 48 }}
-            >
-              <img src="/wlb.png" alt="uBTC" style={{ height: 80, objectFit: 'contain', filter: 'drop-shadow(0 0 30px rgba(0,191,255,0.3))' }} />
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 40, rotateX: 10 }}
-              animate={{ opacity: 1, y: 0, rotateX: 0 }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              style={{
-                background: 'rgba(255,255,255,0.03)',
-                backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: 24, padding: '48px 40px',
-                marginBottom: 40,
-                boxShadow: '0 0 80px rgba(0,191,255,0.05), inset 0 1px 0 rgba(255,255,255,0.05)',
-              }}
-            >
-              <motion.p custom={0} variants={textReveal} initial="hidden" animate="visible"
-                style={{ color: '#86868b', fontSize: 14, fontFamily: 'monospace', lineHeight: 2, margin: '0 0 24px' }}>
-                If you are reading this, you are part of an early group entering a new financial system.
-              </motion.p>
-
-              <motion.div custom={1} variants={textReveal} initial="hidden" animate="visible"
-                style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(0,191,255,0.2), transparent)', margin: '0 0 24px' }} />
-
-              <motion.p custom={2} variants={textReveal} initial="hidden" animate="visible"
-                style={{ color: '#6b6b80', fontSize: 14, fontFamily: 'monospace', lineHeight: 2, margin: '0 0 16px' }}>
-                This is not simply a stablecoin. This is a decentralized monetary layer built directly on Bitcoin.
-              </motion.p>
-
-              <motion.p custom={3} variants={textReveal} initial="hidden" animate="visible"
-                style={{ color: '#00bfff', fontSize: 14, fontFamily: 'monospace', lineHeight: 2, margin: '0 0 16px' }}>
-                Trust is replaced by cryptography. Banks are replaced by protocol. Control is replaced by consensus.
-              </motion.p>
-
-              <motion.p custom={4} variants={textReveal} initial="hidden" animate="visible"
-                style={{ color: '#ff9f0a', fontSize: 14, fontFamily: 'monospace', lineHeight: 2, margin: '0 0 24px' }}>
-                Each participant becomes their own local bank.
-              </motion.p>
-
-              <motion.div custom={5} variants={textReveal} initial="hidden" animate="visible"
-                style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(0,191,255,0.2), transparent)', margin: '0 0 24px' }} />
-
-              <div style={{ overflow: 'hidden' }}>
-                <p style={{ color: '#e8e8f0', fontSize: 17, fontWeight: 700, fontFamily: 'monospace', letterSpacing: '0.05em', margin: 0 }}>
-                  {'Welcome to the '}
-                  {title.split('').map((char, i) => (
-                    <motion.span key={i} custom={i} variants={letterReveal} initial="hidden" animate="visible"
-                      style={{ display: 'inline-block', color: '#00bfff' }}>
-                      {char === ' ' ? ' ' : char}
-                    </motion.span>
-                  ))}
-                  .
-                </p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 1.5 }}
-            >
-              <motion.button
-                whileHover={{ scale: 1.05, boxShadow: '0 0 40px rgba(0,191,255,0.3), 0 0 80px rgba(0,191,255,0.1)' }}
-                whileTap={{ scale: 0.97 }}
-                onHoverStart={() => setHovering(true)}
-                onHoverEnd={() => setHovering(false)}
-                onClick={() => { setEntered(true); setTimeout(() => router.push('/home'), 600) }}
-                style={{
-                  background: 'transparent',
-                  border: '1px solid rgba(0,191,255,0.3)',
-                  color: '#00bfff',
-                  borderRadius: 50, padding: '18px 72px',
-                  fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                  fontFamily: 'monospace', letterSpacing: '0.25em',
-                  textTransform: 'uppercase' as const,
-                  boxShadow: '0 0 20px rgba(0,191,255,0.1)',
-                  position: 'relative' as const, overflow: 'hidden' as const,
-                }}
-              >
-                <motion.div
-                  animate={{ x: hovering ? '200%' : '-100%' }}
-                  transition={{ duration: 0.6 }}
-                  style={{
-                    position: 'absolute' as const, top: 0, left: 0,
-                    width: '50%', height: '100%',
-                    background: 'linear-gradient(90deg, transparent, rgba(0,191,255,0.15), transparent)',
-                  }}
-                />
-                Enter
-              </motion.button>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 1, delay: 2 }}
-              style={{ marginTop: 48, display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' as const }}
-            >
-              {techStack.map((tech, i) => (
-                <motion.span
-                  key={tech}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 0.4, y: 0 }}
-                  transition={{ duration: 0.4, delay: 2 + i * 0.1 }}
-                  whileHover={{ opacity: 1, scale: 1.1 }}
-                  style={{
-                    fontSize: 10, fontFamily: 'monospace', color: '#3a3a50',
-                    letterSpacing: '0.15em', textTransform: 'uppercase' as const,
-                    padding: '4px 12px', cursor: 'default',
-                    border: '1px solid rgba(255,255,255,0.04)', borderRadius: 20,
-                  }}
-                >
-                  {tech}
-                </motion.span>
-              ))}
-            </motion.div>
-
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.3 }}
-              transition={{ duration: 1, delay: 2.5 }}
-              style={{
-                color: '#3a3a50', fontSize: 9, fontFamily: 'monospace',
-                marginTop: 32, letterSpacing: '0.2em', textTransform: 'uppercase' as const,
-              }}
-            >
-              FIPS 204 &middot; FIPS 205 &middot; FIPS 203 &middot; Post-Quantum Secured
-            </motion.p>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="transition"
-            initial={{ opacity: 0, scale: 1.1 }}
-            animate={{ opacity: 1, scale: 1 }}
-            style={{ position: 'relative', zIndex: 10, textAlign: 'center' }}
-          >
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-              style={{
-                width: 40, height: 40,
-                border: '2px solid rgba(0,191,255,0.3)',
-                borderTopColor: '#00bfff',
-                borderRadius: '50%',
-              }}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   )
 }
