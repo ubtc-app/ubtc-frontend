@@ -572,10 +572,22 @@ function WalletContent() {
   )
 }
 
+function WalletPageInner() {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+  if (!mounted) return (
+    <div style={{ minHeight: '100vh', background: 'var(--q-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: 40, height: 40, borderRadius: '50%', border: '2px solid rgba(0,212,255,0.15)', borderTopColor: 'var(--q-electric)', animation: 'wlb-spin .85s linear infinite' }} />
+      <style>{`@keyframes wlb-spin { to { transform: rotate(360deg) } }`}</style>
+    </div>
+  )
+  return <WalletContent />
+}
+
 export default function WalletPage() {
   return (
     <Suspense fallback={<div style={{ minHeight: '100vh', background: 'var(--q-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--t-faint)', fontFamily: 'var(--font-mono)' }}>Loading...</div>}>
-      <WalletContent />
+      <WalletPageInner />
     </Suspense>
   )
 }
