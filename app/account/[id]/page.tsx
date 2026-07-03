@@ -612,46 +612,57 @@ function AccountContent() {
           </div>
 
           {/* Action buttons */}
+          <style>{`
+            .acc-action { transition: transform .15s ease, box-shadow .15s ease; transform-style: preserve-3d; cursor: pointer; }
+            .acc-action:hover { transform: translateY(-4px) scale(1.04) !important; }
+          `}</style>
           {isActive ? (
             <div style={{ display: 'grid', gridTemplateColumns: hasMinted ? 'repeat(3,1fr)' : 'repeat(2,1fr)', gap: '10px', maxWidth: '480px', margin: '0 auto' }}>
-              <a href={`/mint?vault=${vaultId}&currency=ubtc`} style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '9px',
-                background: 'linear-gradient(135deg, rgba(0,212,255,0.15), rgba(0,153,204,0.1))',
-                border: '1px solid rgba(0,212,255,0.28)',
-                borderRadius: '18px', padding: '18px 10px',
-                textDecoration: 'none', color: 'var(--q-electric)',
-                boxShadow: '0 0 24px rgba(0,212,255,0.1)',
-                transition: 'all 0.2s',
-              }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0,212,255,0.22),rgba(0,153,204,0.15))'; e.currentTarget.style.boxShadow = '0 0 36px rgba(0,212,255,0.2)' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0,212,255,0.15),rgba(0,153,204,0.1))'; e.currentTarget.style.boxShadow = '0 0 24px rgba(0,212,255,0.1)' }}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span style={{ fontSize: '11px', fontWeight: '700', ...mono, letterSpacing: '0.06em', textTransform: 'uppercase', textAlign: 'center' }}>Create UBTC</span>
+
+              {/* CREATE UBTC */}
+              <a href={`/mint?vault=${vaultId}&currency=ubtc`} className="acc-action" style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+                background: 'linear-gradient(145deg,#001a2e,#002844)',
+                border: '1px solid rgba(0,212,255,0.3)',
+                borderRadius: 20, padding: '20px 10px',
+                textDecoration: 'none',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(0,212,255,0.2)',
+              }}>
+                <div style={{ width: 48, height: 48, borderRadius: 15, background: 'rgba(0,212,255,0.15)', border: '1px solid rgba(0,212,255,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(0,212,255,0.3)' }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: 'center', color: '#e0eeff' }}>Create UBTC</span>
               </a>
 
+              {/* MOVE TO WALLET */}
               {hasMinted && (
-                <button onClick={() => { setShowMoveModal(true); setMoveAmount(''); setMoveError(''); setMoveDone(false) }} style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '9px',
-                  background: 'rgba(255,184,0,0.1)', border: '1px solid rgba(255,184,0,0.25)',
-                  borderRadius: '18px', padding: '18px 10px', cursor: 'pointer',
-                  color: 'var(--q-btc)',
-                  transition: 'all 0.2s',
+                <button onClick={() => { setShowMoveModal(true); setMoveAmount(''); setMoveError(''); setMoveDone(false) }} className="acc-action" style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+                  background: 'linear-gradient(145deg,#1a1000,#2a1a00)',
+                  border: '1px solid rgba(255,184,0,0.35)',
+                  borderRadius: 20, padding: '20px 10px',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,184,0,0.2)',
                 }}>
-                  {Icons.wallet(20, 'var(--q-btc)')}
-                  <span style={{ fontSize: '11px', fontWeight: '700', ...mono, letterSpacing: '0.06em', textTransform: 'uppercase', textAlign: 'center' }}>Move to Wallet</span>
+                  <div style={{ width: 48, height: 48, borderRadius: 15, background: 'rgba(255,184,0,0.15)', border: '1px solid rgba(255,184,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(255,184,0,0.3)' }}>
+                    {Icons.wallet(22, '#FFB800')}
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: 'center', color: '#e0eeff' }}>Move to Wallet</span>
                 </button>
               )}
 
-              <a href={vault.linked_wallet ? `/wallet?address=${vault.linked_wallet}` : '/wallet'} style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '9px',
-                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: '18px', padding: '18px 10px',
-                textDecoration: 'none', color: 'var(--q-text-3)',
-                transition: 'all 0.2s',
+              {/* MY WALLET */}
+              <a href={vault.linked_wallet ? `/wallet?address=${vault.linked_wallet}` : '/wallet'} className="acc-action" style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+                background: 'linear-gradient(145deg,#0e0028,#160040)',
+                border: '1px solid rgba(167,139,250,0.3)',
+                borderRadius: 20, padding: '20px 10px',
+                textDecoration: 'none',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(167,139,250,0.15)',
               }}>
-                {Icons.send(20, 'currentColor')}
-                <span style={{ fontSize: '11px', fontWeight: '700', ...mono, letterSpacing: '0.06em', textTransform: 'uppercase', textAlign: 'center' }}>My Wallet</span>
+                <div style={{ width: 48, height: 48, borderRadius: 15, background: 'rgba(167,139,250,0.15)', border: '1px solid rgba(167,139,250,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(167,139,250,0.3)' }}>
+                  {Icons.send(22, '#A78BFA')}
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: 'center', color: '#e0eeff' }}>My Wallet</span>
               </a>
             </div>
           ) : (
