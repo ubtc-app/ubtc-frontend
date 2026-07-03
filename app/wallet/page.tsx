@@ -7,7 +7,14 @@ import { isInTelegram } from '../lib/telegram'
 
 
 function WalletContent() {
-  const [view, setView] = useState<'landing' | 'create' | 'lookup' | 'dashboard'>('landing')
+  // Start in 'loading' if we already have an address — skip the landing screen
+  const getInitialView = () => {
+    if (typeof window === 'undefined') return 'landing' as const
+    const params = new URLSearchParams(window.location.search)
+    const addr = params.get('address') || localStorage.getItem('ubtc_wallet_address') || ''
+    return addr ? 'loading' as const : 'landing' as const
+  }
+  const [view, setView] = useState<'landing' | 'loading' | 'create' | 'lookup' | 'dashboard'>(getInitialView)
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [walletName, setWalletName] = useState('')
@@ -70,7 +77,7 @@ function WalletContent() {
       const data = await res.json()
       const wData = (data.wallets || []).find((w: any) => w.wallet_address === addr)
       if (wData) { setWalletData(wData); setView('dashboard') }
-      else { setView('landing') }
+      else { setView('landing') } // address stored but not found on server yet
       try {
         const txRes = await fetch(`${API_URL}/wallet/${addr}/transactions`)
         if (txRes.ok) { const txData = await txRes.json(); setWalletTxs(txData.transactions || []) }
@@ -173,6 +180,15 @@ function WalletContent() {
   const balance = parseFloat(walletData?.balance || '0')
   const uusdtBalance = parseFloat(walletData?.uusdt_balance || '0')
   const uusdcBalance = parseFloat(walletData?.uusdc_balance || '0')
+
+  // ── LOADING (auto-fetching wallet) ──
+  if (view === 'loading') return (
+    <div style={{ minHeight: '100vh', background: 'var(--q-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 20 }}>
+      <div style={{ width: 48, height: 48, borderRadius: '50%', border: '2px solid rgba(0,212,255,0.15)', borderTopColor: 'var(--q-electric)', animation: 'wlb-spin .85s linear infinite' }} />
+      <p style={{ color: 'var(--q-text-3)', fontSize: 12, fontFamily: 'var(--font-mono)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>Opening Wallet…</p>
+      <style>{`@keyframes wlb-spin { to { transform: rotate(360deg) } }`}</style>
+    </div>
+  )
 
   // ── LANDING ──
   if (view === 'landing') return (
