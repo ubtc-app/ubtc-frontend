@@ -162,11 +162,19 @@ export default function Dashboard() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--q-bg)', fontFamily: 'var(--font-display)', position: 'relative', overflow: 'hidden' }}>
 
-      {/* Dot grid */}
-      <div className="dot-grid" style={{ position: 'fixed', inset: 0, opacity: 0.35, pointerEvents: 'none' }} />
-
-      {/* Ambient glow */}
-      <div style={{ position: 'fixed', top: '-20%', left: '30%', width: '800px', height: '800px', background: 'radial-gradient(circle, rgba(0,212,255,0.04) 0%, transparent 65%)', pointerEvents: 'none', zIndex: 0 }} />
+      {/* Quantum vortex background */}
+      <div className="q-vortex-scene">
+        <div className="q-glow-node" style={{ top: '-10%', left: '25%', width: 900, height: 900, background: 'rgba(0,212,255,0.04)' }} />
+        <div className="q-glow-node" style={{ bottom: '-5%', right: '10%', width: 700, height: 700, background: 'rgba(124,58,255,0.05)' }} />
+        <div className="q-circuit-grid" style={{ position: 'absolute', inset: 0, opacity: 0.5 }} />
+        <div className="q-ring-1" style={{ opacity: 0.4, width: 1200, height: 1200, margin: '-600px 0 0 -600px' }} />
+        <div className="q-ring-2" style={{ opacity: 0.5 }} />
+        <div className="q-vortex-core" style={{ opacity: 0.4 }} />
+        <div style={{ position: 'absolute', top: '50%', left: '50%' }}>
+          <div className="q-energy-ring" style={{ animationDuration: '9s' }} />
+          <div className="q-energy-ring" style={{ animationDuration: '9s', animationDelay: '3s' }} />
+        </div>
+      </div>
 
       {/* ── Hero ── */}
       <div style={{ position: 'relative', zIndex: 1 }}>
