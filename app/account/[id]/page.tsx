@@ -11,12 +11,12 @@ import { useIsMobile } from '../../lib/useIsMobile'
 const mono: any = { fontFamily: 'var(--font-mono)' }
 
 const glass = (extra?: string) => ({
-  background: 'rgba(5,12,35,0.65)',
-  border: '1px solid rgba(0,212,255,0.1)',
+  background: 'var(--q-surface)',
+  border: '1px solid var(--q-border)',
   borderRadius: '20px',
   backdropFilter: 'blur(40px)',
   WebkitBackdropFilter: 'blur(40px)',
-  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 32px rgba(0,0,0,0.5)',
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 32px rgba(0,0,0,0.25)',
   ...(extra ? {} : {}),
 })
 
@@ -676,11 +676,18 @@ function AccountContent() {
               <p style={{ color: 'var(--q-btc)', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.22em', margin: '0 0 8px', ...mono }}>Step 1 — Add Bitcoin</p>
               <p style={{ fontFamily: 'var(--font-syne)', color: 'var(--q-text)', fontSize: '18px', fontWeight: '700', margin: '0 0 8px', letterSpacing: '-0.02em' }}>Send Bitcoin to activate</p>
               <p style={{ color: 'var(--q-text-3)', fontSize: '12px', margin: '0 0 20px', lineHeight: '1.8', fontWeight: '300' }}>Your Bitcoin is locked as collateral. Once confirmed on-chain, you can create UBTC against it.</p>
-              <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: '12px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px', border: '1px solid var(--q-border-subtle)' }}>
+              <div style={{ background: 'var(--q-surface-2)', borderRadius: '12px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px', border: '1px solid var(--q-border-subtle)' }}>
                 <p style={{ color: 'var(--q-electric)', fontSize: '11px', ...mono, margin: 0, flex: 1, wordBreak: 'break-all', lineHeight: '1.7' }}>{depositAddr}</p>
                 <CopyBtn text={depositAddr} id="dep-addr" />
               </div>
-              <p style={{ color: 'var(--q-text-3)', fontSize: '10px', ...mono, margin: 0, textAlign: 'center', letterSpacing: '0.08em' }}>Waiting for confirmation — auto-updates</p>
+              <button onClick={async () => {
+                const res = await fetch(`${API_URL}/deposit/scan`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ vault_id: vaultId }) })
+                const data = await res.json()
+                if (data.found) await loadAll()
+                else await loadAll()
+              }} style={{ width: '100%', background: 'var(--q-electric)', color: '#000', border: 'none', borderRadius: '12px', padding: '14px', fontSize: '14px', fontWeight: '800', cursor: 'pointer', fontFamily: 'var(--font-syne)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', letterSpacing: '0.04em' }}>
+                {Icons.refresh(16, 'currentColor')} Check for Payment
+              </button>
             </div>
           )}
 
@@ -833,11 +840,12 @@ function AccountContent() {
                 const res = await fetch(`${API_URL}/deposit/scan`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ vault_id: vaultId }) })
                 const data = await res.json()
                 if (data.found) await loadAll()
-              }} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', color: 'var(--q-text-3)', fontSize: '10px', ...mono, letterSpacing: '0.1em', transition: 'color 0.2s' }}
-                onMouseEnter={e => (e.currentTarget.style.color = 'var(--q-electric)')}
-                onMouseLeave={e => (e.currentTarget.style.color = 'var(--q-text-3)')}
+                else await loadAll()
+              }} style={{ background: 'var(--q-surface-2)', border: '1px solid var(--q-border)', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--q-text-2)', fontSize: '12px', fontWeight: '600', ...mono, padding: '7px 14px', transition: 'all 0.2s' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--q-electric)'; e.currentTarget.style.color = 'var(--q-electric)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--q-border)'; e.currentTarget.style.color = 'var(--q-text-2)' }}
               >
-                {Icons.refresh(12, 'currentColor')} Refresh
+                {Icons.refresh(13, 'currentColor')} Refresh
               </button>
             </div>
 
