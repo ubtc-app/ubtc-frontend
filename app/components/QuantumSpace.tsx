@@ -50,8 +50,8 @@ function QuantumField({ count }: { count: number }) {
   return (
     <points ref={ref}>
       <bufferGeometry>
-        <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
-        <bufferAttribute attach="attributes-color"    count={count} array={colors}    itemSize={3} />
+        <bufferAttribute args={[positions, 3]} attach="attributes-position" count={count} array={positions} itemSize={3} />
+        <bufferAttribute args={[colors, 3]}    attach="attributes-color"    count={count} array={colors}    itemSize={3} />
       </bufferGeometry>
       <pointsMaterial size={0.14} vertexColors transparent opacity={0.75} sizeAttenuation depthWrite={false} />
     </points>
