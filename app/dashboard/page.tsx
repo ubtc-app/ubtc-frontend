@@ -184,9 +184,8 @@ export default function Dashboard() {
           transition={{ duration: 0.5 }}
           style={{
             padding: isMobile ? '28px 20px 32px' : '40px 48px 36px',
-            borderBottom: '1px solid var(--q-border-subtle)',
-            background: 'rgba(0,5,20,0.5)',
-            backdropFilter: 'blur(40px)',
+            borderBottom: '1px solid rgba(0,212,255,0.08)',
+            background: 'transparent',
           }}
         >
           <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
