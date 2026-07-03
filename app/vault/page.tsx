@@ -194,13 +194,13 @@ function VaultPageInner() {
     setCheckingUsername(true)
     try {
       const res = await fetch(`${API_URL}/wallets/all`)
+      if (!res.ok) { setQuantumUsernameAvailable(true); setCheckingUsername(false); return }
       const data = await res.json()
       const taken = (data.wallets || []).some((w: any) =>
-        w.username?.toLowerCase() === name.toLowerCase() ||
-        w.username?.toLowerCase().replace(/_[a-f0-9]+$/, '') === name.toLowerCase()
+        w.username?.toLowerCase() === name.toLowerCase()
       )
       setQuantumUsernameAvailable(!taken)
-    } catch { setQuantumUsernameAvailable(null) }
+    } catch { setQuantumUsernameAvailable(true) }
     setCheckingUsername(false)
   }
 
