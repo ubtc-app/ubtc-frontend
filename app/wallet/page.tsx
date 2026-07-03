@@ -7,14 +7,7 @@ import { isInTelegram } from '../lib/telegram'
 
 
 function WalletContent() {
-  // Start in 'loading' if we already have an address — skip the landing screen
-  const getInitialView = () => {
-    if (typeof window === 'undefined') return 'landing' as const
-    const params = new URLSearchParams(window.location.search)
-    const addr = params.get('address') || localStorage.getItem('ubtc_wallet_address') || ''
-    return addr ? 'loading' as const : 'landing' as const
-  }
-  const [view, setView] = useState<'landing' | 'loading' | 'create' | 'lookup' | 'dashboard'>(getInitialView)
+  const [view, setView] = useState<'landing' | 'loading' | 'create' | 'lookup' | 'dashboard'>('landing')
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [walletName, setWalletName] = useState('')
