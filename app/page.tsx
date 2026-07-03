@@ -67,34 +67,17 @@ export default function LandingPage() {
     const pulse = new THREE.Mesh(pulseGeo, pulseMat)
     scene.add(pulse)
 
-    // ── UBTC texture canvas ────────────────────────────────────────────────
-    const texCanvas = document.createElement('canvas')
-    texCanvas.width = 512; texCanvas.height = 512
-    const ctx = texCanvas.getContext('2d')!
-    ctx.clearRect(0, 0, 512, 512)
-    // Outer ring
-    ctx.beginPath()
-    ctx.arc(256, 256, 240, 0, Math.PI * 2)
-    ctx.strokeStyle = 'rgba(0,160,255,0.35)'
-    ctx.lineWidth = 2
-    ctx.stroke()
-    // UBTC text
-    ctx.fillStyle = 'rgba(120,200,255,0.95)'
-    ctx.font = 'bold 96px monospace'
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.fillText('UBTC', 256, 256)
-    // Subtitle
-    ctx.fillStyle = 'rgba(80,150,220,0.6)'
-    ctx.font = '22px monospace'
-    ctx.fillText('QUANTUM SECURED', 256, 340)
-    const logoTex = new THREE.CanvasTexture(texCanvas)
-
-    // Floating logo plane (always faces camera)
-    const logoGeo = new THREE.PlaneGeometry(4.5, 4.5)
-    const logoMat = new THREE.MeshBasicMaterial({ map: logoTex, transparent: true, depthWrite: false })
+    // ── Logo image texture ────────────────────────────────────────────────
+    const logoTex = new THREE.TextureLoader().load('/wlb.png')
+    const logoGeo = new THREE.PlaneGeometry(3.2, 3.2)
+    const logoMat = new THREE.MeshBasicMaterial({
+      map: logoTex,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending, // dark bg becomes transparent, bright logo glows
+    })
     const logo = new THREE.Mesh(logoGeo, logoMat)
-    logo.position.z = 1.3
+    logo.position.z = 1.4
     scene.add(logo)
 
     // ── Quantum orbital rings ───────────────────────────────────────────────
@@ -215,10 +198,6 @@ export default function LandingPage() {
         camera.position.x *= 0.96
         camera.position.y *= 0.96
         camera.lookAt(0, 0, 0)
-        // Fade to white then route
-        if (camera.position.z < -2) {
-          router.push('/unlock')
-        }
       }
 
       renderer.render(scene, camera)
@@ -241,6 +220,8 @@ export default function LandingPage() {
     if (enteringRef.current) return
     enteringRef.current = true
     setEntering(true)
+    // White flash appears at 0.9s (CSS transition), navigate just after
+    setTimeout(() => router.push('/unlock'), 1400)
   }
 
   return (
