@@ -176,27 +176,36 @@ function WalletContent() {
 
   // ── LANDING ──
   if (view === 'landing') return (
-    <div style={{ minHeight: '100vh', background: 'var(--t-bg)', fontFamily: 'var(--font-display)', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
-      <div style={{ maxWidth: '400px', width: '100%', textAlign: 'center' as const }}>
-        <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'var(--t-accent-bg)', border: '2px solid hsl(205 85% 55% / 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-          <img src="/ubtcqwallet-logo.png" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
+    <div style={{ minHeight: '100vh', background: 'var(--q-bg)', fontFamily: 'var(--font-display)', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', padding: '40px 20px', position: 'relative', overflow: 'hidden' }}>
+      {/* Quantum ambient */}
+      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none' }}>
+        <div className="q-glow-node" style={{ top: '15%', left: '10%', width: 500, height: 500, background: 'rgba(0,212,255,0.04)' }} />
+        <div className="q-glow-node" style={{ bottom: '10%', right: '8%', width: 450, height: 450, background: 'rgba(124,58,255,0.05)' }} />
+        <div className="q-circuit-grid" style={{ position: 'absolute', inset: 0, opacity: 0.35 }} />
+      </div>
+      <div className="warp-in" style={{ maxWidth: '420px', width: '100%', textAlign: 'center' as const, position: 'relative', zIndex: 1 }}>
+        {/* Icon */}
+        <div style={{ width: '80px', height: '80px', borderRadius: '24px', background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 28px', boxShadow: '0 0 40px rgba(0,212,255,0.12), inset 0 1px 0 rgba(255,255,255,0.08)', position: 'relative' }}>
+          <div style={{ position: 'absolute', inset: -10, borderRadius: '50%', border: '1px solid rgba(0,212,255,0.12)', animation: 'vortex-cw 8s linear infinite' }} />
+          <img src="/ubtcqwallet-logo.png" style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
         </div>
-        <h1 style={{ color: 'var(--t-text)', fontSize: '28px', fontWeight: '700', margin: '0 0 8px' }}>UBTC Wallet</h1>
-        <p style={{ color: 'var(--t-faint)', fontSize: '14px', ...mono, margin: '0 0 32px', lineHeight: '1.7' }}>Send and receive UBTC, UUSDT and UUSDC instantly.</p>
+        <p style={{ color: 'var(--q-electric)', fontSize: '9px', fontFamily: 'var(--font-mono)', letterSpacing: '0.32em', textTransform: 'uppercase' as const, marginBottom: '14px', opacity: 0.7 }}>QAP · QUANTUM WALLET</p>
+        <h1 style={{ fontFamily: 'var(--font-syne)', fontSize: '32px', fontWeight: 800, letterSpacing: '0.03em', textTransform: 'uppercase' as const, margin: '0 0 12px', background: 'linear-gradient(135deg, var(--q-text) 0%, var(--q-electric) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>UBTC Wallet</h1>
+        <p style={{ color: 'var(--q-text-3)', fontSize: '13px', ...mono, margin: '0 0 36px', lineHeight: '1.8' }}>Send and receive UBTC, UUSDT and UUSDC instantly.</p>
         <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '10px' }}>
-          <button onClick={() => setView('create')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))', color: 'white', border: 'none', borderRadius: '14px', padding: '16px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)', boxShadow: '0 0 30px hsl(205 85% 55% / 0.3)' }}>
-            {Icons.plus(18, 'white')} Create New Wallet
+          <button onClick={() => setView('create')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'linear-gradient(135deg, var(--q-electric), var(--q-cyan))', color: '#000', border: 'none', borderRadius: '14px', padding: '16px', fontSize: '14px', fontWeight: '800', cursor: 'pointer', fontFamily: 'var(--font-syne)', letterSpacing: '0.05em', boxShadow: '0 0 30px rgba(0,212,255,0.25)' }}>
+            {Icons.plus(16, '#000')} CREATE NEW WALLET
           </button>
-          <button onClick={() => setView('lookup')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'var(--t-surface2)', border: '1px solid var(--t-border)', color: 'var(--t-muted)', borderRadius: '14px', padding: '16px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
-            {Icons.user(18, 'var(--t-muted)')} Find a User
+          <button onClick={() => setView('lookup')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'var(--q-surface)', border: '1px solid var(--q-border)', color: 'var(--q-text-2)', borderRadius: '14px', padding: '16px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)', backdropFilter: 'blur(20px)' }}>
+            {Icons.user(16, 'var(--q-text-2)')} Find a User
           </button>
           {walletAddress && (
-            <button onClick={() => loadWallet(walletAddress)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'var(--t-surface2)', border: '1px solid hsl(205 85% 55% / 0.35)', color: 'var(--t-accent)', borderRadius: '14px', padding: '16px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
-              {Icons.wallet(18, 'var(--t-accent)')} Open My Wallet
+            <button onClick={() => loadWallet(walletAddress)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'var(--q-electric-dim)', border: '1px solid rgba(0,212,255,0.3)', color: 'var(--q-electric)', borderRadius: '14px', padding: '16px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
+              {Icons.wallet(16, 'var(--q-electric)')} Open My Wallet
             </button>
           )}
-          <a href="/dashboard" style={{ color: 'var(--t-faint)', fontSize: '13px', ...mono, textDecoration: 'none', marginTop: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-            {Icons.back(14, 'var(--t-faint)')} Back to Accounts
+          <a href="/dashboard" style={{ color: 'var(--q-text-3)', fontSize: '12px', ...mono, textDecoration: 'none', marginTop: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', letterSpacing: '0.12em' }}>
+            {Icons.back(13, 'var(--q-text-3)')} Back to Accounts
           </a>
         </div>
       </div>
@@ -205,7 +214,7 @@ function WalletContent() {
 
   // ── CREATE ──
   if (view === 'create') return (
-    <div style={{ minHeight: '100vh', background: 'var(--t-bg)', fontFamily: 'var(--font-display)', padding: '40px 20px' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--q-bg)', fontFamily: 'var(--font-display)', padding: '40px 20px' }}>
       <div style={{ maxWidth: '480px', margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '32px' }}>
           <button onClick={() => setView('landing')} style={{ background: 'none', border: 'none', color: 'var(--t-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>{Icons.back(20, 'var(--t-muted)')}</button>
@@ -273,7 +282,7 @@ function WalletContent() {
 
   // ── LOOKUP ──
   if (view === 'lookup') return (
-    <div style={{ minHeight: '100vh', background: 'var(--t-bg)', fontFamily: 'var(--font-display)', padding: '40px 20px' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--q-bg)', fontFamily: 'var(--font-display)', padding: '40px 20px' }}>
       <div style={{ maxWidth: '480px', margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '32px' }}>
           <button onClick={() => { setView('landing'); setError(''); setLookupResult(null); setLookupUsername('') }} style={{ background: 'none', border: 'none', color: 'var(--t-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>{Icons.back(20, 'var(--t-muted)')}</button>
@@ -302,11 +311,11 @@ function WalletContent() {
 
   // ── DASHBOARD ──
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--t-bg)', fontFamily: 'var(--font-display)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--q-bg)', fontFamily: 'var(--font-display)' }}>
 
       {/* Proof download modal */}
       {proofModal.type && (
-        <div style={{ position: 'fixed', inset: 0, background: 'var(--t-bg)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'var(--q-bg)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
           <div style={{ background: 'var(--t-surface)', borderRadius: '24px', padding: '40px', maxWidth: '480px', width: '100%', border: `2px solid ${proofModal.type === 'success' ? 'hsl(142 76% 36% / 0.4)' : 'hsl(38 92% 50% / 0.4)'}` }}>
             {proofModal.type === 'warning' && (
               <>
@@ -399,20 +408,20 @@ function WalletContent() {
       )}
 
       {/* Header */}
-      <div style={{ background: 'var(--t-surface)', borderBottom: '1px solid var(--t-border-subtle)', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px' }}>
-        <a href="/dashboard" style={{ color: 'var(--t-faint)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', ...mono }}>
-          {Icons.back(16, 'var(--t-faint)')} Accounts
+      <div style={{ background: 'var(--q-surface)', borderBottom: '1px solid var(--q-border)', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', backdropFilter: 'blur(20px)' }}>
+        <a href="/dashboard" style={{ color: 'var(--q-text-3)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontFamily: 'var(--font-mono)', letterSpacing: '0.08em' }}>
+          {Icons.back(14, 'var(--q-text-3)')} ACCOUNTS
         </a>
-        <span style={{ color: 'var(--t-muted)', fontWeight: '700', fontSize: '15px' }}>UBTC Wallet</span>
-        <button onClick={() => loadWallet(walletData?.wallet_address || walletAddress)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--t-faint)' }}>
-          {Icons.refresh(18, 'var(--t-faint)')}
+        <span style={{ color: 'var(--q-text)', fontFamily: 'var(--font-syne)', fontWeight: 700, fontSize: '14px', letterSpacing: '0.1em', textTransform: 'uppercase' }}>UBTC Wallet</span>
+        <button onClick={() => loadWallet(walletData?.wallet_address || walletAddress)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--q-text-3)' }}>
+          {Icons.refresh(16, 'var(--q-text-3)')}
         </button>
       </div>
 
       {/* Balance hero */}
-      <div style={{ background: 'var(--t-bg)', padding: '40px 24px 32px', textAlign: 'center' as const, borderBottom: '1px solid var(--t-border-subtle)' }}>
-        <p style={{ color: 'var(--t-faint)', fontSize: '12px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 6px' }}>@{walletData?.username}</p>
-        <p style={{ color: 'var(--t-text)', fontSize: '44px', fontWeight: '700', ...mono, margin: '0 0 4px', lineHeight: '1' }}>
+      <div style={{ background: 'var(--q-bg)', padding: '40px 24px 32px', textAlign: 'center' as const, borderBottom: '1px solid var(--q-border)' }}>
+        <p style={{ color: 'var(--q-electric)', fontSize: '10px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' as const, letterSpacing: '0.25em', margin: '0 0 6px', opacity: 0.8 }}>@{walletData?.username}</p>
+        <p style={{ color: 'var(--q-text)', fontSize: '44px', fontWeight: '700', fontFamily: 'var(--font-mono)', margin: '0 0 4px', lineHeight: '1' }}>
           ${(balance + uusdtBalance + uusdcBalance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </p>
         <p style={{ color: 'var(--t-faint)', fontSize: '12px', ...mono, margin: '0 0 24px' }}>Total Balance</p>
@@ -554,7 +563,7 @@ function WalletContent() {
 
 export default function WalletPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'var(--t-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--t-faint)', fontFamily: 'var(--font-mono)' }}>Loading...</div>}>
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'var(--q-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--t-faint)', fontFamily: 'var(--font-mono)' }}>Loading...</div>}>
       <WalletContent />
     </Suspense>
   )

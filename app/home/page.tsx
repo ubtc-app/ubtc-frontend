@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useRef, useCallback, type ReactNode } from 'react'
+import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { Icons } from '../components/Icons'
 import { SiteLogo } from '../components/SiteLogo'
@@ -136,6 +136,9 @@ function HoloCard({ id, href, label, desc, accent, glow, border, bg, icon }: {
 
 export default function Home() {
   const router = useRouter()
+  const [accountHref, setAccountHref] = useState('/vault')
+  const [accountLabel, setAccountLabel] = useState('Open Account')
+  const [accountDesc, setAccountDesc] = useState('Current, Savings, Yield or Managed')
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -145,6 +148,17 @@ export default function Home() {
       if (has) sessionStorage.setItem('wlb_auth', '1')
       else router.replace('/unlock')
     })
+  }, [])
+
+  // Route "Open Account" to existing vault if one was already created
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const vaultId = localStorage.getItem('ubtc_active_vault_id')
+    if (vaultId) {
+      setAccountHref(`/account/${vaultId}`)
+      setAccountLabel('My Account')
+      setAccountDesc('View balances, deposit & mint UBTC')
+    }
   }, [])
 
   return (
@@ -256,9 +270,9 @@ export default function Home() {
             icon={c => Icons.accounts(26, c)}
           />
           <HoloCard
-            id="vault" href="/vault"
-            label="Open Account"
-            desc="Current, Savings, Yield or Managed"
+            id="vault" href={accountHref}
+            label={accountLabel}
+            desc={accountDesc}
             accent="var(--q-violet)" glow="rgba(124,58,255,0.2)"
             border="rgba(124,58,255,0.15)" bg="rgba(124,58,255,0.04)"
             icon={c => Icons.vault(26, c)}

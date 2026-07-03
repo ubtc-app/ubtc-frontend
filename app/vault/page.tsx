@@ -10,7 +10,7 @@ type Step = 'account' | 'custody' | 'confirm' | 'done'
 type AccountType = 'current' | 'savings' | 'yield' | 'custody_yield' | 'prime' | 'managed_yield'
 export default function VaultPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'var(--t-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: 'var(--t-faint)', fontSize: '14px', fontFamily: 'var(--font-mono)' }}>Loading...</p></div>}>
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'var(--q-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: 'var(--q-text-3)', fontSize: '14px', fontFamily: 'var(--font-mono)', letterSpacing: '0.15em' }}>INITIALISING...</p></div>}>
       <VaultPageInner />
     </Suspense>
   )
@@ -184,6 +184,7 @@ function VaultPageInner() {
         // Track mnemonic in dedicated state — avoids backend response overwriting it
         if (mnemonic) setNewWalletMnemonic(mnemonic)
         setResult({ ...data, wallet_address: wallet.address })
+        if (data.vault_id) localStorage.setItem('ubtc_active_vault_id', data.vault_id)
         setStep('done')
       } catch (e: any) { setError(e.message) }
       setLoading(false)
@@ -367,8 +368,16 @@ function VaultPageInner() {
   )
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--t-bg)', padding: '40px 24px 80px', fontFamily: 'var(--font-display)' }}>
-      <div style={{ maxWidth: step === 'done' ? '580px' : '1100px', margin: '0 auto' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--q-bg)', padding: '40px 24px 80px', fontFamily: 'var(--font-display)', position: 'relative', overflow: 'hidden' }}>
+
+      {/* Quantum ambient glows */}
+      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
+        <div className="q-glow-node" style={{ top: '-10%', left: '20%',  width: 700, height: 700, background: 'rgba(0,212,255,0.035)' }} />
+        <div className="q-glow-node" style={{ bottom: '-5%', right: '10%', width: 600, height: 600, background: 'rgba(124,58,255,0.04)' }} />
+        <div className="q-circuit-grid" style={{ position: 'absolute', inset: 0, opacity: 0.4 }} />
+      </div>
+
+      <div style={{ maxWidth: step === 'done' ? '580px' : '1100px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
 
         {/* ── DETAILS MODAL ── */}
         {showDetailsModal && (
@@ -412,11 +421,20 @@ function VaultPageInner() {
 
         {/* ── PRE-DONE HEADER ── */}
         {step !== 'done' && (
-          <div style={{ textAlign: 'center' as const, marginBottom: '48px' }}>
-            <h1 style={{ color: 'var(--t-text)', fontSize: '38px', fontWeight: '700', margin: '0 0 12px' }}>
-              {step === 'account' && 'Choose your account type'}
-              {step === 'custody' && 'Custody preference'}
-              {step === 'confirm' && 'Open your account'}
+          <div className="warp-in" style={{ textAlign: 'center' as const, marginBottom: '48px' }}>
+            <p style={{ color: 'var(--q-electric)', fontSize: '9px', fontFamily: 'var(--font-mono)', letterSpacing: '0.32em', textTransform: 'uppercase' as const, marginBottom: '16px', opacity: 0.7 }}>
+              QAP · QUANTUM ACCOUNT PROTOCOL
+            </p>
+            <h1 style={{
+              fontFamily: 'var(--font-syne)',
+              fontSize: 'clamp(26px,4vw,42px)', fontWeight: 800,
+              letterSpacing: '0.03em', textTransform: 'uppercase' as const, margin: '0 0 12px',
+              background: 'linear-gradient(135deg, var(--q-text) 0%, var(--q-electric) 100%)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+            }}>
+              {step === 'account' && 'Choose Account Type'}
+              {step === 'custody' && 'Custody Preference'}
+              {step === 'confirm' && 'Open Your Account'}
             </h1>
           </div>
         )}
