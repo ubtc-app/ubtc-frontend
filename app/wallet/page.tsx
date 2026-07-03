@@ -44,9 +44,11 @@ function WalletContent() {
     if (urlAddress) {
       setWalletAddress(urlAddress)
       localStorage.setItem('ubtc_wallet_address', urlAddress)
+      setView('dashboard')   // skip landing immediately — data fills in async
       loadWallet(urlAddress)
     } else if (addr) {
       setWalletAddress(addr)
+      setView('dashboard')   // skip landing immediately — data fills in async
       loadWallet(addr)
     }
     loadVaults()
