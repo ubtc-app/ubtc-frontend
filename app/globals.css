@@ -803,6 +803,43 @@ input[type=number] { -moz-appearance: textfield; }
   pointer-events: none;
 }
 
+/* ─── Quantum page transition ────────────────────────────────────────────── */
+@keyframes qt-page-in {
+  from { opacity: 0; filter: brightness(1.6) blur(6px); transform: scale(1.018); }
+  to   { opacity: 1; filter: brightness(1)   blur(0px); transform: scale(1); }
+}
+
+@keyframes qt-electric-border {
+  0%   { background-position: 0%   50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0%   50%; }
+}
+
+/* Page root — plays once per navigation */
+.qt-page-root > * {
+  animation: qt-page-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Electric border shimmer for quantum buttons */
+.q-btn-electric {
+  position: relative;
+  isolation: isolate;
+}
+.q-btn-electric::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #00d4ff, #7c3aff, #00ffe0, #00d4ff);
+  background-size: 300% 100%;
+  animation: qt-electric-border 3s linear infinite;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.q-btn-electric:hover::before { opacity: 1; }
+.q-btn-electric:active::before { opacity: 0.6; }
+
 /* ─── 3D warp entry animation ────────────────────────────────────────────── */
 .warp-in {
   animation: warp-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;

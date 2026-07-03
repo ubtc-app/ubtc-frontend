@@ -347,10 +347,15 @@ export default function LandingPage() {
     }
   }, [])
 
-  const handleEnter = () => {
+  const handleEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (enteringRef.current) return
     enteringRef.current = true
     setEntering(true)
+    const rect = e.currentTarget.getBoundingClientRect()
+    const ox = rect.left + rect.width / 2
+    const oy = rect.top  + rect.height / 2
+    // Fire local particle burst via custom event (QuantumTransition listens)
+    window.dispatchEvent(new CustomEvent('qt-burst', { detail: { x: ox, y: oy } }))
     setTimeout(() => router.push('/unlock'), 1600)
   }
 

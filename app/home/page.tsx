@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
+import { useQuantumNav } from '../components/QuantumTransition'
 import { Icons } from '../components/Icons'
 import { SiteLogo } from '../components/SiteLogo'
 import { hasStoredWallet } from '../lib/wallet/storage'
@@ -30,6 +31,7 @@ function HoloCard({ id, href, label, desc, accent, glow, border, bg, icon }: {
   icon: (c: string) => ReactNode
 }) {
   const router  = useRouter()
+  const { navigate } = useQuantumNav()
   const ref     = useRef<HTMLButtonElement>(null)
   const rafRef  = useRef<number | null>(null)
 
@@ -54,7 +56,7 @@ function HoloCard({ id, href, label, desc, accent, glow, border, bg, icon }: {
   return (
     <button
       ref={ref}
-      onClick={() => router.push(href)}
+      onClick={e => { const r = e.currentTarget.getBoundingClientRect(); navigate(href, r.left + r.width/2, r.top + r.height/2) }}
       onMouseMove={onMove}
       onMouseLeave={onLeave}
       className="q-holo"

@@ -5,6 +5,7 @@ import { useIsMobile } from '../lib/useIsMobile'
 import { WLBLogo } from './SiteLogo'
 import { listWallets, setActiveWallet, getActiveAddress } from '../lib/wallet/storage'
 import type { StoredWallet } from '../lib/wallet/types'
+import { useQuantumNav } from './QuantumTransition'
 
 
 export default function Header() {
@@ -16,6 +17,7 @@ export default function Header() {
   const isMobile = useIsMobile()
   const dropdownRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
+  const { navigate } = useQuantumNav()
 
   const loadWalletState = () => {
     const isAuthed = !!sessionStorage.getItem('wlb_auth') || !!localStorage.getItem('ubtc_wallet_address')
@@ -71,21 +73,21 @@ export default function Header() {
       gap: '12px',
     }}>
       {/* Logo */}
-      <a href="/dashboard" style={{ textDecoration: 'none', flexShrink: 0 }}>
+      <a href="/dashboard" onClick={e => { e.preventDefault(); navigate('/dashboard', 32, 32) }} style={{ textDecoration: 'none', flexShrink: 0 }}>
         <WLBLogo height={isMobile ? 28 : 32} />
       </a>
 
       {/* Nav links — hidden on mobile */}
       {authed && !isMobile && (
         <div style={{ display: 'flex', gap: '4px', flex: 1, justifyContent: 'center' }}>
-          <a href="/dashboard" className={`nav-link${pathname === '/dashboard' ? ' active' : ''}`}>
+          <a href="/dashboard" onClick={e => { e.preventDefault(); navigate('/dashboard') }} className={`nav-link${pathname === '/dashboard' ? ' active' : ''}`}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
               <rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
             </svg>
             Accounts
           </a>
-          <a href="/wallet" className={`nav-link${pathname === '/wallet' ? ' active' : ''}`}>
+          <a href="/wallet" onClick={e => { e.preventDefault(); navigate('/wallet') }} className={`nav-link${pathname === '/wallet' ? ' active' : ''}`}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-1"/>
               <path d="M16 12h6v4h-6a2 2 0 0 1 0-4z"/>
@@ -185,7 +187,7 @@ export default function Header() {
                     fontSize: '13px', fontWeight: '600', textDecoration: 'none',
                     borderRadius: '10px', fontFamily: 'var(--font-display)',
                   }}
-                  onClick={() => setDropdownOpen(false)}
+                  onClick={e => { e.preventDefault(); setDropdownOpen(false); navigate('/vault') }}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
