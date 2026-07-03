@@ -419,104 +419,116 @@ function WalletContent() {
       )}
 
       <style>{`
-        @keyframes w-pulse { 0%,100%{opacity:.5;transform:scale(1)} 50%{opacity:1;transform:scale(1.04)} }
-        @keyframes w-scan { 0%{transform:translateY(-100%)} 100%{transform:translateY(100vh)} }
-        @keyframes w-fadein { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-        .w-card { animation: w-fadein .4s ease both }
-        .w-action-btn:hover { transform: translateY(-2px); filter: brightness(1.15) }
-        .w-action-btn { transition: transform .18s ease, filter .18s ease }
-        .w-asset-row:hover { border-color: rgba(0,212,255,0.25) !important; background: rgba(0,212,255,0.04) !important }
-        .w-asset-row { transition: border-color .2s, background .2s }
-        .w-tx-row:hover { background: rgba(0,212,255,0.04) !important }
-        .w-tx-row { transition: background .2s }
+        @keyframes w-pulse { 0%,100%{opacity:.4;transform:scale(1)} 50%{opacity:1;transform:scale(1.08)} }
+        @keyframes w-scan  { 0%{transform:translateY(-100%)} 100%{transform:translateY(100vh)} }
+        @keyframes w-in    { from{opacity:0;transform:translateY(16px) scale(.98)} to{opacity:1;transform:translateY(0) scale(1)} }
+        @keyframes w-shimmer { 0%{left:-100%} 100%{left:200%} }
+        .w-in  { animation: w-in .45s cubic-bezier(.22,1,.36,1) both }
+        .w-card-3d {
+          transition: transform .12s ease, box-shadow .2s ease;
+          transform-style: preserve-3d;
+          will-change: transform;
+        }
+        .w-card-3d:hover { box-shadow: 0 24px 60px rgba(0,0,0,0.6), 0 0 40px rgba(0,212,255,0.12) !important }
+        .w-action-btn {
+          transition: transform .15s ease, box-shadow .15s ease;
+          transform-style: preserve-3d;
+          will-change: transform;
+          cursor: pointer;
+        }
+        .w-action-btn:hover { transform: translateY(-4px) scale(1.04); box-shadow: 0 16px 40px rgba(0,0,0,0.5) !important }
+        .w-tx-row { transition: background .15s }
+        .w-tx-row:hover { background: rgba(0,212,255,0.05) !important }
+        .w-shimmer { position:relative; overflow:hidden }
+        .w-shimmer::after { content:''; position:absolute; top:0; left:-100%; width:60%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.04),transparent); animation: w-shimmer 3s ease infinite }
       `}</style>
 
-      {/* Scanline effect */}
+      {/* Scanline */}
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 2, overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg,transparent,rgba(0,212,255,0.06),transparent)', animation: 'w-scan 8s linear infinite' }} />
+        <div style={{ position: 'absolute', left: 0, right: 0, height: 1, background: 'linear-gradient(90deg,transparent,rgba(0,212,255,0.08),transparent)', animation: 'w-scan 10s linear infinite' }} />
       </div>
 
-      {/* Back nav — sits below global header */}
+      {/* Back nav */}
       <div style={{ position: 'relative', zIndex: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 24px 0' }}>
-        <a href="/dashboard" style={{ color: 'var(--q-text-3)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-          {Icons.back(12, 'var(--q-text-3)')} Accounts
+        <a href="/dashboard" style={{ color: 'rgba(120,160,220,0.5)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          {Icons.back(12, 'rgba(120,160,220,0.5)')} Accounts
         </a>
-        <button onClick={() => loadWallet(walletData?.wallet_address || walletAddress)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--q-text-3)', opacity: 0.6, padding: 4 }}>
-          {Icons.refresh(15, 'var(--q-text-3)')}
+        <button onClick={() => loadWallet(walletData?.wallet_address || walletAddress)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(120,160,220,0.4)', padding: 4 }}>
+          {Icons.refresh(15, 'rgba(120,160,220,0.4)')}
         </button>
       </div>
 
       {/* ── BALANCE HERO ── */}
-      <div className="w-card" style={{ textAlign: 'center', padding: '32px 24px 28px', position: 'relative', zIndex: 3 }}>
-        {/* Glow orb behind balance */}
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 320, height: 320, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
-
-        <p style={{ color: 'var(--q-electric)', fontSize: '10px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.3em', margin: '0 0 4px', opacity: 0.7 }}>
+      <div className="w-in" style={{ textAlign: 'center', padding: '36px 24px 32px', position: 'relative', zIndex: 3 }}>
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-60%)', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,212,255,0.08) 0%, transparent 65%)', pointerEvents: 'none' }} />
+        <p style={{ color: '#00D4FF', fontSize: 10, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.35em', margin: '0 0 12px', opacity: 0.7 }}>
           {walletData?.username || 'Wallet'}
         </p>
-
-        {/* Big balance */}
-        <div style={{ position: 'relative', display: 'inline-block', margin: '8px 0 4px' }}>
-          <p style={{ color: 'var(--q-text)', fontSize: 'clamp(42px,8vw,64px)', fontWeight: 800, fontFamily: 'var(--font-mono)', margin: 0, lineHeight: 1, letterSpacing: '-0.02em', textShadow: '0 0 40px rgba(0,212,255,0.25)' }}>
-            ${(balance + uusdtBalance + uusdcBalance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </p>
-          {/* Underline glow */}
-          <div style={{ position: 'absolute', bottom: -6, left: '10%', right: '10%', height: 1, background: 'linear-gradient(90deg,transparent,rgba(0,212,255,0.4),transparent)' }} />
-        </div>
-        <p style={{ color: 'var(--q-text-3)', fontSize: '11px', fontFamily: 'var(--font-mono)', margin: '10px 0 0', letterSpacing: '0.2em', textTransform: 'uppercase' }}>Total Portfolio</p>
-
-        {copied === 'recv' && (
-          <p style={{ color: 'var(--q-cyan)', fontSize: '11px', fontFamily: 'var(--font-mono)', margin: '8px 0 0', letterSpacing: '0.1em' }}>Address copied to clipboard</p>
-        )}
+        <p style={{ color: '#fff', fontSize: 'clamp(48px,9vw,72px)', fontWeight: 800, fontFamily: 'var(--font-mono)', margin: '0 0 6px', lineHeight: 1, letterSpacing: '-0.03em', textShadow: '0 0 60px rgba(0,212,255,0.3), 0 2px 0 rgba(0,0,0,0.5)' }}>
+          ${(balance + uusdtBalance + uusdcBalance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </p>
+        <div style={{ width: 80, height: 1, background: 'linear-gradient(90deg,transparent,#00D4FF,transparent)', margin: '10px auto 10px' }} />
+        <p style={{ color: 'rgba(120,160,220,0.5)', fontSize: 11, fontFamily: 'var(--font-mono)', margin: 0, letterSpacing: '0.2em', textTransform: 'uppercase' }}>Total Portfolio Value</p>
+        {copied === 'recv' && <p style={{ color: '#00FFE0', fontSize: 11, fontFamily: 'var(--font-mono)', margin: '10px 0 0', letterSpacing: '0.1em' }}>Address copied ✓</p>}
       </div>
 
       {/* ── ACTION BUTTONS ── */}
-      <div className="w-card" style={{ display: 'flex', gap: 10, padding: '0 20px 28px', maxWidth: 480, margin: '0 auto', animationDelay: '.05s' }}>
-        {[
-          { label: 'Send', icon: Icons.send(20, '#00D4FF'), href: `/transfer?from_wallet=${walletData?.wallet_address}&ubtc=${balance}&uusdt=${uusdtBalance}&uusdc=${uusdcBalance}`, color: '#00D4FF', glow: 'rgba(0,212,255,0.2)' },
-          { label: 'Receive', icon: Icons.receive(20, '#00FFE0'), action: () => copy(walletData?.wallet_address || '', 'recv'), color: '#00FFE0', glow: 'rgba(0,255,224,0.2)' },
-          { label: 'Redeem', icon: Icons.redeem(20, '#F59E0B'), href: '/redeem/proof', color: '#F59E0B', glow: 'rgba(245,158,11,0.25)' },
-          { label: 'Tokens', icon: Icons.settings(20, '#7C3AFF'), action: () => setShowManageTokens(true), color: '#7C3AFF', glow: 'rgba(124,58,255,0.2)' },
-        ].map(btn => {
+      <div className="w-in" style={{ display: 'flex', gap: 10, padding: '0 16px 28px', maxWidth: 480, margin: '0 auto', animationDelay: '.06s' }}>
+        {([
+          { label: 'Send',    icon: Icons.send(22, '#00D4FF'),    href: `/transfer?from_wallet=${walletData?.wallet_address}&ubtc=${balance}&uusdt=${uusdtBalance}&uusdc=${uusdcBalance}`, color: '#00D4FF', bg: 'linear-gradient(145deg,#001a2e,#002844)', glow: 'rgba(0,212,255,0.35)' },
+          { label: 'Receive', icon: Icons.receive(22, '#00FFE0'),  action: () => copy(walletData?.wallet_address || '', 'recv'),                                                          color: '#00FFE0', bg: 'linear-gradient(145deg,#001a20,#002820)', glow: 'rgba(0,255,224,0.3)'  },
+          { label: 'Redeem',  icon: Icons.redeem(22, '#F59E0B'),   href: '/redeem/proof',                                                                                                color: '#F59E0B', bg: 'linear-gradient(145deg,#1a1000,#2a1a00)', glow: 'rgba(245,158,11,0.4)'  },
+          { label: 'Tokens',  icon: Icons.settings(22, '#A78BFA'), action: () => setShowManageTokens(true),                                                                              color: '#A78BFA', bg: 'linear-gradient(145deg,#0e0028,#160040)', glow: 'rgba(167,139,250,0.3)' },
+        ] as any[]).map((btn: any) => {
           const inner = (
-            <div className="w-action-btn" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '16px 6px', borderRadius: 18, background: 'rgba(2,8,28,0.6)', border: `1px solid rgba(255,255,255,0.07)`, backdropFilter: 'blur(20px)', boxShadow: `0 0 20px ${btn.glow}, inset 0 1px 0 rgba(255,255,255,0.06)`, cursor: 'pointer' }}>
-              <div style={{ width: 44, height: 44, borderRadius: 14, background: `${btn.color}14`, border: `1px solid ${btn.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 16px ${btn.glow}` }}>
+            <div className="w-action-btn" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '18px 8px 14px', borderRadius: 20, background: btn.bg, border: `1px solid ${btn.color}30`, boxShadow: `0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 ${btn.color}20, 0 0 0 0 ${btn.glow}` }}>
+              <div style={{ width: 48, height: 48, borderRadius: 15, background: `${btn.color}18`, border: `1px solid ${btn.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 20px ${btn.glow}, inset 0 1px 0 ${btn.color}30` }}>
                 {btn.icon}
               </div>
-              <span style={{ color: 'var(--q-text-2)', fontSize: '11px', fontFamily: 'var(--font-mono)', fontWeight: 600, letterSpacing: '0.08em' }}>{btn.label}</span>
+              <span style={{ color: '#e0eeff', fontSize: 12, fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.06em' }}>{btn.label}</span>
             </div>
           )
           return btn.href
             ? <a key={btn.label} href={btn.href} style={{ flex: 1, textDecoration: 'none' }}>{inner}</a>
-            : <button key={btn.label} onClick={(btn as any).action} style={{ flex: 1, background: 'none', border: 'none', padding: 0, fontFamily: 'var(--font-display)' }}>{inner}</button>
+            : <button key={btn.label} onClick={btn.action} style={{ flex: 1, background: 'none', border: 'none', padding: 0 }}>{inner}</button>
         })}
       </div>
 
       {/* ── CONTENT ── */}
-      <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 16px 40px', position: 'relative', zIndex: 3 }}>
+      <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 16px 48px', position: 'relative', zIndex: 3 }}>
 
-        {/* ASSETS */}
-        <p className="w-card" style={{ color: 'var(--q-electric)', fontSize: '9px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.3em', margin: '0 0 10px', opacity: 0.6, animationDelay: '.1s' }}>Assets</p>
-        <div className="w-card" style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(0,212,255,0.1)', backdropFilter: 'blur(24px)', background: 'rgba(2,8,28,0.55)', marginBottom: 16, animationDelay: '.12s' }}>
-          {[
-            { show: true,         name: 'UBTC',  sub: 'Bitcoin-backed',       color: '#F59E0B', bal: balance,       unit: 'UBTC'  },
-            { show: tokens.uusdt, name: 'UUSDT', sub: '1:1 USDT · BTC-native', color: '#22C55E', bal: uusdtBalance, unit: 'UUSDT' },
-            { show: tokens.uusdc, name: 'UUSDC', sub: '1:1 USDC · BTC-native', color: '#00D4FF', bal: uusdcBalance, unit: 'UUSDC' },
-          ].filter(t => t.show).map((t, i, arr) => (
-            <div key={t.name} className="w-asset-row" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px', borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-              {/* Token dot */}
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: `${t.color}14`, border: `1px solid ${t.color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: t.color, boxShadow: `0 0 10px ${t.color}` }} />
+        {/* SECTION LABEL */}
+        <p className="w-in" style={{ color: '#00D4FF', fontSize: 9, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.35em', margin: '0 0 10px', opacity: 0.5, animationDelay: '.1s' }}>Assets</p>
+
+        {/* ASSET CARDS — individual 3D tilt cards */}
+        <div className="w-in" style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16, animationDelay: '.12s' }}>
+          {([
+            { show: true,         name: 'UBTC',  sub: 'Bitcoin-backed · Quantum-secured', color: '#F59E0B', bg: 'linear-gradient(135deg,#1a1000 0%,#0d0800 100%)', bal: balance,       unit: 'UBTC'  },
+            { show: tokens.uusdt, name: 'UUSDT', sub: '1:1 USDT · Bitcoin-native',        color: '#22C55E', bg: 'linear-gradient(135deg,#001a08 0%,#000d04 100%)', bal: uusdtBalance, unit: 'UUSDT' },
+            { show: tokens.uusdc, name: 'UUSDC', sub: '1:1 USDC · Bitcoin-native',        color: '#00D4FF', bg: 'linear-gradient(135deg,#00111a 0%,#000810 100%)', bal: uusdcBalance, unit: 'UUSDC' },
+          ] as any[]).filter((t: any) => t.show).map((t: any) => (
+            <div key={t.name} className="w-card-3d w-shimmer"
+              style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 20px', borderRadius: 18, background: t.bg, border: `1px solid ${t.color}25`, boxShadow: `0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 ${t.color}15` }}
+              onMouseMove={e => {
+                const r = e.currentTarget.getBoundingClientRect()
+                const x = ((e.clientX - r.left) / r.width  - 0.5) * 16
+                const y = ((e.clientY - r.top)  / r.height - 0.5) * -16
+                e.currentTarget.style.transform = `perspective(700px) rotateX(${y}deg) rotateY(${x}deg) translateZ(8px)`
+              }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'perspective(700px) rotateX(0deg) rotateY(0deg) translateZ(0px)'; e.currentTarget.style.transition = 'transform .5s cubic-bezier(.23,1,.32,1), box-shadow .2s' }}
+            >
+              <div style={{ width: 46, height: 46, borderRadius: 14, background: `${t.color}18`, border: `1px solid ${t.color}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `0 0 20px ${t.color}30, inset 0 1px 0 ${t.color}25` }}>
+                <div style={{ width: 14, height: 14, borderRadius: '50%', background: `radial-gradient(circle at 35% 35%, #fff, ${t.color})`, boxShadow: `0 0 12px ${t.color}` }} />
               </div>
               <div style={{ flex: 1 }}>
-                <p style={{ color: 'var(--q-text)', fontWeight: 700, fontSize: 14, margin: '0 0 2px', fontFamily: 'var(--font-syne)' }}>{t.name}</p>
-                <p style={{ color: 'var(--q-text-3)', fontSize: 11, fontFamily: 'var(--font-mono)', margin: 0 }}>{t.sub}</p>
+                <p style={{ color: '#fff', fontWeight: 800, fontSize: 16, margin: '0 0 3px', fontFamily: 'var(--font-syne)', letterSpacing: '0.02em' }}>{t.name}</p>
+                <p style={{ color: 'rgba(160,200,240,0.45)', fontSize: 11, fontFamily: 'var(--font-mono)', margin: 0 }}>{t.sub}</p>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <p style={{ color: t.color, fontWeight: 700, fontSize: 18, fontFamily: 'var(--font-mono)', margin: '0 0 1px', textShadow: `0 0 12px ${t.color}60` }}>
+                <p style={{ color: t.color, fontWeight: 800, fontSize: 20, fontFamily: 'var(--font-mono)', margin: '0 0 2px', textShadow: `0 0 16px ${t.color}80` }}>
                   ${t.bal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
-                <p style={{ color: 'var(--q-text-3)', fontSize: 10, fontFamily: 'var(--font-mono)', margin: 0 }}>{t.unit}</p>
+                <p style={{ color: `${t.color}80`, fontSize: 11, fontFamily: 'var(--font-mono)', margin: 0, fontWeight: 600 }}>{t.unit}</p>
               </div>
             </div>
           ))}
@@ -524,10 +536,13 @@ function WalletContent() {
 
         {/* WALLET ADDRESS */}
         {walletData && (
-          <div className="w-card" style={{ borderRadius: 16, padding: '14px 18px', background: 'rgba(2,8,28,0.55)', border: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(20px)', marginBottom: 16, animationDelay: '.15s' }}>
-            <p style={{ color: 'var(--q-text-3)', fontSize: '9px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.25em', margin: '0 0 8px' }}>Wallet Address</p>
+          <div className="w-in w-card-3d" style={{ borderRadius: 16, padding: '14px 18px', background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(0,212,255,0.08)', marginBottom: 16, animationDelay: '.16s' }}
+            onMouseMove={e => { const r = e.currentTarget.getBoundingClientRect(); const x = ((e.clientX-r.left)/r.width-.5)*10; const y = ((e.clientY-r.top)/r.height-.5)*-10; e.currentTarget.style.transform = `perspective(600px) rotateX(${y}deg) rotateY(${x}deg)` }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'perspective(600px) rotateX(0deg) rotateY(0deg)'; e.currentTarget.style.transition = 'transform .4s ease' }}
+          >
+            <p style={{ color: 'rgba(0,212,255,0.4)', fontSize: 9, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.3em', margin: '0 0 8px' }}>Wallet Address</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <p style={{ color: 'var(--q-electric)', fontSize: 11, fontFamily: 'var(--font-mono)', margin: 0, flex: 1, wordBreak: 'break-all', opacity: 0.8 }}>{walletData.wallet_address}</p>
+              <p style={{ color: '#00D4FF', fontSize: 11, fontFamily: 'var(--font-mono)', margin: 0, flex: 1, wordBreak: 'break-all', opacity: 0.75 }}>{walletData.wallet_address}</p>
               <CopyBtn text={walletData.wallet_address} id="wal-addr" />
             </div>
           </div>
@@ -535,39 +550,40 @@ function WalletContent() {
 
         {/* PENDING PROOFS */}
         {pendingProofs.length > 0 && (
-          <div className="w-card" style={{ borderRadius: 20, padding: 20, background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.35)', backdropFilter: 'blur(20px)', marginBottom: 16, boxShadow: '0 0 30px rgba(245,158,11,0.1)', animationDelay: '.18s' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#F59E0B', boxShadow: '0 0 8px #F59E0B', animation: 'w-pulse 2s ease infinite' }} />
+          <div className="w-in w-card-3d" style={{ borderRadius: 20, padding: 20, background: 'linear-gradient(135deg,#1a0e00,#0d0700)', border: '1px solid rgba(245,158,11,0.4)', boxShadow: '0 8px 40px rgba(0,0,0,0.5), 0 0 30px rgba(245,158,11,0.12)', marginBottom: 16, animationDelay: '.19s' }}
+            onMouseMove={e => { const r = e.currentTarget.getBoundingClientRect(); const x = ((e.clientX-r.left)/r.width-.5)*12; const y = ((e.clientY-r.top)/r.height-.5)*-12; e.currentTarget.style.transform = `perspective(700px) rotateX(${y}deg) rotateY(${x}deg)` }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'perspective(700px) rotateX(0deg) rotateY(0deg)'; e.currentTarget.style.transition = 'transform .5s ease' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#F59E0B', boxShadow: '0 0 10px #F59E0B', animation: 'w-pulse 2s ease infinite' }} />
               <p style={{ color: '#F59E0B', fontSize: 11, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.2em', margin: 0, fontWeight: 700 }}>
                 {pendingProofs.length} Proof File{pendingProofs.length > 1 ? 's' : ''} — Action Required
               </p>
             </div>
-            <p style={{ color: 'var(--q-text-3)', fontSize: 11, fontFamily: 'var(--font-mono)', margin: '0 0 14px', lineHeight: 1.7 }}>
+            <p style={{ color: 'rgba(200,160,100,0.6)', fontSize: 11, fontFamily: 'var(--font-mono)', margin: '0 0 14px', lineHeight: 1.7 }}>
               You have received UBTC. Redeem to Bitcoin or download your proof file.
             </p>
             {pendingProofs.map((proof: any) => {
               const isDownloaded = !!proof.downloaded
               return (
-                <div key={proof.proof_id} style={{ background: 'rgba(2,8,28,0.6)', borderRadius: 12, padding: '12px 14px', marginBottom: 8, border: `1px solid ${isDownloaded ? 'rgba(255,255,255,0.06)' : 'rgba(0,212,255,0.2)'}` }}>
+                <div key={proof.proof_id} style={{ background: 'rgba(0,0,0,0.4)', borderRadius: 12, padding: '12px 14px', marginBottom: 8, border: `1px solid ${isDownloaded ? 'rgba(255,255,255,0.06)' : 'rgba(0,212,255,0.2)'}` }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                        <p style={{ color: 'var(--q-text)', fontSize: 14, fontFamily: 'var(--font-mono)', margin: 0, fontWeight: 700 }}>{proof.proof_data?.ownership?.ubtc_amount || '?'} UBTC</p>
-                        <span style={{ background: isDownloaded ? 'rgba(255,255,255,0.06)' : 'rgba(0,212,255,0.12)', color: isDownloaded ? 'var(--q-text-3)' : 'var(--q-electric)', fontSize: 9, fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', padding: '2px 7px', borderRadius: 999, textTransform: 'uppercase' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                        <p style={{ color: '#fff', fontSize: 15, fontFamily: 'var(--font-mono)', margin: 0, fontWeight: 700 }}>{proof.proof_data?.ownership?.ubtc_amount || '?'} UBTC</p>
+                        <span style={{ background: isDownloaded ? 'rgba(255,255,255,0.06)' : 'rgba(0,212,255,0.15)', color: isDownloaded ? 'rgba(160,180,220,0.4)' : '#00D4FF', fontSize: 9, fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', padding: '2px 8px', borderRadius: 999, textTransform: 'uppercase' }}>
                           {isDownloaded ? 'Saved' : 'New'}
                         </span>
                       </div>
-                      <p style={{ color: 'var(--q-text-3)', fontSize: 10, fontFamily: 'var(--font-mono)', margin: 0 }}>
-                        {new Date(proof.created_at).toLocaleString()}
-                      </p>
+                      <p style={{ color: 'rgba(160,180,220,0.4)', fontSize: 10, fontFamily: 'var(--font-mono)', margin: 0 }}>{new Date(proof.created_at).toLocaleString()}</p>
                     </div>
                     <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                       {!isInTelegram() && (
-                        <button onClick={() => downloadProof(proof)} style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--q-text-3)', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600, padding: '8px 10px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        <button onClick={() => downloadProof(proof)} style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(160,190,240,0.6)', fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600, padding: '8px 10px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, cursor: 'pointer' }}>
                           {isDownloaded ? '↻' : '↓'}
                         </button>
                       )}
-                      <button onClick={() => window.location.href = `/redeem/proof?proof_id=${proof.proof_id}&vault_id=${proof.sender_vault_id}&amount=${proof.proof_data?.ownership?.ubtc_amount}`} style={{ background: 'linear-gradient(135deg,#22C55E,#16A34A)', color: '#000', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, padding: '8px 12px', border: 'none', borderRadius: 8, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      <button onClick={() => window.location.href = `/redeem/proof?proof_id=${proof.proof_id}&vault_id=${proof.sender_vault_id}&amount=${proof.proof_data?.ownership?.ubtc_amount}`} style={{ background: 'linear-gradient(135deg,#16a34a,#15803d)', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, padding: '8px 14px', border: 'none', borderRadius: 8, cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 0 16px rgba(34,197,94,0.3)' }}>
                         ⚡ Redeem
                       </button>
                     </div>
@@ -579,36 +595,40 @@ function WalletContent() {
         )}
 
         {/* TRANSACTIONS */}
-        <p className="w-card" style={{ color: 'var(--q-electric)', fontSize: '9px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.3em', margin: '0 0 10px', opacity: 0.6, animationDelay: '.2s' }}>Transactions</p>
-        <div className="w-card" style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(24px)', background: 'rgba(2,8,28,0.55)', marginBottom: 20, animationDelay: '.22s' }}>
+        <p className="w-in" style={{ color: '#00D4FF', fontSize: 9, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.35em', margin: '0 0 10px', opacity: 0.5, animationDelay: '.21s' }}>Transactions</p>
+        <div className="w-in w-card-3d w-shimmer" style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', background: 'linear-gradient(145deg,#050f20,#020810)', boxShadow: '0 12px 40px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)', marginBottom: 20, animationDelay: '.23s' }}
+          onMouseMove={e => { const r = e.currentTarget.getBoundingClientRect(); const x = ((e.clientX-r.left)/r.width-.5)*8; const y = ((e.clientY-r.top)/r.height-.5)*-8; e.currentTarget.style.transform = `perspective(800px) rotateX(${y}deg) rotateY(${x}deg)` }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'perspective(800px) rotateX(0) rotateY(0)'; e.currentTarget.style.transition = 'transform .5s ease' }}
+        >
           {walletTxs.length === 0 ? (
-            <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-              <p style={{ color: 'var(--q-text-3)', fontSize: 12, fontFamily: 'var(--font-mono)', margin: 0, letterSpacing: '0.1em' }}>No transactions yet</p>
+            <div style={{ padding: '44px 20px', textAlign: 'center' }}>
+              <p style={{ color: 'rgba(120,160,220,0.3)', fontSize: 12, fontFamily: 'var(--font-mono)', margin: 0, letterSpacing: '0.15em' }}>No transactions yet</p>
             </div>
           ) : walletTxs.map((tx: any, i: number) => {
             const isIn = tx.is_incoming
             const color = isIn ? '#22C55E' : '#EF4444'
             return (
-              <div key={tx.id} className="w-tx-row" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', borderBottom: i < walletTxs.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-                <div style={{ width: 38, height: 38, borderRadius: 12, background: `${color}14`, border: `1px solid ${color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  {isIn ? Icons.receive(16, color) : Icons.send(16, color)}
+              <div key={tx.id} className="w-tx-row" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px', borderBottom: i < walletTxs.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+                <div style={{ width: 40, height: 40, borderRadius: 13, background: `${color}14`, border: `1px solid ${color}28`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `0 0 12px ${color}20` }}>
+                  {isIn ? Icons.receive(17, color) : Icons.send(17, color)}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ color: 'var(--q-text)', fontWeight: 600, fontSize: 13, margin: '0 0 2px', fontFamily: 'var(--font-display)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.description}</p>
-                  <p style={{ color: 'var(--q-text-3)', fontSize: 10, fontFamily: 'var(--font-mono)', margin: 0 }}>{new Date(tx.created_at).toLocaleString()}</p>
+                  <p style={{ color: '#e0eeff', fontWeight: 600, fontSize: 13, margin: '0 0 3px', fontFamily: 'var(--font-display)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.description}</p>
+                  <p style={{ color: 'rgba(120,160,220,0.4)', fontSize: 10, fontFamily: 'var(--font-mono)', margin: 0 }}>{new Date(tx.created_at).toLocaleString()}</p>
                 </div>
-                <p style={{ color, fontWeight: 700, fontSize: 14, fontFamily: 'var(--font-mono)', margin: 0, textShadow: `0 0 10px ${color}60` }}>
-                  {isIn ? '+' : '-'}{parseFloat(tx.amount).toLocaleString()} UBTC
+                <p style={{ color, fontWeight: 800, fontSize: 15, fontFamily: 'var(--font-mono)', margin: 0, textShadow: `0 0 12px ${color}70`, whiteSpace: 'nowrap' }}>
+                  {isIn ? '+' : '−'}{parseFloat(tx.amount).toLocaleString()} <span style={{ fontSize: 10, opacity: 0.6 }}>UBTC</span>
                 </p>
               </div>
             )
           })}
         </div>
 
-        {/* SIGN OUT */}
-        <button onClick={() => { localStorage.removeItem('ubtc_wallet_address'); setWalletData(null); setView('landing') }} style={{ width: '100%', background: 'none', border: '1px solid rgba(255,255,255,0.06)', color: 'var(--q-text-3)', borderRadius: 12, padding: '11px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase', transition: 'border-color .2s, color .2s' }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(239,68,68,0.3)'; e.currentTarget.style.color = '#EF4444' }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'var(--q-text-3)' }}
+        {/* DISCONNECT */}
+        <button onClick={() => { localStorage.removeItem('ubtc_wallet_address'); setWalletData(null); setView('landing') }}
+          style={{ width: '100%', background: 'none', border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(120,150,200,0.35)', borderRadius: 12, padding: 12, fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-mono)', letterSpacing: '0.12em', textTransform: 'uppercase', transition: 'border-color .2s, color .2s, background .2s' }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(239,68,68,0.35)'; e.currentTarget.style.color = '#EF4444'; e.currentTarget.style.background = 'rgba(239,68,68,0.06)' }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(120,150,200,0.35)'; e.currentTarget.style.background = 'none' }}
         >
           Disconnect Wallet
         </button>
