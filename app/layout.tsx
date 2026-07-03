@@ -5,6 +5,7 @@ import { ThemeProvider } from './lib/theme'
 import Header from './components/Header'
 import { QuantumSigningOverlay } from './components/QuantumSigningOverlay'
 import { QuantumTransitionProvider } from './components/QuantumTransition'
+import { QuantumSpace } from './components/QuantumSpace'
 
 export const metadata: Metadata = {
   title: 'uBTC — Quantum-Secured Bitcoin Layer',
@@ -19,9 +20,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
         <ThemeProvider>
           <QuantumTransitionProvider>
+            <QuantumSpace />
             <QuantumSigningOverlay />
             <Header />
-            <div style={{ paddingTop: '64px' }} className="qt-page-root">
+            <div style={{ paddingTop: '64px', position: 'relative', zIndex: 1 }} className="qt-page-root">
               {children}
             </div>
           </QuantumTransitionProvider>

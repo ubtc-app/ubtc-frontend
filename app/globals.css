@@ -3,10 +3,10 @@
 /* ─── Quantum Noir Design System ──────────────────────────────────────────── */
 :root {
   /* ── Core palette ── */
-  --q-bg:              #000510;
-  --q-bg-2:            #000820;
-  --q-surface:         rgba(5, 15, 40, 0.65);
-  --q-surface-2:       rgba(10, 20, 50, 0.5);
+  --q-bg:              transparent;
+  --q-bg-2:            transparent;
+  --q-surface:         rgba(2, 8, 28, 0.72);
+  --q-surface-2:       rgba(4, 12, 36, 0.58);
   --q-glass:           rgba(255, 255, 255, 0.025);
   --q-glass-strong:    rgba(255, 255, 255, 0.05);
 
@@ -165,14 +165,14 @@
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 
 body {
-  background: var(--q-bg);
+  background: #000208;
   color: var(--q-text);
   font-family: var(--font-display);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: 'kern' 1, 'liga' 1;
-  transition: background 0.3s ease, color 0.3s ease;
+  transition: color 0.3s ease;
 }
 
 h1, h2, h3, h4 {
@@ -864,3 +864,333 @@ input[type=number] { -moz-appearance: textfield; }
   animation: q-float-3d 6s ease-in-out infinite;
   transform-style: preserve-3d;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   QUANTUM 3D IMMERSIVE UI SYSTEM
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── HUD Panel — floating holographic display ───────────────────────────── */
+.q-hud-panel {
+  position: relative;
+  background: rgba(2, 8, 28, 0.75);
+  border: 1px solid rgba(0, 212, 255, 0.14);
+  border-top: 1px solid rgba(0, 212, 255, 0.4);
+  border-radius: 16px;
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  box-shadow:
+    0 0 0 1px rgba(0, 212, 255, 0.04),
+    0 8px 48px rgba(0, 0, 0, 0.6),
+    0 0 60px rgba(0, 80, 255, 0.06),
+    inset 0 1px 0 rgba(0, 212, 255, 0.12),
+    inset 0 -1px 0 rgba(100, 0, 255, 0.06);
+  transform-style: preserve-3d;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
+}
+.q-hud-panel:hover {
+  border-top-color: rgba(0, 212, 255, 0.6);
+  box-shadow:
+    0 0 0 1px rgba(0, 212, 255, 0.06),
+    0 16px 64px rgba(0, 0, 0, 0.7),
+    0 0 80px rgba(0, 100, 255, 0.1),
+    inset 0 1px 0 rgba(0, 212, 255, 0.18),
+    inset 0 -1px 0 rgba(100, 0, 255, 0.08);
+}
+
+/* HUD corner brackets (TL + TR via pseudo) */
+.q-hud-panel::before,
+.q-hud-panel::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  z-index: 2;
+  transition: border-color 0.3s ease;
+}
+.q-hud-panel::before {
+  top: -1px; left: -1px;
+  border-top: 2px solid rgba(0, 212, 255, 0.6);
+  border-left: 2px solid rgba(0, 212, 255, 0.6);
+  border-radius: 4px 0 0 0;
+}
+.q-hud-panel::after {
+  top: -1px; right: -1px;
+  border-top: 2px solid rgba(0, 212, 255, 0.6);
+  border-right: 2px solid rgba(0, 212, 255, 0.6);
+  border-radius: 0 4px 0 0;
+}
+.q-hud-panel:hover::before,
+.q-hud-panel:hover::after {
+  border-color: rgba(0, 212, 255, 0.9);
+}
+
+/* Bottom corners as inner child — add <div className="q-hud-corners-btm" /> */
+.q-hud-corners-btm {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  border-radius: inherit;
+}
+.q-hud-corners-btm::before,
+.q-hud-corners-btm::after {
+  content: '';
+  position: absolute;
+  width: 14px; height: 14px;
+}
+.q-hud-corners-btm::before {
+  bottom: -1px; left: -1px;
+  border-bottom: 2px solid rgba(0, 212, 255, 0.4);
+  border-left: 2px solid rgba(0, 212, 255, 0.4);
+  border-radius: 0 0 0 4px;
+}
+.q-hud-corners-btm::after {
+  bottom: -1px; right: -1px;
+  border-bottom: 2px solid rgba(0, 212, 255, 0.4);
+  border-right: 2px solid rgba(0, 212, 255, 0.4);
+  border-radius: 0 0 4px 0;
+}
+
+/* ─── 3D interactive button ──────────────────────────────────────────────── */
+@keyframes q-btn-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200%  0; }
+}
+
+.q-btn-3d {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(0, 10, 40, 0.55);
+  border: 1px solid rgba(0, 180, 255, 0.35);
+  border-radius: 12px;
+  padding: 12px 28px;
+  color: rgba(130, 215, 255, 0.95);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-decoration: none;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 -2px 0 rgba(0, 0, 0, 0.3) inset,
+    0 0 30px rgba(0, 100, 255, 0.08);
+  transform: perspective(600px) translateZ(0) translateY(0);
+  transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Shimmer sweep on hover */
+.q-btn-3d::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 40%, rgba(0,212,255,0.15) 50%, transparent 60%);
+  background-size: 200% 100%;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.q-btn-3d:hover {
+  transform: perspective(600px) translateZ(8px) translateY(-2px);
+  border-color: rgba(0, 210, 255, 0.7);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.1) inset,
+    0 -2px 0 rgba(0, 0, 0, 0.3) inset,
+    0 0 50px rgba(0, 150, 255, 0.18),
+    0 0 100px rgba(0, 80, 255, 0.08);
+}
+.q-btn-3d:hover::before {
+  opacity: 1;
+  animation: q-btn-shimmer 0.6s ease forwards;
+}
+
+.q-btn-3d:active {
+  transform: perspective(600px) translateZ(2px) translateY(0);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.6),
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 0 20px rgba(0, 100, 255, 0.1);
+}
+
+/* Accent variant — violet */
+.q-btn-3d.violet {
+  border-color: rgba(124, 58, 255, 0.4);
+  color: rgba(180, 140, 255, 0.95);
+}
+.q-btn-3d.violet:hover {
+  border-color: rgba(160, 100, 255, 0.8);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.1) inset,
+    0 0 50px rgba(100, 0, 255, 0.2),
+    0 0 100px rgba(80, 0, 255, 0.1);
+}
+
+/* ─── Glow numbers — for stats, balances ────────────────────────────────── */
+.q-glow-number {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: #00d4ff;
+  text-shadow:
+    0 0 10px rgba(0, 212, 255, 0.8),
+    0 0 30px rgba(0, 212, 255, 0.4),
+    0 0 60px rgba(0, 150, 255, 0.2);
+}
+
+.q-glow-number.violet {
+  color: #a78bfa;
+  text-shadow:
+    0 0 10px rgba(167, 139, 250, 0.8),
+    0 0 30px rgba(124, 58, 255, 0.4),
+    0 0 60px rgba(100, 0, 255, 0.2);
+}
+
+/* ─── Data readout — mono HUD text ──────────────────────────────────────── */
+.q-data-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(0, 212, 255, 0.45);
+}
+
+/* ─── Scanline overlay (applies to any element) ──────────────────────────── */
+.q-scanlines {
+  position: relative;
+  overflow: hidden;
+}
+.q-scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.025) 2px,
+    rgba(0, 0, 0, 0.025) 4px
+  );
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* ─── 3D hover tilt on cards ─────────────────────────────────────────────── */
+.q-card-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.08s ease, box-shadow 0.25s ease;
+  will-change: transform;
+}
+
+/* ─── Depth perspective wrapper ──────────────────────────────────────────── */
+.q-perspective {
+  perspective: 1200px;
+  perspective-origin: 50% 40%;
+}
+
+/* ─── Floating animation ─────────────────────────────────────────────────── */
+@keyframes q-levitate {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+.q-levitate {
+  animation: q-levitate 4s ease-in-out infinite;
+}
+
+/* ─── Electric line separator ────────────────────────────────────────────── */
+.q-divider-electric {
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(0, 212, 255, 0.5) 30%,
+    rgba(124, 58, 255, 0.5) 50%,
+    rgba(0, 212, 255, 0.5) 70%,
+    transparent 100%
+  );
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.3);
+}
+
+/* ─── Holographic tag / pill ─────────────────────────────────────────────── */
+.q-holo-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 212, 255, 0.06);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 100px;
+  padding: 3px 12px 3px 8px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(0, 212, 255, 0.8);
+  backdrop-filter: blur(8px);
+}
+.q-holo-tag .dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: #00d4ff;
+  box-shadow: 0 0 6px #00d4ff;
+  flex-shrink: 0;
+}
+.q-holo-tag.violet {
+  background: rgba(124, 58, 255, 0.06);
+  border-color: rgba(124, 58, 255, 0.22);
+  color: rgba(167, 139, 250, 0.85);
+}
+.q-holo-tag.violet .dot {
+  background: #7c3aff;
+  box-shadow: 0 0 6px #7c3aff;
+}
+
+/* ─── Section header with left accent bar ────────────────────────────────── */
+.q-section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.q-section-header::before {
+  content: '';
+  width: 3px;
+  height: 1.1em;
+  background: linear-gradient(180deg, #00d4ff, #7c3aff);
+  border-radius: 2px;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.5);
+}
+
+/* ─── Glass surface (enhanced) ───────────────────────────────────────────── */
+.glass {
+  background: var(--q-surface) !important;
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid var(--q-border);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.07),
+    0 8px 40px rgba(0,0,0,0.5),
+    0 0 0 1px rgba(0,212,255,0.03);
+}
+
+/* ─── Frosted nav (enhanced) ─────────────────────────────────────────────── */
+.frosted-nav {
+  background: rgba(2, 6, 22, 0.8) !important;
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+  box-shadow:
+    0 1px 0 rgba(0, 212, 255, 0.06),
+    0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
