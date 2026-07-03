@@ -319,6 +319,12 @@ const mono: any = { fontFamily: 'var(--font-mono)' }
   const scAddr = '0x' + vaultId.replace('vault_', '').padEnd(40, 'a1b2c3d4e5f67890abcdef12')
   const fieldStyle: any = { display: 'block', width: '100%', padding: '13px 16px', background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '12px', color: 'var(--t-text)', fontSize: '14px', fontFamily: 'var(--font-mono)', outline: 'none', boxSizing: 'border-box' as const }
 
+  const isActive = vault.status === 'active'
+  const hasMinted = ubtcBalance > 0
+  const availableToMove = Math.max(0, ubtcBalance - ubtcCirculation)
+  const depositAddr = vault.mast_address || vault.deposit_address
+  const safetyLabel = ratio >= 200 ? 'Healthy' : ratio >= 150 ? 'Adequate' : ratio > 0 ? 'Low — add more BTC' : '—'
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--t-bg)', fontFamily: 'var(--font-display)' }}>
 
@@ -536,323 +542,275 @@ const mono: any = { fontFamily: 'var(--font-mono)' }
         </div>
       )}
 
-      {/* ── HEADER ── */}
-     <div style={{ background: 'var(--t-surface)', borderBottom: '1px solid var(--t-border-subtle)', padding: isMobile ? '14px 16px' : '18px 28px' }}>
-        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'flex-start', gap: isMobile ? '16px' : '0', marginBottom: '18px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <a href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--t-faint)', textDecoration: 'none', fontSize: '13px', ...mono, background: 'var(--t-surface2)', border: '1px solid var(--t-border)', borderRadius: '8px', padding: '8px 14px' }}>{Icons.back(14, 'var(--t-faint)')} Accounts</a>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '46px', height: '46px', borderRadius: '14px', background: meta.color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{meta.icon}</div>
-              <div>
-                <h1 style={{ color: 'var(--t-text)', fontSize: '20px', fontWeight: '700', margin: '0 0 4px' }}>{meta.title}</h1>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <span style={{ fontSize: '10px', ...mono, color: meta.color, border: `1px solid ${meta.color}35`, borderRadius: '20px', padding: '2px 10px', textTransform: 'uppercase' }}>{meta.tag}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>{Icons.shield(12, 'var(--t-faint)')}<span style={{ fontSize: '10px', ...mono, color: 'var(--t-faint)' }}>{meta.custody}</span></div>
-                  <button onClick={loadAll} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        {Icons.refresh(13, 'var(--t-muted)') }
-                        <span style={{ fontSize: '10px', color: 'var(--t-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>Scan for recent deposits</span>
-                      </span>
-                    </button>
-                </div>
-              </div>
-            </div>
+      {/* ── HERO ── */}
+      <div style={{ background: 'linear-gradient(180deg, hsl(220 25% 7%) 0%, hsl(220 20% 10%) 60%, var(--t-bg) 100%)', padding: isMobile ? '20px 20px 36px' : '28px 32px 44px' }}>
+
+        {/* Top nav */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '36px' }}>
+          <a href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'hsl(0 0% 55%)', textDecoration: 'none', fontSize: '13px', fontWeight: '500' }}>
+            {Icons.back(14, 'hsl(0 0% 55%)')} Accounts
+          </a>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: meta.color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{meta.icon}</div>
+            <span style={{ color: 'hsl(0 0% 70%)', fontSize: '13px', fontWeight: '600' }}>{meta.title}</span>
           </div>
-         <div style={{ textAlign: isMobile ? 'left' as const : 'right' as const }}>
-            <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 4px' }}>Collateral Balance Â· BTC locked in USD</p>
-            <p style={{ color: 'var(--t-text)', fontSize: isMobile ? '26px' : '32px', fontWeight: '700', ...mono, margin: '0 0 2px', lineHeight: '1' }}>${btcValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-            <p style={{ color: 'var(--t-green)', fontSize: '12px', fontWeight: '600', ...mono, margin: '0 0 2px' }}>${remainingMintable > 0 ? remainingMintable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'} available to mint</p>
-            <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, margin: 0 }}>{btcLocked.toFixed(6)} BTC locked · updates with live BTC price</p>
+          <button onClick={loadAll} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'hsl(0 0% 40%)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            {Icons.refresh(13, 'hsl(0 0% 40%)')}
+          </button>
+        </div>
+
+        {/* Balance */}
+        <div style={{ textAlign: 'center' as const, marginBottom: '36px' }}>
+          <p style={{ color: 'hsl(0 0% 40%)', fontSize: '12px', fontWeight: '500', margin: '0 0 8px', textTransform: 'uppercase' as const, letterSpacing: '0.12em' }}>
+            {isActive ? 'UBTC Balance' : 'Bitcoin Backing'}
+          </p>
+          <p style={{ color: 'white', fontSize: isMobile ? '52px' : '64px', fontWeight: '800', margin: '0 0 8px', lineHeight: '1', letterSpacing: '-2px', ...mono }}>
+            ${isActive ? ubtcBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : btcValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' as const }}>
+            {isActive && (
+              <span style={{ color: 'hsl(0 0% 45%)', fontSize: '13px', ...mono }}>
+                {btcLocked.toFixed(6)} BTC backing
+              </span>
+            )}
+            <span style={{ display: 'flex', alignItems: 'center', gap: '5px', background: isActive ? 'hsl(142 76% 36% / 0.15)' : 'hsl(38 92% 50% / 0.15)', borderRadius: '20px', padding: '3px 10px' }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isActive ? 'var(--t-green)' : 'var(--t-orange)', display: 'inline-block' }} />
+              <span style={{ color: isActive ? 'var(--t-green)' : 'var(--t-orange)', fontSize: '11px', fontWeight: '600' }}>{isActive ? 'Active' : 'Pending deposit'}</span>
+            </span>
           </div>
         </div>
 
-        {vault.status === 'active' && (
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(6, 1fr)', gap: '8px' }}>
-            {[
-             { icon: Icons.bitcoin(14, 'var(--t-accent)'), label: 'UBTC Debt', value: '$' + ubtcBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), sub: ubtcBalance + ' UBTC minted against BTC', color: 'var(--t-accent)' },
-              { icon: Icons.lock(14, 'var(--t-orange)'), label: 'BTC Locked', value: btcLocked.toFixed(4), sub: '$' + btcValue.toLocaleString(undefined, { maximumFractionDigits: 0 }), color: 'var(--t-orange)' },
-              { icon: Icons.shield(14, ratioColor), label: 'Collateral', value: ratio > 0 ? ratio.toFixed(0) + '%' : '—', sub: ratio >= 200 ? 'Healthy' : ratio >= 150 ? 'Adequate' : ratio > 0 ? 'Low' : 'No UBTC', color: ratioColor },
-              { icon: Icons.lock(14, 'var(--t-green)'), label: 'USDT Locked', value: uusdtDep > 0 ? '$' + uusdtDep.toLocaleString() : '—', sub: uusdtBal > 0 ? uusdtBal.toLocaleString() + ' UUSDT' : 'Not added', color: 'var(--t-green)' },
-              { icon: Icons.lock(14, 'var(--t-accent)'), label: 'USDC Locked', value: uusdcDep > 0 ? '$' + uusdcDep.toLocaleString() : '—', sub: uusdcBal > 0 ? uusdcBal.toLocaleString() + ' UUSDC' : 'Not added', color: 'var(--t-accent)' },
-              { icon: Icons.chart(14, 'var(--t-muted)'), label: 'BTC Price', value: '$' + btcPrice.toLocaleString(), sub: 'Live', color: 'var(--t-muted)' },
-            ].map(item => (
-              <div key={item.label} style={{ background: 'var(--t-surface)', borderRadius: '10px', padding: '10px 12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '5px' }}>{item.icon}<p style={{ color: 'var(--t-faint)', fontSize: '9px', ...mono, textTransform: 'uppercase', margin: 0 }}>{item.label}</p></div>
-                <p style={{ color: item.color, fontWeight: '700', fontSize: '14px', ...mono, margin: '0 0 2px' }}>{item.value}</p>
-                <p style={{ color: 'var(--t-faint)', fontSize: '9px', ...mono, margin: 0 }}>{item.sub}</p>
-              </div>
-            ))}
+        {/* Action buttons — context aware */}
+        {isActive ? (
+          <div style={{ display: 'grid', gridTemplateColumns: hasMinted ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: '10px', maxWidth: '480px', margin: '0 auto' }}>
+            <a href={`/mint?vault=${vaultId}&currency=ubtc`} style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: '8px', background: 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))', borderRadius: '16px', padding: '16px 10px', textDecoration: 'none', color: 'white' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+              <span style={{ fontSize: '12px', fontWeight: '700' }}>Create UBTC</span>
+            </a>
+            {hasMinted && (
+              <button onClick={() => { setShowMoveModal(true); setMoveAmount(''); setMoveError(''); setMoveDone(false) }} style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: '8px', background: 'hsl(38 92% 50% / 0.18)', border: '1px solid hsl(38 92% 50% / 0.35)', borderRadius: '16px', padding: '16px 10px', cursor: 'pointer', color: 'var(--t-orange)' }}>
+                {Icons.wallet(20, 'var(--t-orange)')}
+                <span style={{ fontSize: '12px', fontWeight: '700' }}>Move to Wallet</span>
+              </button>
+            )}
+            <a href={vault.linked_wallet ? `/wallet?address=${vault.linked_wallet}` : '/wallet'} style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: '8px', background: 'hsl(0 0% 100% / 0.06)', border: '1px solid hsl(0 0% 100% / 0.1)', borderRadius: '16px', padding: '16px 10px', textDecoration: 'none', color: 'hsl(0 0% 65%)' }}>
+              {Icons.send(20, 'hsl(0 0% 65%)')}
+              <span style={{ fontSize: '12px', fontWeight: '700' }}>My Wallet</span>
+            </a>
           </div>
-        )}
-        {vault.status !== 'active' && (
-          <div style={{ background: 'hsl(38 92% 50% / 0.06)', border: '1px solid hsl(38 92% 50% / 0.25)', borderRadius: '12px', padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>{Icons.warning(16, 'var(--t-orange)')}<p style={{ color: 'var(--t-orange)', fontSize: '13px', ...mono, margin: 0 }}>Account pending — deposit Bitcoin to activate</p></div>
-            <a href={`/deposit?vault=${vaultId}&currency=ubtc`} style={{ background: 'var(--t-accent)', color: 'white', textDecoration: 'none', borderRadius: '8px', padding: '10px 20px', fontSize: '13px', fontWeight: '600', fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', gap: '6px' }}>{Icons.deposit(14, 'white')} Fund Account</a>
+        ) : (
+          <div style={{ maxWidth: '420px', margin: '0 auto' }}>
+            <a href={`/deposit?vault=${vaultId}&currency=ubtc`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))', borderRadius: '16px', padding: '18px', textDecoration: 'none', color: 'white', fontSize: '15px', fontWeight: '700' }}>
+              {Icons.deposit(18, 'white')} Add Bitcoin to Activate
+            </a>
           </div>
         )}
       </div>
 
-     <div style={{ padding: isMobile ? '16px 12px' : '24px 28px', maxWidth: '1060px', margin: '0 auto' }}>
+      {/* ── MAIN CONTENT ── */}
+      <div style={{ padding: isMobile ? '20px 16px' : '28px 32px', maxWidth: '680px', margin: '0 auto' }}>
 
-        {/* Currency tabs */}
-        <div style={{ display: 'flex', gap: '4px', marginBottom: '22px', background: 'var(--t-surface)', borderRadius: '14px', padding: '4px', width: 'fit-content' }}>
-          {[
-            { key: 'ubtc', icon: Icons.bitcoin(16, currencyTab === 'ubtc' ? 'var(--t-orange)' : 'var(--t-faint)'), label: 'UBTC', balance: '$' + ubtcBalance.toLocaleString(undefined, { maximumFractionDigits: 0 }), color: 'var(--t-orange)', hasBalance: true },
-            { key: 'uusdt', icon: Icons.lock(16, currencyTab === 'uusdt' ? 'var(--t-green)' : 'var(--t-faint)'), label: 'UUSDT', balance: uusdtBal > 0 ? '$' + uusdtBal.toLocaleString(undefined, { maximumFractionDigits: 0 }) : 'Add', color: 'var(--t-green)', hasBalance: uusdtBal > 0 },
-            { key: 'uusdc', icon: Icons.lock(16, currencyTab === 'uusdc' ? 'var(--t-accent)' : 'var(--t-faint)'), label: 'UUSDC', balance: uusdcBal > 0 ? '$' + uusdcBal.toLocaleString(undefined, { maximumFractionDigits: 0 }) : 'Add', color: 'var(--t-accent)', hasBalance: uusdcBal > 0 },
-          ].map(t => (
-            <button key={t.key} onClick={() => setCurrencyTab(t.key as any)} style={{ background: currencyTab === t.key ? 'var(--t-surface3)' : 'transparent', border: currencyTab === t.key ? '1px solid var(--t-border)' : '1px solid transparent', color: currencyTab === t.key ? 'var(--t-text)' : 'var(--t-muted)', borderRadius: '10px', padding: '10px 18px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.15s' }}>
-              {t.icon}<span>{t.label}</span><span style={{ fontSize: '11px', ...mono, color: t.hasBalance ? t.color : 'var(--t-faint)' }}>{t.balance}</span>
-            </button>
-          ))}
-        </div>
+        {/* ── PENDING: deposit address ── */}
+        {!isActive && (
+          <div style={{ background: 'hsl(38 92% 50% / 0.08)', border: '1px solid hsl(38 92% 50% / 0.25)', borderRadius: '20px', padding: '24px', marginBottom: '20px' }}>
+            <p style={{ color: 'var(--t-orange)', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' as const, letterSpacing: '0.12em', margin: '0 0 6px' }}>Step 1 — Add Bitcoin</p>
+            <p style={{ color: 'var(--t-text)', fontSize: '17px', fontWeight: '700', margin: '0 0 6px' }}>Send Bitcoin to activate your account</p>
+            <p style={{ color: 'hsl(0 0% 48%)', fontSize: '13px', margin: '0 0 18px', lineHeight: '1.7' }}>Your Bitcoin is locked as collateral. Once confirmed, you can create UBTC against it.</p>
+            <div style={{ background: 'hsl(0 0% 0% / 0.3)', borderRadius: '12px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+              <p style={{ color: 'hsl(205,85%,65%)', fontSize: '12px', ...mono, margin: 0, flex: 1, wordBreak: 'break-all' as const, lineHeight: '1.6' }}>{depositAddr}</p>
+              <CopyBtn text={depositAddr} id="dep-addr" />
+            </div>
+            <p style={{ color: 'hsl(0 0% 35%)', fontSize: '11px', ...mono, margin: 0, textAlign: 'center' as const }}>Waiting for confirmation — updates automatically</p>
+          </div>
+        )}
 
-       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 280px', gap: '20px' }}>
-          <div>
+        {/* ── RISK INDICATOR (always visible when active) ── */}
+        {isActive && (
+          <div style={{ background: 'var(--t-surface)', border: `1px solid ${ratioColor}30`, borderRadius: '20px', padding: '20px 22px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+              <div>
+                <p style={{ color: 'hsl(0 0% 40%)', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase' as const, letterSpacing: '0.12em', margin: '0 0 3px' }}>Safety Level</p>
+                <p style={{ color: ratioColor, fontSize: '26px', fontWeight: '800', ...mono, margin: 0, lineHeight: 1 }}>
+                  {ratio > 0 ? ratio.toFixed(0) + '%' : '—'}
+                  <span style={{ color: 'hsl(0 0% 40%)', fontSize: '13px', fontWeight: '500', marginLeft: '8px' }}>{safetyLabel}</span>
+                </p>
+              </div>
+              <div style={{ textAlign: 'right' as const }}>
+                <p style={{ color: 'hsl(0 0% 38%)', fontSize: '10px', ...mono, margin: '0 0 3px', textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>BTC price</p>
+                <p style={{ color: 'hsl(0 0% 60%)', fontSize: '14px', fontWeight: '600', ...mono, margin: 0 }}>${btcPrice.toLocaleString()}</p>
+              </div>
+            </div>
 
-            {/* ── UBTC TAB ── */}
-            {currencyTab === 'ubtc' && (
-              <>
-                {vault.status === 'active' ? (
-                  <>
-                    <ActionButtons currency="ubtc" />
+            {/* Ratio bar */}
+            <div style={{ height: '6px', background: 'hsl(0 0% 15%)', borderRadius: '3px', overflow: 'hidden', marginBottom: '8px' }}>
+              <div style={{ height: '100%', width: Math.min(100, ratio / 3) + '%', background: `linear-gradient(90deg, ${ratioColor}, ${ratioColor}bb)`, borderRadius: '3px', transition: 'width 0.6s ease' }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <span style={{ color: 'hsl(0 0% 30%)', fontSize: '10px', ...mono }}>0%</span>
+              <span style={{ color: 'hsl(0 84% 60% / 0.7)', fontSize: '10px', ...mono }}>150% min</span>
+              <span style={{ color: 'hsl(142 76% 36% / 0.7)', fontSize: '10px', ...mono }}>200% healthy</span>
+              <span style={{ color: 'hsl(0 0% 30%)', fontSize: '10px', ...mono }}>300%</span>
+            </div>
 
-                    {/* 3 Key Stats */}
-                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: '10px', marginBottom: '20px' }}>
-                      {[
-                     { label: 'UBTC Debt (Minted)', value: '$' + ubtcBalance.toLocaleString(undefined, { maximumFractionDigits: 2 }), sub: totalEverMinted > ubtcBalance ? totalEverMinted.toFixed(2) + ' UBTC total issued · ' + ubtcBalance.toFixed(2) + ' outstanding' : ubtcBalance.toFixed(2) + ' UBTC outstanding', color: 'var(--t-accent)', bg: 'var(--t-accent-bg)', border: 'var(--t-accent-border)' },
-                        { label: 'Available to Move to Wallet', value: Math.max(0, ubtcBalance - ubtcCirculation).toFixed(2) + ' UBTC', sub: ubtcCirculation > 0 ? ubtcCirculation.toFixed(2) + ' UBTC already in circulation' : 'None moved yet', color: 'var(--t-orange)', bg: 'var(--t-orange-bg)', border: 'var(--t-orange-bg)' },
-                       
-                        { label: 'Available to Mint', value: remainingMintable > 0 ? '$' + remainingMintable.toLocaleString(undefined, { maximumFractionDigits: 2 }) : '$0', sub: remainingMintable > 0 ? 'of $' + maxMintable.toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' max' : 'Fully minted', color: 'var(--t-orange)', bg: 'var(--t-orange-bg)', border: 'var(--t-orange-bg)' },
-                        { label: 'Redeemable', value: '$' + ubtcBalance.toLocaleString(undefined, { maximumFractionDigits: 2 }), sub: ubtcBalance > 0 ? (ubtcBalance / btcPrice * 100_000_000).toFixed(0) + ' sats' : 'No UBTC minted', color: 'var(--t-green)', bg: 'var(--t-green-bg)', border: 'hsl(142 76% 36% / 0.2)' },
-                      ].map(item => (
-                        <div key={item.label} style={{ background: item.bg, border: `1px solid ${item.border}`, borderRadius: '12px', padding: '14px 16px' }}>
-                          <p style={{ color: 'var(--t-faint)', fontSize: '9px', ...mono, textTransform: 'uppercase', letterSpacing: '0.12em', margin: '0 0 6px' }}>{item.label}</p>
-                          <p style={{ color: item.color, fontSize: '18px', fontWeight: '700', ...mono, margin: '0 0 4px', lineHeight: 1 }}>{item.value}</p>
-                          <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, margin: 0 }}>{item.sub}</p>
-                        </div>
-                      ))}
-                    </div>
+            {/* Two key numbers */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div style={{ background: 'hsl(0 0% 0% / 0.25)', borderRadius: '12px', padding: '12px 14px' }}>
+                <p style={{ color: 'hsl(0 0% 38%)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.08em', margin: '0 0 4px' }}>BTC locked</p>
+                <p style={{ color: 'var(--t-orange)', fontSize: '16px', fontWeight: '700', ...mono, margin: '0 0 1px' }}>{btcLocked.toFixed(6)}</p>
+                <p style={{ color: 'hsl(0 0% 35%)', fontSize: '10px', ...mono, margin: 0 }}>${btcValue.toLocaleString(undefined, { maximumFractionDigits: 0 })} USD</p>
+              </div>
+              <div style={{ background: 'hsl(0 0% 0% / 0.25)', borderRadius: '12px', padding: '12px 14px' }}>
+                <p style={{ color: 'hsl(0 0% 38%)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.08em', margin: '0 0 4px' }}>UBTC created</p>
+                <p style={{ color: 'hsl(205,85%,65%)', fontSize: '16px', fontWeight: '700', ...mono, margin: '0 0 1px' }}>${ubtcBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                <p style={{ color: 'hsl(0 0% 35%)', fontSize: '10px', ...mono, margin: 0 }}>{remainingMintable > 0 ? '$' + remainingMintable.toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' more available' : 'fully minted'}</p>
+              </div>
+            </div>
 
-                    {/* Smart banner */}
-                 {ubtcBalance > 0 && ubtcCirculation < ubtcBalance && Math.max(0, ubtcBalance - ubtcCirculation) > 0 && (
-                      <div style={{ background: 'hsl(38 92% 50% / 0.07)', border: '1px solid hsl(38 92% 50% / 0.25)', borderRadius: '12px', padding: '14px 18px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          {Icons.wallet(18, 'var(--t-orange)')}
-                          <div>
-                           <p style={{ color: 'var(--t-orange)', fontWeight: 700, fontSize: 13, margin: '0 0 2px', ...mono }}>{Math.max(0, ubtcBalance - ubtcCirculation).toFixed(2)} UBTC ready to move to wallet</p>
-                            <p style={{ color: 'var(--t-faint)', fontSize: 11, margin: 0, ...mono }}>Use <strong>To Wallet</strong> above to move it to your wallet — then you can send it to others</p>
-                          </div>
-                        </div>
-                      <button onClick={() => setShowMoveModal(true)} style={{ flexShrink: 0, background: 'var(--t-orange)', color: '#000', border: 'none', borderRadius: 8, padding: '9px 16px', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-display)', whiteSpace: 'nowrap' as const, cursor: 'pointer' }}>Move to Wallet →</button>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '14px', padding: '24px', marginBottom: '28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <p style={{ color: 'hsl(0 0% 42%)', fontSize: '14px', ...mono, margin: 0 }}>Deposit Bitcoin to activate account</p>
-                    <a href={`/deposit?vault=${vaultId}&currency=ubtc`} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))', color: 'white', textDecoration: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13px', fontWeight: '600', fontFamily: 'var(--font-display)' }}>{Icons.deposit(14, 'white')} Fund Account</a>
-                  </div>
-                )}
-
-                {/* Account Activity */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {Icons.deposit(16, 'var(--t-muted)')}
-                    <h3 style={{ color: 'var(--t-text)', fontSize: '14px', fontWeight: '600', margin: 0 }}>Account Activity</h3>
-                    <button
-                      onClick={async () => {
-                        const res = await fetch(`${API_URL}/deposit/scan`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ vault_id: vaultId }) })
-                        const data = await res.json()
-                        if (data.found) await loadAll()
-                      }}
-                      title="Scan for new deposits"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '2px 6px', gap: '5px' }}
-                    >
-                      {Icons.refresh(13, 'var(--t-muted)')}
-                    </button>
-                  </div>
-                  <span style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono }}>{transactions.length} records · Mints &amp; Redeems</span>
-                </div>
-                {transactions.length === 0 ? (
-                  <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border-subtle)', borderRadius: '14px', padding: '32px', textAlign: 'center' as const, marginBottom: '24px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px', opacity: 0.3 }}>{Icons.chart(36, 'var(--t-muted)')}</div>
-                    <p style={{ color: 'var(--t-faint)', fontSize: '13px', ...mono, margin: 0 }}>No activity yet</p>
-                  </div>
-                ) : (
-                  <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border-subtle)', borderRadius: '14px', overflow: 'hidden', marginBottom: '24px' }}>
-                    {transactions.map((tx, i) => <TxRow key={tx.id} tx={tx} i={i} total={transactions.length} />)}
-                  </div>
-                )}
-
-            {/* Redemption History */}
-                {redemptionHistory.length > 0 && (
-                  <div style={{ marginBottom: '24px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {Icons.redeem(16, 'var(--t-green)')}
-                        <h3 style={{ color: 'var(--t-text)', fontSize: '14px', fontWeight: '600', margin: 0 }}>Redemption History</h3>
-                      </div>
-                      <span style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono }}>{redemptionHistory.length} redemptions against your BTC</span>
-                    </div>
-                    <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border-subtle)', borderRadius: '14px', overflow: 'hidden' }}>
-                      {redemptionHistory.map((r: any, i: number) => (
-                        <div key={r.proof_id} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: i < redemptionHistory.length - 1 ? '1px solid var(--t-border-subtle)' : 'none', gap: '14px' }}>
-                          <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'var(--t-green-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            {Icons.redeem(16, 'var(--t-green)')}
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <p style={{ color: 'var(--t-text)', fontWeight: '600', fontSize: '13px', margin: '0 0 2px' }}>{r.ubtc_amount} UBTC Redeemed</p>
-                            <p style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono, margin: 0 }}>
-                              {new Date(r.redeemed_at).toLocaleString()} · BTC @ ${r.btc_price ? parseFloat(r.btc_price).toLocaleString(undefined, {maximumFractionDigits: 0}) : '—'}
-                            </p>
-                          </div>
-                          <div style={{ textAlign: 'right' as const }}>
-                            <p style={{ color: 'var(--t-green)', fontWeight: '700', fontSize: '14px', ...mono, margin: '0 0 2px' }}>-{r.sats_released ? parseInt(r.sats_released).toLocaleString() : '—'} sats</p>
-                            <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, margin: 0 }}>${r.ubtc_amount} released</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* UBTC Transaction History */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>{Icons.transfer(16, 'var(--t-orange)')}<h3 style={{ color: 'var(--t-text)', fontSize: '14px', fontWeight: '600', margin: 0 }}>UBTC Transaction History</h3></div>
-                  <span style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono }}>{walletTxs.length} records · Sends &amp; Receives</span>
-                </div>
-                {walletTxs.length === 0 ? (
-                  <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border-subtle)', borderRadius: '14px', padding: '32px', textAlign: 'center' as const }}>
-                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px', opacity: 0.3 }}>{Icons.transfer(36, 'var(--t-muted)')}</div>
-                    <p style={{ color: 'var(--t-faint)', fontSize: '13px', ...mono, margin: '0 0 6px' }}>No UBTC transfers yet</p>
-                    <p style={{ color: 'hsl(0 0% 22%)', fontSize: '11px', ...mono, margin: 0 }}>Move UBTC to your wallet first, then send from there</p>
-                  </div>
-                ) : (
-                  <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border-subtle)', borderRadius: '14px', overflow: 'hidden' }}>
-                    {walletTxs.map((tx: any, i: number) => (
-                      <div key={tx.id} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: i < walletTxs.length - 1 ? '1px solid var(--t-border-subtle)' : 'none', gap: '14px' }}>
-                        <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: tx.is_incoming ? 'var(--t-green-bg)' : 'hsl(0 84% 60% / 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          {tx.is_incoming ? Icons.deposit(16, 'var(--t-green)') : Icons.send(16, 'var(--t-red)')}
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <p style={{ color: 'var(--t-text)', fontWeight: '600', fontSize: '13px', margin: '0 0 2px' }}>{tx.description || (tx.is_incoming ? 'UBTC Received' : 'UBTC Sent')}</p>
-                          <p style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono, margin: 0 }}>{new Date(tx.created_at).toLocaleString()}</p>
-                        </div>
-                        <p style={{ color: tx.is_incoming ? 'var(--t-green)' : 'var(--t-red)', fontWeight: '700', fontSize: '14px', ...mono, margin: 0 }}>
-                          {tx.is_incoming ? '+' : '-'}{tx.amount} UBTC
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* ── UUSDT TAB ── */}
-            {currencyTab === 'uusdt' && (
-              <>
-                {uusdtBal > 0 ? (
-                  <>
-                    <ActionButtons currency="uusdt" />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>{Icons.chart(16, 'var(--t-muted)')}<h3 style={{ color: 'var(--t-text)', fontSize: '14px', fontWeight: '600', margin: 0 }}>UUSDT Transactions</h3></div>
-                      <span style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono }}>{uusdtTxs.length} records</span>
-                    </div>
-                    <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border-subtle)', borderRadius: '14px', overflow: 'hidden' }}>
-                      {uusdtTxs.map((tx, i) => <TxRow key={tx.id} tx={tx} i={i} total={uusdtTxs.length} />)}
-                    </div>
-                  </>
-                ) : (
-                  <div style={{ background: 'var(--t-surface)', border: '1px dashed hsl(142 76% 36% / 0.3)', borderRadius: '18px', padding: '52px 40px', textAlign: 'center' as const }}>
-                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '18px', opacity: 0.6 }}>{Icons.lock(52, 'var(--t-green)')}</div>
-                    <h3 style={{ color: 'var(--t-text)', fontSize: '20px', fontWeight: '700', margin: '0 0 10px' }}>Add UUSDT to this Account</h3>
-                    <p style={{ color: 'hsl(0 0% 42%)', fontSize: '13px', ...mono, margin: '0 0 28px', lineHeight: '1.8' }}>Deposit USDT and mint UUSDT 1:1. Your USDT is locked in a quantum vault.</p>
-                    <button onClick={() => setShowAddModal('UUSDT')} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))', color: 'white', border: 'none', borderRadius: '12px', padding: '14px 32px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>{Icons.deposit(16, 'white')} Deposit USDT & Mint UUSDT</button>
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* ── UUSDC TAB ── */}
-            {currencyTab === 'uusdc' && (
-              <>
-                {uusdcBal > 0 ? (
-                  <>
-                    <ActionButtons currency="uusdc" />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>{Icons.chart(16, 'var(--t-muted)')}<h3 style={{ color: 'var(--t-text)', fontSize: '14px', fontWeight: '600', margin: 0 }}>UUSDC Transactions</h3></div>
-                      <span style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono }}>{uusdcTxs.length} records</span>
-                    </div>
-                    <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border-subtle)', borderRadius: '14px', overflow: 'hidden' }}>
-                      {uusdcTxs.map((tx, i) => <TxRow key={tx.id} tx={tx} i={i} total={uusdcTxs.length} />)}
-                    </div>
-                  </>
-                ) : (
-                  <div style={{ background: 'var(--t-surface)', border: '1px dashed hsl(220 85% 60% / 0.3)', borderRadius: '18px', padding: '52px 40px', textAlign: 'center' as const }}>
-                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '18px', opacity: 0.6 }}>{Icons.lock(52, 'var(--t-accent)')}</div>
-                    <h3 style={{ color: 'var(--t-text)', fontSize: '20px', fontWeight: '700', margin: '0 0 10px' }}>Add UUSDC to this Account</h3>
-                    <p style={{ color: 'hsl(0 0% 42%)', fontSize: '13px', ...mono, margin: '0 0 28px', lineHeight: '1.8' }}>Deposit USDC and mint UUSDC 1:1. Your USDC is locked in a quantum vault.</p>
-                    <button onClick={() => setShowAddModal('UUSDC')} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))', color: 'white', border: 'none', borderRadius: '12px', padding: '14px 32px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>{Icons.deposit(16, 'white')} Deposit USDC & Mint UUSDC</button>
-                  </div>
-                )}
-              </>
+            {ratio > 0 && ratio < 150 && (
+              <div style={{ marginTop: '14px', background: 'hsl(0 84% 60% / 0.1)', border: '1px solid hsl(0 84% 60% / 0.3)', borderRadius: '10px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {Icons.warning(14, 'var(--t-red)')}
+                <p style={{ color: 'var(--t-red)', fontSize: '12px', ...mono, margin: 0 }}>Safety level is low — consider adding more BTC to avoid liquidation</p>
+              </div>
             )}
           </div>
+        )}
 
-          {/* ── SIDEBAR ── */}
-          <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '12px' }}>
-
-            {/* MY WALLET */}
-            <div style={{ background: 'var(--t-surface)', border: '2px solid hsl(38 92% 50% / 0.5)', borderRadius: '16px', padding: '18px', boxShadow: '0 0 28px hsl(38 92% 50% / 0.12)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                {Icons.wallet(15, 'var(--t-orange)')}
-                <p style={{ color: 'var(--t-orange)', fontSize: '10px', fontWeight: '700', ...mono, margin: 0, textTransform: 'uppercase' as const, letterSpacing: '0.12em' }}>Your UBTC Wallet</p>
+        {/* ── CREATE UBTC (primary CTA) ── */}
+        {isActive && (
+          <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border-subtle)', borderRadius: '20px', padding: '22px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px', gap: '12px' }}>
+              <div>
+                <p style={{ color: 'hsl(205,85%,65%)', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' as const, letterSpacing: '0.12em', margin: '0 0 4px' }}>Create UBTC</p>
+                <p style={{ color: 'var(--t-text)', fontSize: '16px', fontWeight: '700', margin: 0 }}>
+                  {!hasMinted ? 'Lock your BTC, get UBTC' : 'Create more UBTC'}
+                </p>
               </div>
-              <p style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono, margin: '0 0 14px', lineHeight: '1.7' }}>
-                This <strong style={{ color: 'var(--t-accent)' }}>Account</strong> locks BTC and mints UBTC. Your <strong style={{ color: 'var(--t-orange)' }}>Wallet </strong> is your address to send &amp; receive UBTC with others.
-              </p>
-              <a href={vault.linked_wallet ? `/wallet?address=${vault.linked_wallet}` : `/wallet`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: 'var(--t-orange)', color: '#000', textDecoration: 'none', borderRadius: '10px', padding: '13px', fontSize: '14px', fontWeight: '700', fontFamily: 'var(--font-display)', boxShadow: '0 0 24px hsl(38 92% 50% / 0.5)', marginBottom: '10px' }}>
-                {Icons.wallet(17, '#000')} Open My Wallet
-              </a>
-              {vault.linked_wallet && (
-                <div style={{ background: 'var(--t-surface)', borderRadius: 8, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                  <div>
-                    <p style={{ color: 'var(--t-faint)', fontSize: '9px', ...mono, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 2px' }}>Wallet Balance</p>
-                    <p style={{ color: 'var(--t-orange)', fontSize: '16px', fontWeight: 700, ...mono, margin: 0 }}>{walletBalance.toLocaleString(undefined, { maximumFractionDigits: 4 })} UBTC</p>
-                  </div>
-                  <div style={{ textAlign: 'right' as const }}>
-                    <p style={{ color: 'var(--t-faint)', fontSize: '9px', ...mono, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 2px' }}>≈ USD</p>
-                    <p style={{ color: 'var(--t-muted)', fontSize: '13px', fontWeight: 600, ...mono, margin: 0 }}>${walletBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-                  </div>
+              {remainingMintable > 0 && (
+                <div style={{ flexShrink: 0, background: 'hsl(205 85% 55% / 0.12)', borderRadius: '10px', padding: '8px 14px', textAlign: 'right' as const }}>
+                  <p style={{ color: 'hsl(0 0% 38%)', fontSize: '9px', ...mono, textTransform: 'uppercase' as const, margin: '0 0 2px' }}>Available</p>
+                  <p style={{ color: 'hsl(205,85%,65%)', fontSize: '16px', fontWeight: '800', ...mono, margin: 0 }}>${remainingMintable.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                 </div>
               )}
-              {vault.linked_wallet && <p style={{ color: 'var(--t-faint)', fontSize: '9px', ...mono, margin: 0, textAlign: 'center' as const, wordBreak: 'break-all' as const }}>{vault.linked_wallet}</p>}
             </div>
+            <p style={{ color: 'hsl(0 0% 45%)', fontSize: '13px', margin: '0 0 18px', lineHeight: '1.7' }}>
+              {!hasMinted
+                ? 'UBTC is a dollar-pegged token backed 1.5× by your Bitcoin. You can send it to anyone, use it as cash, or swap it — while your BTC stays locked and appreciating.'
+                : 'Your BTC backing supports more UBTC. Keep your safety level above 200% for a healthy buffer.'}
+            </p>
+            <a href={`/mint?vault=${vaultId}&currency=ubtc`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: 'linear-gradient(135deg, hsl(205,85%,55%), hsl(190,80%,50%))', borderRadius: '14px', padding: '16px', textDecoration: 'none', color: 'white', fontSize: '15px', fontWeight: '700', fontFamily: 'var(--font-display)' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+              {!hasMinted ? 'Create UBTC Now →' : `Create More UBTC →`}
+            </a>
+          </div>
+        )}
 
-            {/* ACCOUNT DETAILS */}
-            <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border-subtle)', borderRadius: '14px', padding: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '12px' }}>
-                {Icons.shield(13, 'var(--t-faint)')}
-                <h3 style={{ color: 'var(--t-muted)', fontSize: '11px', fontWeight: '600', margin: 0, textTransform: 'uppercase' as const, letterSpacing: '0.1em', ...mono }}>Account Details</h3>
+        {/* ── MOVE TO WALLET (step 2 after minting) ── */}
+        {isActive && hasMinted && (
+          <div style={{ background: 'var(--t-surface)', border: availableToMove > 0 ? '1px solid hsl(38 92% 50% / 0.4)' : '1px solid var(--t-border-subtle)', borderRadius: '20px', padding: '22px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+              {Icons.wallet(18, availableToMove > 0 ? 'var(--t-orange)' : 'hsl(0 0% 35%)')}
+              <div>
+                <p style={{ color: availableToMove > 0 ? 'var(--t-orange)' : 'hsl(0 0% 35%)', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' as const, letterSpacing: '0.12em', margin: '0 0 2px' }}>Your Wallet</p>
+                <p style={{ color: 'var(--t-text)', fontSize: '15px', fontWeight: '700', margin: 0 }}>
+                  {availableToMove > 0 ? `${availableToMove.toFixed(2)} UBTC ready to move` : 'All UBTC moved to wallet'}
+                </p>
               </div>
-              {[
-                { label: 'Account ID', value: vaultId },
-                { label: 'Type', value: meta.title },
-                { label: 'Custody', value: meta.custody },
-                { label: 'Status', value: vault.status === 'active' ? 'Active' : 'Pending' },
-                { label: 'Network', value: vault.network === 'testnet4' ? 'Bitcoin Testnet4' : vault.network === 'mainnet' ? 'Bitcoin Mainnet' : vault.network || 'Bitcoin Testnet4' },
-                { label: 'BTC Address', value: vault.deposit_address },
-                ...(vault.mast_address ? [{ label: 'MAST Vault Address (P2TR)', value: vault.mast_address }] : []),
-              ].map(item => (
-                <div key={item.label} style={{ padding: '7px 0', borderBottom: '1px solid var(--t-border-subtle)' }}>
-                  <p style={{ color: 'var(--t-faint)', fontSize: '9px', ...mono, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 2px' }}>{item.label}</p>
-                  <p style={{ color: 'var(--t-muted)', fontSize: '11px', ...mono, margin: 0, wordBreak: 'break-all' as const }}>{item.value}</p>
-                </div>
-              ))}
+              {vault.linked_wallet && walletBalance > 0 && (
+                <p style={{ color: 'var(--t-orange)', fontSize: '16px', fontWeight: '800', ...mono, margin: '0 0 0 auto' }}>{walletBalance.toFixed(2)} UBTC</p>
+              )}
+            </div>
+            <p style={{ color: 'hsl(0 0% 42%)', fontSize: '13px', margin: '0 0 16px', lineHeight: '1.7' }}>
+              UBTC in this account can't be sent yet — it needs to be in your wallet first. Think of this account as the vault, and your wallet as your spending account.
+            </p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              {availableToMove > 0 && (
+                <button onClick={() => { setShowMoveModal(true); setMoveAmount(''); setMoveError(''); setMoveDone(false) }} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'var(--t-orange)', border: 'none', borderRadius: '12px', padding: '14px', color: '#000', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
+                  {Icons.wallet(16, '#000')} Move to Wallet →
+                </button>
+              )}
+              <a href={vault.linked_wallet ? `/wallet?address=${vault.linked_wallet}` : '/wallet'} style={{ flex: availableToMove > 0 ? '0 0 auto' : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'hsl(0 0% 100% / 0.06)', border: '1px solid hsl(0 0% 100% / 0.1)', borderRadius: '12px', padding: '14px 20px', textDecoration: 'none', color: 'hsl(0 0% 60%)', fontSize: '14px', fontWeight: '600' }}>
+                Open Wallet
+              </a>
             </div>
           </div>
+        )}
+
+        {/* ── ACTIVITY ── */}
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <h3 style={{ color: 'var(--t-text)', fontSize: '15px', fontWeight: '700', margin: 0 }}>Activity</h3>
+            <button onClick={async () => { const res = await fetch(`${API_URL}/deposit/scan`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ vault_id: vaultId }) }); const data = await res.json(); if (data.found) await loadAll() }} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: 'hsl(0 0% 40%)', fontSize: '11px' }}>
+              {Icons.refresh(12, 'hsl(0 0% 40%)')} Refresh
+            </button>
+          </div>
+          {transactions.length === 0 && walletTxs.length === 0 ? (
+            <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border-subtle)', borderRadius: '16px', padding: '40px 24px', textAlign: 'center' as const }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px', opacity: 0.25 }}>{Icons.chart(40, 'var(--t-muted)')}</div>
+              <p style={{ color: 'hsl(0 0% 38%)', fontSize: '14px', fontWeight: '600', margin: '0 0 4px' }}>No activity yet</p>
+              <p style={{ color: 'hsl(0 0% 28%)', fontSize: '12px', ...mono, margin: 0 }}>
+                {!isActive ? 'Send Bitcoin to get started' : !hasMinted ? 'Create UBTC to see activity here' : 'Your transactions will appear here'}
+              </p>
+            </div>
+          ) : (
+            <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border-subtle)', borderRadius: '16px', overflow: 'hidden' }}>
+              {[...transactions, ...walletTxs].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map((tx: any, i: number, arr: any[]) => (
+                <TxRow key={tx.id} tx={tx} i={i} total={arr.length} />
+              ))}
+            </div>
+          )}
         </div>
+
+        {/* ── REDEMPTION INFO (secondary — informational) ── */}
+        {isActive && hasMinted && (
+          <details style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border-subtle)', borderRadius: '16px', padding: '18px', marginBottom: '16px' }}>
+            <summary style={{ color: 'hsl(0 0% 40%)', fontSize: '12px', fontWeight: '600', cursor: 'pointer', listStyle: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>{Icons.redeem(13, 'hsl(0 0% 35%)')} Cash Out (Redeem UBTC for BTC)</span>
+              <span style={{ color: 'hsl(0 0% 30%)', fontSize: '11px' }}>▸</span>
+            </summary>
+            <div style={{ marginTop: '14px' }}>
+              <p style={{ color: 'hsl(0 0% 45%)', fontSize: '13px', lineHeight: '1.75', margin: '0 0 14px' }}>
+                When you redeem UBTC, you burn the tokens and unlock the equivalent amount of Bitcoin from your vault. The amount of BTC you receive is calculated at the current BTC price at the moment of redemption.
+              </p>
+              <p style={{ color: 'hsl(0 0% 35%)', fontSize: '12px', ...mono, lineHeight: '1.7', margin: '0 0 16px', background: 'hsl(0 0% 0% / 0.25)', borderRadius: '10px', padding: '12px 14px' }}>
+                Example: you created 100 UBTC when BTC = $50,000. If you redeem when BTC = $60,000, your 100 UBTC unlocks only ~0.00167 BTC ($100 worth) — your remaining BTC stays locked as collateral.
+              </p>
+              <a href={`/redeem?vault=${vaultId}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'hsl(0 0% 40%)', fontSize: '12px', textDecoration: 'none', border: '1px solid hsl(0 0% 25%)', borderRadius: '8px', padding: '8px 16px' }}>
+                {Icons.redeem(13, 'hsl(0 0% 40%)')} Go to Redemption
+              </a>
+            </div>
+          </details>
+        )}
+
+        {/* ── DEPOSIT ADDRESS + ACCOUNT DETAILS ── */}
+        <details style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border-subtle)', borderRadius: '16px', padding: '16px' }}>
+          <summary style={{ color: 'hsl(0 0% 40%)', fontSize: '12px', fontWeight: '600', cursor: 'pointer', listStyle: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {Icons.shield(12, 'hsl(0 0% 40%)')} Account Details
+          </summary>
+          <div style={{ marginTop: '14px' }}>
+            {isActive && depositAddr && (
+              <div style={{ marginBottom: '14px', paddingBottom: '14px', borderBottom: '1px solid var(--t-border-subtle)' }}>
+                <p style={{ color: 'hsl(0 0% 35%)', fontSize: '9px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.1em', margin: '0 0 6px' }}>Bitcoin Deposit Address</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <p style={{ color: 'hsl(205,85%,65%)', fontSize: '11px', ...mono, margin: 0, flex: 1, wordBreak: 'break-all' as const, lineHeight: '1.6' }}>{depositAddr}</p>
+                  <CopyBtn text={depositAddr} id="dep-addr-active" />
+                </div>
+              </div>
+            )}
+            {[
+              { label: 'Account ID', value: vaultId },
+              { label: 'Type', value: meta.title },
+              { label: 'Status', value: vault.status === 'active' ? 'Active' : 'Pending deposit' },
+              { label: 'Network', value: vault.network === 'testnet4' ? 'Bitcoin Testnet4' : vault.network === 'mainnet' ? 'Bitcoin Mainnet' : vault.network || 'Bitcoin Testnet4' },
+              ...(vault.mast_address ? [{ label: 'MAST Vault (P2TR)', value: vault.mast_address }] : []),
+            ].map(item => (
+              <div key={item.label} style={{ padding: '7px 0', borderBottom: '1px solid var(--t-border-subtle)' }}>
+                <p style={{ color: 'hsl(0 0% 35%)', fontSize: '9px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.1em', margin: '0 0 3px' }}>{item.label}</p>
+                <p style={{ color: 'hsl(0 0% 55%)', fontSize: '11px', ...mono, margin: 0, wordBreak: 'break-all' as const }}>{item.value}</p>
+              </div>
+            ))}
+          </div>
+        </details>
+
       </div>
     </div>
   )
