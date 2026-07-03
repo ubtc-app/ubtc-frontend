@@ -68,9 +68,8 @@ function WalletContent() {
   const loadWallet = async (addr: string) => {
     if (!addr) return
     try {
-      const res = await fetch(`${API_URL}/wallets/all`)
-      const data = await res.json()
-      const wData = (data.wallets || []).find((w: any) => w.wallet_address === addr)
+      const res = await fetch(`${API_URL}/wallet/${addr}`)
+      const wData = res.ok ? await res.json() : null
       // Always go to dashboard if we have a stored address — never drop back to landing
       if (wData) setWalletData(wData)
       setView('dashboard')
