@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
+import { usePathname } from 'next/navigation'
 import { QoraAvatar } from './QoraAvatar'
 
 const STEPS = [
@@ -46,11 +47,15 @@ const STEPS = [
 ]
 
 export function QoraPanel() {
+  const pathname = usePathname()
   const [open,    setOpen]    = useState(false)
   const [step,    setStep]    = useState(0)
   const [visible, setVisible] = useState(false)   // button slide-up
   const [textIdx, setTextIdx] = useState(0)        // typewriter char index
   const [speaking,setSpeaking]= useState(false)
+
+  // Hide entirely on onboarding and unlock pages
+  if (pathname === '/' || pathname === '/unlock') return null
 
   // Button eases up after 2s
   useEffect(() => {
