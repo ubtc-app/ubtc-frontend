@@ -4,15 +4,21 @@ import { InstitutionalHome } from '../components/InstitutionalHome'
 import { ConsumerHome } from '../components/ConsumerHome'
 
 export default function Home() {
-  const [userType, setUserType] = useState<string | null>(null)
-  const [ready,    setReady]    = useState(false)
+  const [theme, setTheme] = useState<string | null>(null)
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    setUserType(localStorage.getItem('qufi_user_type'))
+    const t = localStorage.getItem('qufi_theme')
+    if (t) {
+      setTheme(t)
+    } else {
+      const ut = localStorage.getItem('qufi_user_type')
+      setTheme(ut === 'institutional' ? 'light' : 'futuristic')
+    }
     setReady(true)
   }, [])
 
   if (!ready) return null
-  if (userType === 'institutional') return <InstitutionalHome />
+  if (theme === 'light') return <InstitutionalHome />
   return <ConsumerHome />
 }

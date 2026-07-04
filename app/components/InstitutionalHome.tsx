@@ -1,6 +1,7 @@
 'use client'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { QoraAvatar } from './QoraAvatar'
 
 const NAV_ITEMS = [
   { label: 'Overview', href: '/home', active: true },
@@ -133,17 +134,51 @@ export function InstitutionalHome() {
       <div style={{ maxWidth: 1080, margin: '0 auto', padding: '48px 48px 80px' }}>
 
         {/* Header */}
-        <div style={{ marginBottom: 48 }}>
-          <p style={{ color: '#94a3b8', fontSize: 12, margin: '0 0 8px', letterSpacing: '0.04em' }}>{now}</p>
-          <h1 style={{
-            color: '#0f172a', fontSize: 32, fontWeight: 700,
-            margin: '0 0 10px', letterSpacing: '-0.03em',
-          }}>
-            {name ? `Good morning, ${name}.` : 'Good morning.'}
-          </h1>
-          <p style={{ color: '#64748b', fontSize: 15, margin: 0, fontWeight: 400 }}>
-            Your assets are secured. All systems operational.
-          </p>
+        <div style={{ marginBottom: 48, display: 'flex', alignItems: 'flex-start', gap: 32 }}>
+          <div style={{ flex: 1 }}>
+            <p style={{ color: '#94a3b8', fontSize: 12, margin: '0 0 8px', letterSpacing: '0.04em' }}>{now}</p>
+            <h1 style={{
+              color: '#0f172a', fontSize: 32, fontWeight: 700,
+              margin: '0 0 10px', letterSpacing: '-0.03em',
+            }}>
+              {name ? `Good morning, ${name}.` : 'Good morning.'}
+            </h1>
+            <p style={{ color: '#64748b', fontSize: 15, margin: 0, fontWeight: 400 }}>
+              Your assets are secured. All systems operational.
+            </p>
+          </div>
+
+          {/* QORA greeting widget */}
+          <div style={{ flexShrink: 0, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+            <QoraAvatar size={80} theme="light" waving />
+            <div style={{
+              background: '#fff',
+              border: '1px solid #e2e8f0',
+              borderRadius: '12px 12px 12px 4px',
+              padding: '12px 16px',
+              marginTop: 8, minWidth: 180,
+              boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+            }}>
+              <p style={{
+                color: '#0f172a', fontSize: 12, margin: '0 0 4px',
+                fontFamily: "'Inter', sans-serif", fontWeight: 500,
+              }}>
+                Hi {name ? `@${name}` : 'there'}! 👋
+              </p>
+              <p style={{
+                color: '#64748b', fontSize: 11, lineHeight: 1.55,
+                margin: '0 0 8px', fontFamily: "'Inter', sans-serif",
+              }}>
+                All systems are secure and operational.
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#22c55e' }} />
+                <span style={{ color: '#94a3b8', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', fontFamily: "'Inter', sans-serif" }}>
+                  QORA · Online
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Security status card */}

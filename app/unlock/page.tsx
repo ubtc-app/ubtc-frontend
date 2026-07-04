@@ -4,15 +4,22 @@ import { InstitutionalUnlock } from '../components/InstitutionalUnlock'
 import { ConsumerUnlock } from '../components/ConsumerUnlock'
 
 export default function UnlockPage() {
-  const [userType, setUserType] = useState<string | null>(null)
+  const [theme, setTheme] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    setUserType(localStorage.getItem('qufi_user_type'))
+    // qufi_theme determines visual style; fall back to user_type for legacy sessions
+    const t = localStorage.getItem('qufi_theme')
+    if (t) {
+      setTheme(t)
+    } else {
+      const ut = localStorage.getItem('qufi_user_type')
+      setTheme(ut === 'institutional' ? 'light' : 'futuristic')
+    }
     setReady(true)
   }, [])
 
   if (!ready) return null
-  if (userType === 'institutional') return <InstitutionalUnlock />
+  if (theme === 'light') return <InstitutionalUnlock />
   return <ConsumerUnlock />
 }
