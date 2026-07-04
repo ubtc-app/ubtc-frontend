@@ -82,6 +82,12 @@ export default function Header() {
       height: '64px', display: 'flex', alignItems: 'center',
       padding: isMobile ? '0 16px' : '0 28px', justifyContent: 'space-between',
       gap: '12px',
+      ...(institutional ? {
+        background: 'rgba(255,255,255,0.95)',
+        borderBottom: '1px solid #e2e8f0',
+        boxShadow: '0 1px 12px rgba(0,0,0,0.06)',
+        backdropFilter: 'blur(12px)',
+      } : {}),
     }}>
 
       {/* ── Logo ── */}
@@ -97,8 +103,8 @@ export default function Header() {
       {authed && !isMobile && (
         <div style={{
           display: 'flex', gap: '2px',
-          background: 'rgba(255,255,255,0.03)',
-          border: '1px solid rgba(255,255,255,0.06)',
+          background: institutional ? '#f1f5f9' : 'rgba(255,255,255,0.03)',
+          border: institutional ? '1px solid #e2e8f0' : '1px solid rgba(255,255,255,0.06)',
           borderRadius: '50px',
           padding: '3px',
         }}>
@@ -176,7 +182,7 @@ export default function Header() {
               </div>
               {!isMobile && displayName && (
                 <span style={{
-                  color: 'rgba(180,220,255,0.85)', fontSize: '12px', fontWeight: '500',
+                  color: institutional ? '#334155' : 'rgba(180,220,255,0.85)', fontSize: '12px', fontWeight: '500',
                   fontFamily: 'var(--font-mono)', letterSpacing: '0.02em',
                   maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>
@@ -208,7 +214,7 @@ export default function Header() {
                 <p style={{
                   padding: '4px 12px 10px',
                   fontSize: '10px', fontWeight: '600', letterSpacing: '0.12em',
-                  textTransform: 'uppercase', color: 'rgba(120,160,220,0.5)',
+                  textTransform: 'uppercase', color: institutional ? '#94a3b8' : 'rgba(120,160,220,0.5)',
                   fontFamily: 'var(--font-mono)', margin: 0,
                 }}>Accounts</p>
 
@@ -251,10 +257,10 @@ export default function Header() {
                         {w.accountIndex + 1}
                       </div>
                       <div style={{ textAlign: 'left', flex: 1, minWidth: 0 }}>
-                        <p style={{ color: isActive ? 'var(--q-text)' : 'rgba(180,210,255,0.7)', fontSize: '13px', fontWeight: '600', margin: '0 0 2px' }}>
+                        <p style={{ color: isActive ? (institutional ? '#1d4ed8' : 'var(--q-electric)') : (institutional ? '#334155' : 'rgba(180,210,255,0.7)'), fontSize: '13px', fontWeight: '600', margin: '0 0 2px' }}>
                           {name}
                         </p>
-                        <p style={{ color: 'rgba(120,160,220,0.4)', fontSize: '9px', fontFamily: 'var(--font-mono)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '0.03em' }}>
+                        <p style={{ color: institutional ? '#94a3b8' : 'rgba(120,160,220,0.4)', fontSize: '9px', fontFamily: 'var(--font-mono)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '0.03em' }}>
                           {w.address.slice(0, 16)}···{w.address.slice(-6)}
                         </p>
                       </div>
@@ -265,12 +271,12 @@ export default function Header() {
                   )
                 })}
 
-                <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '8px 0' }} />
+                <div style={{ height: '1px', background: institutional ? '#f1f5f9' : 'rgba(255,255,255,0.05)', margin: '8px 0' }} />
 
                 <button
                   style={{
                     display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
-                    padding: '10px 12px', color: 'rgba(180,210,255,0.6)',
+                    padding: '10px 12px', color: institutional ? '#475569' : 'rgba(180,210,255,0.6)',
                     fontSize: '13px', fontWeight: '500', fontFamily: 'var(--font-display)',
                     background: 'transparent', border: '1px solid transparent',
                     borderRadius: '12px', cursor: 'pointer',
