@@ -102,10 +102,10 @@
   --q-border:          rgba(0, 100, 180, 0.14);
   --q-border-subtle:   rgba(0, 80, 160, 0.08);
   --q-border-bright:   rgba(0, 140, 220, 0.4);
-  --q-text:            #050f28;
-  --q-text-2:          rgba(20, 50, 110, 0.75);
-  --q-text-3:          rgba(60, 100, 160, 0.45);
-  --q-muted:           rgba(40, 80, 140, 0.6);
+  --q-text:            #0f172a;
+  --q-text-2:          #334155;
+  --q-text-3:          #64748b;
+  --q-muted:           #64748b;
   --q-electric:        #0066CC;
   --q-electric-dim:    rgba(0, 102, 204, 0.1);
   --q-electric-glow:   rgba(0, 102, 204, 0.15);
