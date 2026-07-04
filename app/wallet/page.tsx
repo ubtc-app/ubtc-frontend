@@ -442,6 +442,8 @@ function WalletContent() {
           cursor: pointer;
         }
         .w-action-btn:hover { transform: translateY(-4px) scale(1.04); box-shadow: 0 16px 40px rgba(0,0,0,0.5) !important }
+        .inst-btn:hover { transform: translateY(-2px) scale(1.02) !important; box-shadow: 0 8px 20px rgba(0,0,0,0.22) !important }
+        .inst-btn:active { transform: scale(0.96) !important; box-shadow: 0 2px 8px rgba(0,0,0,0.18) !important; transition: transform 0.08s ease, box-shadow 0.08s ease !important }
         .w-tx-row { transition: background .15s }
         .w-tx-row:hover { background: rgba(0,212,255,0.05) !important }
         .w-shimmer { position:relative; overflow:hidden }
@@ -480,17 +482,17 @@ function WalletContent() {
       {/* ── ACTION BUTTONS ── */}
       <div className="w-in" style={{ display: 'flex', gap: 10, padding: '0 16px 28px', maxWidth: 480, margin: '0 auto', animationDelay: '.06s' }}>
         {([
-          { label: 'Send',    icon: Icons.send(22, inst?'#1d4ed8':'#00D4FF'),    href: `/transfer?from_wallet=${walletData?.wallet_address}&ubtc=${balance}&uusdt=${uusdtBalance}&uusdc=${uusdcBalance}`, color: inst?'#1d4ed8':'#00D4FF', bg: inst?'#fff':'linear-gradient(145deg,#001a2e,#002844)', glow: 'rgba(0,212,255,0.35)' },
-          { label: 'Receive', icon: Icons.receive(22, inst?'#059669':'#00FFE0'),  action: () => copy(walletData?.wallet_address || '', 'recv'),                                          color: inst?'#059669':'#00FFE0', bg: inst?'#fff':'linear-gradient(145deg,#001a20,#002820)', glow: 'rgba(0,255,224,0.3)'  },
-          { label: 'Redeem',  icon: Icons.redeem(22, inst?'#d97706':'#F59E0B'),   href: '/redeem/proof',                                                                                color: inst?'#d97706':'#F59E0B', bg: inst?'#fff':'linear-gradient(145deg,#1a1000,#2a1a00)', glow: 'rgba(245,158,11,0.4)'  },
-          { label: 'Tokens',  icon: Icons.settings(22, inst?'#7c3aed':'#A78BFA'), action: () => setShowManageTokens(true),                                                              color: inst?'#7c3aed':'#A78BFA', bg: inst?'#fff':'linear-gradient(145deg,#0e0028,#160040)', glow: 'rgba(167,139,250,0.3)' },
+          { label: 'Send',    icon: Icons.send(22, inst?'#fff':'#00D4FF'),    href: `/transfer?from_wallet=${walletData?.wallet_address}&ubtc=${balance}&uusdt=${uusdtBalance}&uusdc=${uusdcBalance}`, color: inst?'#1d4ed8':'#00D4FF', bg: inst?'#1d4ed8':'linear-gradient(145deg,#001a2e,#002844)', glow: 'rgba(0,212,255,0.35)' },
+          { label: 'Receive', icon: Icons.receive(22, inst?'#fff':'#00FFE0'),  action: () => copy(walletData?.wallet_address || '', 'recv'),                                          color: inst?'#059669':'#00FFE0', bg: inst?'#059669':'linear-gradient(145deg,#001a20,#002820)', glow: 'rgba(0,255,224,0.3)'  },
+          { label: 'Redeem',  icon: Icons.redeem(22, inst?'#fff':'#F59E0B'),   href: '/redeem/proof',                                                                                color: inst?'#d97706':'#F59E0B', bg: inst?'#d97706':'linear-gradient(145deg,#1a1000,#2a1a00)', glow: 'rgba(245,158,11,0.4)'  },
+          { label: 'Tokens',  icon: Icons.settings(22, inst?'#fff':'#A78BFA'), action: () => setShowManageTokens(true),                                                              color: inst?'#7c3aed':'#A78BFA', bg: inst?'#7c3aed':'linear-gradient(145deg,#0e0028,#160040)', glow: 'rgba(167,139,250,0.3)' },
         ] as any[]).map((btn: any) => {
           const inner = (
-            <div className="w-action-btn" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '18px 8px 14px', borderRadius: 20, background: btn.bg, border: inst ? `1px solid ${btn.color}40` : `1px solid ${btn.color}30`, boxShadow: inst ? '0 2px 12px rgba(0,0,0,0.08)' : `0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 ${btn.color}20, 0 0 0 0 ${btn.glow}` }}>
-              <div style={{ width: 48, height: 48, borderRadius: 15, background: `${btn.color}18`, border: `1px solid ${btn.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: inst ? 'none' : `0 0 20px ${btn.glow}, inset 0 1px 0 ${btn.color}30` }}>
+            <div className={inst ? 'w-action-btn inst-btn' : 'w-action-btn'} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '18px 8px 14px', borderRadius: 20, background: btn.bg, border: inst ? 'none' : `1px solid ${btn.color}30`, boxShadow: inst ? '0 4px 14px rgba(0,0,0,0.18)' : `0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 ${btn.color}20` }}>
+              <div style={{ width: 48, height: 48, borderRadius: 15, background: inst ? 'rgba(255,255,255,0.2)' : `${btn.color}18`, border: inst ? '1px solid rgba(255,255,255,0.25)' : `1px solid ${btn.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: inst ? 'none' : `0 0 20px ${btn.glow}, inset 0 1px 0 ${btn.color}30` }}>
                 {btn.icon}
               </div>
-              <span style={{ color: inst ? btn.color : '#e0eeff', fontSize: 12, fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.06em' }}>{btn.label}</span>
+              <span style={{ color: inst ? '#fff' : '#e0eeff', fontSize: 12, fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.06em' }}>{btn.label}</span>
             </div>
           )
           return btn.href
@@ -526,14 +528,14 @@ function WalletContent() {
                 <div style={{ width: 14, height: 14, borderRadius: '50%', background: `radial-gradient(circle at 35% 35%, #fff, ${t.color})`, boxShadow: `0 0 12px ${t.color}` }} />
               </div>
               <div style={{ flex: 1 }}>
-                <p style={{ color: '#fff', fontWeight: 800, fontSize: 16, margin: '0 0 3px', fontFamily: 'var(--font-syne)', letterSpacing: '0.02em' }}>{t.name}</p>
-                <p style={{ color: 'rgba(160,200,240,0.45)', fontSize: 11, fontFamily: 'var(--font-mono)', margin: 0 }}>{t.sub}</p>
+                <p style={{ color: inst ? '#0f172a' : '#fff', fontWeight: 800, fontSize: 16, margin: '0 0 3px', fontFamily: 'var(--font-syne)', letterSpacing: '0.02em' }}>{t.name}</p>
+                <p style={{ color: inst ? '#64748b' : 'rgba(160,200,240,0.45)', fontSize: 11, fontFamily: 'var(--font-mono)', margin: 0 }}>{t.sub}</p>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <p style={{ color: t.color, fontWeight: 800, fontSize: 20, fontFamily: 'var(--font-mono)', margin: '0 0 2px', textShadow: `0 0 16px ${t.color}80` }}>
+                <p style={{ color: t.color, fontWeight: 800, fontSize: 20, fontFamily: 'var(--font-mono)', margin: '0 0 2px', textShadow: inst ? 'none' : `0 0 16px ${t.color}80` }}>
                   ${t.bal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
-                <p style={{ color: `${t.color}80`, fontSize: 11, fontFamily: 'var(--font-mono)', margin: 0, fontWeight: 600 }}>{t.unit}</p>
+                <p style={{ color: inst ? '#64748b' : `${t.color}80`, fontSize: 11, fontFamily: 'var(--font-mono)', margin: 0, fontWeight: 600 }}>{t.unit}</p>
               </div>
             </div>
           ))}
