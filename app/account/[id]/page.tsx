@@ -302,8 +302,8 @@ function AccountContent() {
           display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
         }}>{txIcon(tx.kind)}</div>
         <div style={{ flex: 1 }}>
-          <p style={{ color: 'var(--q-text)', fontWeight: '600', fontSize: '13px', margin: '0 0 2px' }}>{tx.description}</p>
-          <p style={{ color: 'var(--q-text-3)', fontSize: '10px', ...mono, margin: 0, letterSpacing: '0.04em' }}>{new Date(tx.created_at).toLocaleString()}</p>
+          <p style={{ color: txInst ? '#0f172a' : 'var(--q-text)', fontWeight: '600', fontSize: '13px', margin: '0 0 2px' }}>{tx.description}</p>
+          <p style={{ color: txInst ? '#64748b' : 'var(--q-text-3)', fontSize: '10px', ...mono, margin: 0, letterSpacing: '0.04em' }}>{new Date(tx.created_at).toLocaleString()}</p>
         </div>
         <p style={{ color, fontWeight: '700', fontSize: '14px', ...mono, margin: 0 }}>{isCredit ? '+' : '−'}{tx.amount} {tx.currency}</p>
       </div>
@@ -713,7 +713,7 @@ function AccountContent() {
             <div style={{ ...glass(), border: `1px solid ${ratioColor}22`, padding: '22px 24px', marginBottom: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '18px' }}>
                 <div>
-                  <p style={{ color: 'var(--q-text-3)', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.22em', margin: '0 0 6px', ...mono }}>Safety Level</p>
+                  <p style={{ color: inst ? '#64748b' : 'var(--q-text-3)', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.22em', margin: '0 0 6px', ...mono }}>Safety Level</p>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
                     <p className="number" style={{ color: ratioColor, fontSize: '36px', fontWeight: '700', margin: 0, lineHeight: 1, textShadow: `0 0 30px ${ratioColor}50` }}>
                       {ratio > 0 ? ratio.toFixed(0) + '%' : '—'}
@@ -722,8 +722,8 @@ function AccountContent() {
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <p style={{ color: 'var(--q-text-3)', fontSize: '9px', ...mono, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.12em' }}>BTC price</p>
-                  <p className="number" style={{ color: 'var(--q-text-2)', fontSize: '15px', fontWeight: '600', margin: 0 }}>${btcPrice.toLocaleString()}</p>
+                  <p style={{ color: inst ? '#64748b' : 'var(--q-text-3)', fontSize: '9px', ...mono, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.12em' }}>BTC price</p>
+                  <p className="number" style={{ color: inst ? '#0f172a' : 'var(--q-text-2)', fontSize: '15px', fontWeight: '600', margin: 0 }}>${btcPrice.toLocaleString()}</p>
                 </div>
               </div>
 
@@ -745,9 +745,9 @@ function AccountContent() {
                   { label: 'UBTC created', val: '$' + ubtcBalance.toLocaleString(undefined,{maximumFractionDigits:2}), sub: remainingMintable > 0 ? '$' + remainingMintable.toLocaleString(undefined,{maximumFractionDigits:0}) + ' more available' : 'Fully minted', color: 'var(--q-electric)' },
                 ].map(s => (
                   <div key={s.label} style={{ background: inst ? '#f8fafc' : 'rgba(0,0,0,0.3)', borderRadius: '14px', padding: '14px 16px', border: inst ? '1px solid #e2e8f0' : '1px solid rgba(255,255,255,0.04)' }}>
-                    <p style={{ color: 'var(--q-text-3)', fontSize: '9px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 6px' }}>{s.label}</p>
-                    <p className="number" style={{ color: s.color, fontSize: '17px', fontWeight: '700', margin: '0 0 2px', textShadow: `0 0 20px ${s.color}40` }}>{s.val}</p>
-                    <p style={{ color: 'var(--q-text-3)', fontSize: '10px', ...mono, margin: 0 }}>{s.sub}</p>
+                    <p style={{ color: inst ? '#64748b' : 'var(--q-text-3)', fontSize: '9px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 6px' }}>{s.label}</p>
+                    <p className="number" style={{ color: s.color, fontSize: '17px', fontWeight: '700', margin: '0 0 2px', textShadow: inst ? 'none' : `0 0 20px ${s.color}40` }}>{s.val}</p>
+                    <p style={{ color: inst ? '#64748b' : 'var(--q-text-3)', fontSize: '10px', ...mono, margin: 0 }}>{s.sub}</p>
                   </div>
                 ))}
               </div>
@@ -767,7 +767,7 @@ function AccountContent() {
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px', gap: '12px' }}>
                 <div>
                   <p style={{ color: 'var(--q-electric)', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.2em', margin: '0 0 6px', ...mono }}>Create UBTC</p>
-                  <p style={{ fontFamily: 'var(--font-syne)', color: 'var(--q-text)', fontSize: '18px', fontWeight: '700', margin: 0, letterSpacing: '-0.02em' }}>
+                  <p style={{ fontFamily: 'var(--font-syne)', color: inst ? '#0f172a' : 'var(--q-text)', fontSize: '18px', fontWeight: '700', margin: 0, letterSpacing: '-0.02em' }}>
                     {!hasMinted ? 'Lock your BTC, get UBTC' : 'Create more UBTC'}
                   </p>
                 </div>
@@ -778,22 +778,22 @@ function AccountContent() {
                   </div>
                 )}
               </div>
-              <p style={{ color: 'var(--q-text-3)', fontSize: '13px', margin: '0 0 20px', lineHeight: '1.8', fontWeight: '300' }}>
+              <p style={{ color: inst ? '#64748b' : 'var(--q-text-3)', fontSize: '13px', margin: '0 0 20px', lineHeight: '1.8', fontWeight: '300' }}>
                 {!hasMinted
                   ? 'UBTC is a dollar-pegged token backed 1.5× by your Bitcoin. Send it to anyone, use it as cash — while your BTC stays locked and appreciating.'
                   : 'Your BTC backing supports more UBTC. Keep your safety level above 200% for a healthy buffer.'}
               </p>
               <a href={`/mint?vault=${vaultId}&currency=ubtc`} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-                background: 'linear-gradient(135deg, var(--q-electric), #0099cc)',
+                background: inst ? '#1d4ed8' : 'linear-gradient(135deg, var(--q-electric), #0099cc)',
                 borderRadius: '14px', padding: '16px', textDecoration: 'none',
-                color: '#000', fontSize: '14px', fontWeight: '800',
+                color: '#fff', fontSize: '14px', fontWeight: '800',
                 fontFamily: 'var(--font-syne)',
-                boxShadow: '0 0 30px rgba(0,212,255,0.25), 0 4px 14px rgba(0,0,0,0.4)',
+                boxShadow: inst ? '0 4px 18px rgba(29,78,216,0.35)' : '0 0 30px rgba(0,212,255,0.25), 0 4px 14px rgba(0,0,0,0.4)',
                 transition: 'box-shadow 0.2s',
               }}
-                onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 0 50px rgba(0,212,255,0.4), 0 4px 20px rgba(0,0,0,0.5)')}
-                onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 0 30px rgba(0,212,255,0.25), 0 4px 14px rgba(0,0,0,0.4)')}
+                onMouseEnter={e => (e.currentTarget.style.boxShadow = inst ? '0 6px 24px rgba(29,78,216,0.5)' : '0 0 50px rgba(0,212,255,0.4), 0 4px 20px rgba(0,0,0,0.5)')}
+                onMouseLeave={e => (e.currentTarget.style.boxShadow = inst ? '0 4px 18px rgba(29,78,216,0.35)' : '0 0 30px rgba(0,212,255,0.25), 0 4px 14px rgba(0,0,0,0.4)')}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
                 {!hasMinted ? 'Create UBTC Now →' : 'Create More UBTC →'}
@@ -808,7 +808,7 @@ function AccountContent() {
                 {Icons.wallet(18, availableToMove > 0 ? 'var(--q-btc)' : 'var(--q-text-3)')}
                 <div style={{ flex: 1 }}>
                   <p style={{ color: availableToMove > 0 ? 'var(--q-btc)' : 'var(--q-text-3)', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.18em', margin: '0 0 3px', ...mono }}>Your Wallet</p>
-                  <p style={{ fontFamily: 'var(--font-syne)', color: 'var(--q-text)', fontSize: '15px', fontWeight: '700', margin: 0 }}>
+                  <p style={{ fontFamily: 'var(--font-syne)', color: inst ? '#0f172a' : 'var(--q-text)', fontSize: '15px', fontWeight: '700', margin: 0 }}>
                     {availableToMove > 0 ? `${availableToMove.toFixed(2)} UBTC ready to move` : 'All UBTC moved to wallet'}
                   </p>
                 </div>
@@ -816,7 +816,7 @@ function AccountContent() {
                   <p className="number" style={{ color: 'var(--q-btc)', fontSize: '18px', fontWeight: '800', margin: 0, textShadow: '0 0 20px rgba(255,184,0,0.3)' }}>{walletBalance.toFixed(2)} UBTC</p>
                 )}
               </div>
-              <p style={{ color: 'var(--q-text-3)', fontSize: '12px', margin: '0 0 18px', lineHeight: '1.8', fontWeight: '300' }}>
+              <p style={{ color: inst ? '#64748b' : 'var(--q-text-3)', fontSize: '12px', margin: '0 0 18px', lineHeight: '1.8', fontWeight: '300' }}>
                 UBTC in this account needs to be in your wallet to spend. This account is the vault — your wallet is your spending account.
               </p>
               <div style={{ display: 'flex', gap: '10px' }}>

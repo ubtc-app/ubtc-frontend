@@ -36,7 +36,7 @@ export function ConsumerUnlock() {
     setTimeout(() => {
       if (password === 'N@k@m0t0') {
         sessionStorage.setItem('wlb_auth', '1')
-        router.push('/home')
+        window.location.href = '/home'
       } else {
         setError('Biometric mismatch — access denied')
         setShake(true)
