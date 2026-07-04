@@ -11,13 +11,21 @@ import { useIsMobile } from '../../lib/useIsMobile'
 // ── Shared style helpers ─────────────────────────────────────────────────────
 const mono: any = { fontFamily: 'var(--font-mono)' }
 
-const glass = (extra?: string) => ({
+const isInstitutional = () =>
+  typeof window !== 'undefined' &&
+  (localStorage.getItem('qufi_theme') === 'light' || localStorage.getItem('qufi_user_type') === 'institutional')
+
+const glass = (_extra?: string) => isInstitutional() ? {
+  background: '#fff',
+  border: '1px solid #e2e8f0',
+  borderRadius: '20px',
+  boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
+} : {
   background: 'linear-gradient(135deg,#050f20,#020810)',
   border: '1px solid rgba(0,212,255,0.12)',
   borderRadius: '20px',
   boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(0,212,255,0.08)',
-  ...(extra ? {} : {}),
-})
+}
 
 function AccountContent() {
   const params = useParams()
@@ -261,7 +269,8 @@ function AccountContent() {
   const scToken          = showAddModal === 'UUSDT' ? 'USDT' : 'USDC'
   const scUToken         = showAddModal || 'UUSDT'
   const scAddr           = '0x' + vaultId.replace('vault_', '').padEnd(40, 'a1b2c3d4e5f67890abcdef12')
-  const fieldStyle: any  = { display: 'block', width: '100%', padding: '14px 16px', background: 'rgba(0,5,20,0.7)', border: '1px solid var(--q-border)', borderRadius: '12px', color: 'var(--q-text)', fontSize: '14px', ...mono, outline: 'none', boxSizing: 'border-box' }
+  const inst = isInstitutional()
+  const fieldStyle: any  = { display: 'block', width: '100%', padding: '14px 16px', background: inst?'#f8fafc':'rgba(0,5,20,0.7)', border: '1px solid var(--q-border)', borderRadius: '12px', color: 'var(--q-text)', fontSize: '14px', ...mono, outline: 'none', boxSizing: 'border-box' }
 
   const kindColor = (kind: string) => {
     const map: Record<string, string> = { mint: 'var(--q-electric)', deposit: 'var(--q-btc)', redeem: 'var(--q-green)', burn: 'var(--q-red)', transfer: 'var(--q-violet)', to_wallet: 'var(--q-green)', external_send: 'var(--q-red)', wallet_redeem: 'var(--q-red)', withdraw: 'var(--q-red)' }
@@ -329,7 +338,7 @@ function AccountContent() {
       {/* ── MOVE TO WALLET MODAL ── */}
       {showMoveModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,2,10,0.92)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', backdropFilter: 'blur(20px)' }}>
-          <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(255,184,0,0.22)', borderRadius: '20px', padding: '36px', maxWidth: '440px', width: '100%', boxShadow: '0 24px 80px rgba(0,0,0,0.8)' }}>
+          <div style={{ background: inst?'#fff':'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(255,184,0,0.22)', borderRadius: '20px', padding: '36px', maxWidth: '440px', width: '100%', boxShadow: '0 24px 80px rgba(0,0,0,0.8)' }}>
             {!moveDone ? (
               <>
                 <div style={{ textAlign: 'center', marginBottom: '28px' }}>
@@ -354,7 +363,7 @@ function AccountContent() {
                 <label style={{ display: 'block', color: 'var(--q-text-3)', fontSize: '9px', ...mono, textTransform: 'uppercase', letterSpacing: '0.18em', marginBottom: '8px' }}>Amount (UBTC)</label>
                 <input value={moveAmount} onChange={e => setMoveAmount(e.target.value)} placeholder="0.00" type="number" max={ubtcBalance} style={{ ...fieldStyle, fontSize: '20px', marginBottom: '8px' }} autoFocus />
 
-                <div style={{ background: 'rgba(0,5,20,0.5)', borderRadius: '10px', padding: '10px 14px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', border: '1px solid var(--q-border-subtle)' }}>
+                <div style={{ background: inst?'#f8fafc':'rgba(0,5,20,0.5)', borderRadius: '10px', padding: '10px 14px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', border: '1px solid var(--q-border-subtle)' }}>
                   <span style={{ color: 'var(--q-text-3)', fontSize: '10px', ...mono, letterSpacing: '0.06em' }}>Destination</span>
                   <span style={{ color: 'var(--q-btc)', fontSize: '10px', ...mono }}>{vault.linked_wallet?.slice(0,18)}…</span>
                 </div>
@@ -434,7 +443,7 @@ function AccountContent() {
       {/* ── ADD STABLECOIN MODAL ── */}
       {showAddModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,2,10,0.92)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', overflowY: 'auto', backdropFilter: 'blur(20px)' }}>
-          <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: `1px solid ${scColor}22`, borderRadius: '20px', padding: '36px', maxWidth: '520px', width: '100%', boxShadow: '0 24px 80px rgba(0,0,0,0.8)' }}>
+          <div style={{ background: inst?'#fff':'linear-gradient(135deg,#050f20,#020810)', border: inst?'1px solid #e2e8f0':`1px solid ${scColor}22`, borderRadius: '20px', padding: '36px', maxWidth: '520px', width: '100%', boxShadow: '0 24px 80px rgba(0,0,0,0.8)' }}>
             {/* Progress */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '32px' }}>
               {['deposit','quantum','done'].map((s, i) => {
@@ -450,7 +459,7 @@ function AccountContent() {
                   <h2 style={{ fontFamily: 'var(--font-syne)', color: 'var(--q-text)', fontSize: '22px', fontWeight: '800', margin: '0 0 6px', letterSpacing: '-0.03em' }}>Deposit {scToken}</h2>
                   <p style={{ color: 'var(--q-text-3)', fontSize: '11px', ...mono, margin: 0 }}>Lock {scToken} · Mint {scUToken} 1:1</p>
                 </div>
-                <div style={{ background: 'rgba(0,5,20,0.6)', border: `1px solid ${scColor}18`, borderRadius: '14px', padding: '16px', marginBottom: '14px' }}>
+                <div style={{ background: inst?'#f8fafc':'rgba(0,5,20,0.6)', border: inst?'1px solid #e2e8f0':`1px solid ${scColor}18`, borderRadius: '14px', padding: '16px', marginBottom: '14px' }}>
                   <p style={{ color: 'var(--q-text-3)', fontSize: '9px', ...mono, textTransform: 'uppercase', letterSpacing: '0.18em', margin: '0 0 8px' }}>{scToken} Deposit Address (ERC-20)</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <p style={{ color: scColor, fontSize: '10px', ...mono, margin: 0, flex: 1, wordBreak: 'break-all', lineHeight: '1.7' }}>{scAddr}</p>
@@ -483,7 +492,7 @@ function AccountContent() {
                   <h2 style={{ fontFamily: 'var(--font-syne)', color: 'var(--q-text)', fontSize: '22px', fontWeight: '800', margin: '0 0 6px', letterSpacing: '-0.03em' }}>Quantum Authorization</h2>
                   <p style={{ color: 'var(--q-text-3)', fontSize: '11px', ...mono, margin: 0 }}>Authorize minting of {parseFloat(depositAmount).toLocaleString()} {scUToken}</p>
                 </div>
-                <div style={{ background: 'rgba(0,5,20,0.7)', border: `1px solid ${scColor}18`, borderRadius: '18px', padding: '28px', marginBottom: '14px', textAlign: 'center' }}>
+                <div style={{ background: inst?'#f8fafc':'rgba(0,5,20,0.7)', border: inst?'1px solid #e2e8f0':`1px solid ${scColor}18`, borderRadius: '18px', padding: '28px', marginBottom: '14px', textAlign: 'center' }}>
                   <p style={{ color: 'var(--q-text-3)', fontSize: '9px', ...mono, textTransform: 'uppercase', letterSpacing: '0.25em', margin: '0 0 16px' }}>One-Time Code</p>
                   <p className="number" style={{ color: 'var(--q-text)', fontSize: '48px', fontWeight: '700', letterSpacing: '0.5em', margin: '0 0 10px', lineHeight: '1', textShadow: `0 0 40px ${scColor}40` }}>{otpCode}</p>
                   <p style={{ color: 'var(--q-text-3)', fontSize: '10px', ...mono }}>Expires {otpExpires ? new Date(otpExpires).toLocaleTimeString() : ''}</p>
@@ -506,7 +515,7 @@ function AccountContent() {
                   <h2 style={{ fontFamily: 'var(--font-syne)', color: 'var(--q-text)', fontSize: '22px', fontWeight: '800', margin: '0 0 6px', letterSpacing: '-0.03em' }}>Save Your Signing Key</h2>
                   <p style={{ color: scColor, fontSize: '12px', ...mono, margin: 0 }}>{parseFloat(depositAmount).toLocaleString()} {scUToken} minted</p>
                 </div>
-                <div style={{ background: 'rgba(0,5,20,0.7)', border: '1px solid rgba(255,56,96,0.35)', borderRadius: '18px', padding: '22px', marginBottom: '14px' }}>
+                <div style={{ background: inst?'#fff7f7':'rgba(0,5,20,0.7)', border: '1px solid rgba(255,56,96,0.35)', borderRadius: '18px', padding: '22px', marginBottom: '14px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       {Icons.key(14, 'var(--q-red)')}

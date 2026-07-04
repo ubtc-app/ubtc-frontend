@@ -1248,28 +1248,138 @@ input[type=number] { -moz-appearance: textfield; }
   --t-nav-bg:          rgba(7, 9, 13, 0.95);
 }
 
-/* Strip particle / vortex animations in institutional mode */
-[data-user-type="institutional"] .q-vortex-scene,
-[data-user-type="institutional"] .q-ring-1,
-[data-user-type="institutional"] .q-ring-2,
-[data-user-type="institutional"] .q-ring-3,
-[data-user-type="institutional"] .q-vortex-core,
-[data-user-type="institutional"] .q-energy-ring,
-[data-user-type="institutional"] .q-particle,
-[data-user-type="institutional"] .q-scanline,
-[data-user-type="institutional"] canvas {
+/* ═══════════════════════════════════════════════════════════════════════════
+   INSTITUTIONAL LIGHT THEME
+   Applied when html[data-theme="light"] — overrides all dark quantum styles
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html[data-theme="light"] body {
+  background: #f5f6f8 !important;
+  color: #0f172a !important;
+}
+
+/* Hide 3-D space background canvas */
+html[data-theme="light"] canvas { display: none !important; }
+
+/* Page padding area */
+html[data-theme="light"] .qt-page-root {
+  background: #f5f6f8;
+}
+
+/* ── Header / nav ── */
+html[data-theme="light"] .frosted-nav {
+  background: rgba(255,255,255,0.95) !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+}
+
+/* Nav pills */
+html[data-theme="light"] .nav-link {
+  color: #64748b !important;
+  background: transparent !important;
+}
+html[data-theme="light"] .nav-link:hover {
+  color: #0f172a !important;
+  background: rgba(15,23,42,0.05) !important;
+}
+html[data-theme="light"] .nav-link.active {
+  color: #0f172a !important;
+  background: rgba(15,23,42,0.07) !important;
+}
+
+/* ── Cards / glass ── */
+html[data-theme="light"] .glass,
+html[data-theme="light"] .card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+html[data-theme="light"] .glass:hover,
+html[data-theme="light"] .card:hover {
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08) !important;
+}
+
+/* ── Buttons ── */
+html[data-theme="light"] .btn-primary {
+  background: #0f172a !important;
+  color: #ffffff !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15) !important;
+}
+html[data-theme="light"] .btn-primary:hover {
+  background: #1e293b !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+}
+html[data-theme="light"] .btn-ghost {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: none !important;
+}
+html[data-theme="light"] .btn-ghost:hover {
+  background: #e2e8f0 !important;
+}
+
+/* ── Typography ── */
+html[data-theme="light"] h1,
+html[data-theme="light"] h2,
+html[data-theme="light"] h3,
+html[data-theme="light"] h4 {
+  color: #0f172a !important;
+}
+html[data-theme="light"] .number {
+  color: #0f172a !important;
+}
+
+/* ── Inputs ── */
+html[data-theme="light"] input,
+html[data-theme="light"] textarea,
+html[data-theme="light"] select {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+}
+html[data-theme="light"] input:focus,
+html[data-theme="light"] textarea:focus,
+html[data-theme="light"] select:focus {
+  border-color: #94a3b8 !important;
+  box-shadow: 0 0 0 3px rgba(15,23,42,0.06) !important;
+}
+html[data-theme="light"] input::placeholder { color: #94a3b8 !important; }
+
+/* ── QuantumLoader spinner: clean dark rings ── */
+html[data-theme="light"] .q-loader-ring-1 { border-top-color: #0f172a !important; border-color: #e2e8f0 !important; }
+html[data-theme="light"] .q-loader-ring-2 { border-top-color: #1e40af !important; border-color: #f1f5f9 !important; }
+html[data-theme="light"] .q-loader-ring-3 { border-top-color: #64748b !important; border-color: #f8fafc !important; }
+
+/* ── Strip quantum glow/particle classes ── */
+html[data-theme="light"] .q-vortex-scene,
+html[data-theme="light"] .q-ring-1,
+html[data-theme="light"] .q-ring-2,
+html[data-theme="light"] .q-ring-3,
+html[data-theme="light"] .q-vortex-core,
+html[data-theme="light"] .q-energy-ring,
+html[data-theme="light"] .q-particle,
+html[data-theme="light"] .q-scanline,
+html[data-theme="light"] .q-circuit-grid,
+html[data-theme="light"] .q-glow-node {
   display: none !important;
 }
 
-/* Institutional card style — sharp border, no glow */
+/* ── Scrollbar ── */
+html[data-theme="light"] ::-webkit-scrollbar { width: 6px; }
+html[data-theme="light"] ::-webkit-scrollbar-track { background: #f1f5f9; }
+html[data-theme="light"] ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+html[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* Legacy data-user-type selector kept for backward compat */
 [data-user-type="institutional"] .q-holo {
   background: rgba(12, 16, 24, 0.96) !important;
   border: 1px solid rgba(40, 56, 80, 0.8) !important;
   box-shadow: 0 8px 32px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.03) !important;
   backdrop-filter: blur(20px) !important;
-}
-
-/* Institutional body background */
-[data-user-type="institutional"] body {
-  background: #07090d;
 }

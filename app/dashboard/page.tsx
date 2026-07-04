@@ -3,9 +3,24 @@ import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { API_URL } from '../lib/supabase'
 import { QuantumLoader } from '../components/QuantumLoader'
+import { InstitutionalDashboard } from '../components/InstitutionalDashboard'
 import { Icons } from '../components/Icons'
 import { useIsMobile } from '../lib/useIsMobile'
 import { loadWallet, hasStoredWallet } from '../lib/wallet/storage'
+
+// ── Theme router — renders institutional clean UI for light theme users ───────
+function ThemeRouter({ children }: { children: React.ReactNode }) {
+  const [inst, setInst] = useState<boolean | null>(null)
+  useEffect(() => {
+    setInst(
+      localStorage.getItem('qufi_theme') === 'light' ||
+      localStorage.getItem('qufi_user_type') === 'institutional'
+    )
+  }, [])
+  if (inst === null) return null
+  if (inst) return <InstitutionalDashboard />
+  return <>{children}</>
+}
 
 const stagger = { animate: { transition: { staggerChildren: 0.07 } } }
 const cardVariant = { initial: { opacity: 0, y: 18 }, animate: { opacity: 1, y: 0, transition: { duration: 0.45 } } }
@@ -73,7 +88,7 @@ function AssetRow({ icon, name, subtitle, value, color, addHref }: {
   )
 }
 
-export default function Dashboard() {
+function DashboardConsumer() {
   const [vaults, setVaults]           = useState<any[]>([])
   const [stablecoins, setStablecoins] = useState<any[]>([])
   const [btcPrice, setBtcPrice]       = useState(0)
@@ -508,4 +523,8 @@ export default function Dashboard() {
       </div>
     </div>
   )
+}
+
+export default function Dashboard() {
+  return <ThemeRouter><DashboardConsumer /></ThemeRouter>
 }

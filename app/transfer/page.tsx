@@ -62,6 +62,30 @@ function TransferContent() {
   const [collateralAcknowledged, setCollateralAcknowledged] = useState(false)
   const [qsk, setQsk] = useState(() => sessionStorage.getItem('ubtc_qsk') || '')
   const [qskError, setQskError] = useState('')
+  const [institutional, setInstitutional] = useState(false)
+
+  useEffect(() => {
+    setInstitutional(
+      localStorage.getItem('qufi_theme') === 'light' ||
+      localStorage.getItem('qufi_user_type') === 'institutional'
+    )
+  }, [])
+
+  const C = institutional ? {
+    card:   { background: '#fff',             border: '1px solid #e2e8f0' },
+    modal:  { background: '#fff',             border: '1px solid #e2e8f0' },
+    input:  { background: '#f8fafc',          border: '1px solid #e2e8f0', color: '#0f172a' },
+    shadow: '0 8px 24px rgba(0,0,0,0.08)',
+    selBg:  { background: '#eff6ff',          border: '1px solid #bfdbfe' },
+    selBg2: { background: 'rgba(0,102,204,0.06)', border: '1px solid rgba(0,102,204,0.2)' },
+  } : {
+    card:   { background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)' },
+    modal:  { background: 'linear-gradient(135deg,#070d20,#030812)', border: '1px solid rgba(0,212,255,0.15)' },
+    input:  { background: 'rgba(0,5,20,0.8)',  border: '1px solid rgba(0,212,255,0.15)',  color: '#f0f6ff' },
+    shadow: '0 8px 32px rgba(0,0,0,0.5)',
+    selBg:  { background: 'rgba(0,212,255,0.08)',  border: '1px solid rgba(0,212,255,0.35)' },
+    selBg2: { background: 'rgba(0,212,255,0.15)',  border: '1px solid rgba(0,212,255,0.3)' },
+  }
 
   const mono: any = { fontFamily: 'var(--font-mono)' }
   const isUusdt = activeCurrency === 'uusdt'
@@ -322,7 +346,7 @@ function TransferContent() {
       {/* Own wallet modal */}
       {showOwnWalletQuestion && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-          <div style={{ background: 'linear-gradient(135deg,#070d20,#030812)', border: '1px solid rgba(0,212,255,0.15)', borderRadius: '24px', padding: '36px', maxWidth: '400px', width: '100%', boxShadow: '0 24px 80px rgba(0,0,0,0.8)' }}>
+          <div style={{ ...C.modal, borderRadius: '24px', padding: '36px', maxWidth: '400px', width: '100%', boxShadow: '0 24px 80px rgba(0,0,0,0.8)' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
               <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'var(--t-accent-bg)', border: '2px solid hsl(205 85% 55% / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {Icons.wallet(28, 'var(--t-accent)')}
@@ -351,7 +375,7 @@ function TransferContent() {
       {/* Collateral warning modal */}
       {showWarning && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-          <div style={{ background: 'linear-gradient(135deg,#070d20,#030812)', border: `2px solid ${isOwnWallet ? 'rgba(0,212,255,0.3)' : 'rgba(255,56,96,0.4)'}`, borderRadius: '24px', padding: '32px', maxWidth: '420px', width: '100%', maxHeight: '90vh', overflowY: 'auto' as const, boxShadow: '0 24px 80px rgba(0,0,0,0.8)' }}>
+          <div style={{ ...C.modal, border: `2px solid ${isOwnWallet ? (institutional ? '#bfdbfe' : 'rgba(0,212,255,0.3)') : 'rgba(255,56,96,0.4)'}`, borderRadius: '24px', padding: '32px', maxWidth: '420px', width: '100%', maxHeight: '90vh', overflowY: 'auto' as const, boxShadow: '0 24px 80px rgba(0,0,0,0.8)' }}>
             {isOwnWallet ? (
               <div>
                 <div style={{ textAlign: 'center' as const, marginBottom: '20px' }}>
@@ -434,7 +458,7 @@ function TransferContent() {
       )}
 
       {/* Header */}
-      <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', borderBottom: '1px solid rgba(0,212,255,0.12)', height: '60px', display: 'flex', alignItems: 'center', padding: '0 24px', gap: '16px' }}>
+      <div style={{ ...C.card, borderRadius: 0, borderTop: 'none', borderLeft: 'none', borderRight: 'none', borderBottom: C.card.border, height: '60px', display: 'flex', alignItems: 'center', padding: '0 24px', gap: '16px' }}>
         <a href={backHref} style={{ color: 'var(--t-muted)', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
           {Icons.back(20, 'var(--t-muted)')}
         </a>
@@ -461,7 +485,7 @@ function TransferContent() {
               <h2 style={{ color: 'var(--t-text)', fontSize: '28px', fontWeight: '700', margin: '0 0 6px' }}>Sent!</h2>
               <p style={{ color: 'var(--t-faint)', fontSize: '15px', ...mono, margin: 0 }}>{parseFloat(result.amount).toLocaleString()} {result.currency} transferred</p>
             </div>
-            <div style={{ width: '100%', background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '20px', padding: '22px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+            <div style={{ width: '100%', ...C.card, borderRadius: '20px', padding: '22px', boxShadow: C.shadow }}>
               {[
                 { label: 'Amount', value: `${parseFloat(result.amount).toLocaleString()} ${result.currency}` },
                 { label: 'To', value: result.to },
@@ -551,7 +575,7 @@ function TransferContent() {
                 </div>
               </div>
             ) : fromOptions.length > 0 ? (
-              <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+              <div style={{ ...C.card, borderRadius: '20px', overflow: 'hidden', boxShadow: C.shadow }}>
                 <div style={{ padding: '16px 20px 10px' }}>
                   <p style={{ color: 'rgba(0,212,255,0.5)', fontSize: '9px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.35em', margin: 0 }}>From Account</p>
                 </div>
@@ -582,7 +606,7 @@ function TransferContent() {
             )}
 
             {/* AMOUNT */}
-            <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '20px', padding: '22px 24px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+            <div style={{ ...C.card, borderRadius: '20px', padding: '22px 24px', boxShadow: C.shadow }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <p style={{ color: 'rgba(0,212,255,0.5)', fontSize: '9px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.35em', margin: 0 }}>Amount</p>
                 <button onClick={() => setAmount(activeBalance.toFixed(2))} style={{ background: tokenColor + '12', border: `1px solid ${tokenColor}28`, color: tokenColor, borderRadius: '8px', padding: '4px 10px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', ...mono }}>
@@ -605,7 +629,7 @@ function TransferContent() {
             </div>
 
             {/* TO — search only, UBTC wallets only */}
-            <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '20px', padding: '20px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+            <div style={{ ...C.card, borderRadius: '20px', padding: '20px', boxShadow: C.shadow }}>
               <p style={{ color: 'rgba(0,212,255,0.5)', fontSize: '9px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.35em', margin: '0 0 12px' }}>To</p>
 
               {/* Your own wallets quick-pick */}
@@ -635,16 +659,16 @@ function TransferContent() {
                             style={{
                               display: 'flex', alignItems: 'center', gap: '12px',
                               padding: '11px 14px',
-                              background: isSelected ? 'rgba(0,212,255,0.08)' : 'rgba(255,255,255,0.03)',
-                              border: `1px solid ${isSelected ? 'rgba(0,212,255,0.35)' : 'rgba(255,255,255,0.07)'}`,
+                              background: isSelected ? (institutional?'#eff6ff':'rgba(0,212,255,0.08)') : (institutional?'#f8fafc':'rgba(255,255,255,0.03)'),
+                              border: `1px solid ${isSelected ? (institutional?'#bfdbfe':'rgba(0,212,255,0.35)') : (institutional?'#e2e8f0':'rgba(255,255,255,0.07)')}`,
                               borderRadius: '12px', cursor: 'pointer',
                               transition: 'all 0.15s ease',
                             }}
                           >
                             <div style={{
                               width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0,
-                              background: isSelected ? 'rgba(0,212,255,0.15)' : 'rgba(255,255,255,0.05)',
-                              border: `1px solid ${isSelected ? 'rgba(0,212,255,0.3)' : 'rgba(255,255,255,0.1)'}`,
+                              background: isSelected ? (institutional?'#dbeafe':'rgba(0,212,255,0.15)') : (institutional?'#f1f5f9':'rgba(255,255,255,0.05)'),
+                              border: `1px solid ${isSelected ? (institutional?'#93c5fd':'rgba(0,212,255,0.3)') : (institutional?'#e2e8f0':'rgba(255,255,255,0.1)')}`,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               fontSize: '12px', fontWeight: '700',
                               color: isSelected ? 'var(--t-accent)' : 'var(--t-muted)',
@@ -679,7 +703,7 @@ function TransferContent() {
                 value={searchQuery}
                 onChange={e => handleSearch(e.target.value)}
                 placeholder="@username or ubtc1..."
-                style={{ width: '100%', padding: '13px 14px', background: 'rgba(0,5,20,0.8)', border: `1px solid ${searchError ? 'rgba(255,56,96,0.5)' : (selectedWallet || isManualUbtcAddress) ? 'rgba(0,255,157,0.4)' : 'rgba(0,212,255,0.15)'}`, borderRadius: '12px', color: '#f0f6ff', fontSize: '13px', fontFamily: 'var(--font-mono)', outline: 'none', boxSizing: 'border-box' as const, boxShadow: (selectedWallet || isManualUbtcAddress) ? '0 0 0 3px rgba(0,255,157,0.08)' : 'none' }}
+                style={{ width: '100%', padding: '13px 14px', ...C.input, border: `1px solid ${searchError ? 'rgba(255,56,96,0.5)' : (selectedWallet || isManualUbtcAddress) ? 'rgba(0,255,157,0.4)' : (institutional?'#e2e8f0':'rgba(0,212,255,0.15)')}`, borderRadius: '12px', fontSize: '13px', fontFamily: 'var(--font-mono)', outline: 'none', boxSizing: 'border-box' as const, boxShadow: (selectedWallet || isManualUbtcAddress) ? '0 0 0 3px rgba(0,255,157,0.08)' : 'none' }}
               />
 
               {searchError && (
@@ -740,7 +764,7 @@ function TransferContent() {
 
             {/* QSK — vault sends only */}
             {!isWalletSend && !isStable && (
-              <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.2)', borderRadius: '20px', padding: '22px 24px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+              <div style={{ ...C.card, borderRadius: '20px', padding: '22px 24px', boxShadow: C.shadow }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                   {Icons.quantum(14, 'var(--t-accent)')}
                   <p style={{ color: 'var(--t-accent)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.2em', margin: 0 }}>Quantum Signing Key Required</p>
@@ -749,14 +773,14 @@ function TransferContent() {
                   📁 Load Key File
                   <input type="file" accept=".json" style={{ display: 'none' }} onChange={loadKeyFile} />
                 </label>
-                <textarea value={qsk} onChange={e => { setQsk(e.target.value); setQskError('') }} placeholder="Or paste your Quantum Signing Key..." rows={3} style={{ width: '100%', padding: '12px 14px', background: 'rgba(0,5,20,0.8)', border: `1px solid ${qskError ? 'rgba(255,56,96,0.5)' : 'rgba(0,212,255,0.15)'}`, borderRadius: '10px', color: '#f0f6ff', fontSize: '11px', fontFamily: 'var(--font-mono)', outline: 'none', resize: 'none' as const, boxSizing: 'border-box' as const }} />
+                <textarea value={qsk} onChange={e => { setQsk(e.target.value); setQskError('') }} placeholder="Or paste your Quantum Signing Key..." rows={3} style={{ width: '100%', padding: '12px 14px', ...C.input, border: `1px solid ${qskError ? 'rgba(255,56,96,0.5)' : (institutional?'#e2e8f0':'rgba(0,212,255,0.15)')}`, borderRadius: '10px', fontSize: '11px', fontFamily: 'var(--font-mono)', outline: 'none', resize: 'none' as const, boxSizing: 'border-box' as const }} />
                 {qskError && <p style={{ color: 'var(--t-red)', fontSize: '12px', ...mono, margin: '8px 0 0' }}>{qskError}</p>}
               </div>
             )}
 
             {/* Protocol Second Key for wallet sends */}
             {isWalletSend && (
-              <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.2)', borderRadius: '16px', padding: '18px 20px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+              <div style={{ ...C.card, borderRadius: '16px', padding: '18px 20px', boxShadow: C.shadow }}>
                 <p style={{ color: 'var(--t-accent)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.2em', margin: '0 0 4px' }}>🔒 Authorise Transfer</p>
                 <p style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono, margin: '0 0 12px', lineHeight: '1.6' }}>{isInTelegram() ? 'Paste your Protocol Second Key to authorise this transfer. This proves you are the vault owner.' : 'Upload your Protocol Second Key to authorise this transfer. This proves you are the vault owner.'}</p>
                 {!isInTelegram() && (

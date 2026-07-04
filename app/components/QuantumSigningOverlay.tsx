@@ -4,9 +4,98 @@ import { useEffect, useState, useMemo } from 'react'
 const STAR_COUNT = 110
 const COLORS = ['#00d4ff', '#7c3aff', '#00ffe0', '#ffffff', '#a78bfa']
 
+// ── Clean institutional signing modal ────────────────────────────────────────
+function InstitutionalSigningOverlay() {
+  const [dots, setDots] = useState('.')
+  useEffect(() => {
+    const iv = setInterval(() => setDots(d => d.length >= 3 ? '.' : d + '.'), 500)
+    return () => clearInterval(iv)
+  }, [])
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9999,
+      background: 'rgba(15,23,42,0.55)',
+      backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      animation: 'inst-fadein 0.25s ease forwards',
+    }}>
+      <style>{`@keyframes inst-fadein { from{opacity:0} to{opacity:1} }`}</style>
+      <div style={{
+        background: '#fff',
+        border: '1px solid #e2e8f0',
+        borderRadius: 16,
+        padding: '40px 48px',
+        textAlign: 'center',
+        boxShadow: '0 24px 64px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06)',
+        maxWidth: 420, width: '90%',
+        fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
+      }}>
+        {/* Spinner */}
+        <div style={{ position: 'relative', width: 56, height: 56, margin: '0 auto 24px' }}>
+          <div style={{
+            position: 'absolute', inset: 0, borderRadius: '50%',
+            border: '2px solid #e2e8f0',
+            borderTopColor: '#0f172a',
+            animation: 'inst-spin 0.9s linear infinite',
+          }} />
+          <div style={{
+            position: 'absolute', inset: 8, borderRadius: '50%',
+            border: '2px solid #f1f5f9',
+            borderTopColor: '#1e40af',
+            animation: 'inst-spin 1.3s linear infinite reverse',
+          }} />
+          <style>{`@keyframes inst-spin { to { transform: rotate(360deg) } }`}</style>
+        </div>
+
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          background: '#f0fdf4', border: '1px solid #bbf7d0',
+          borderRadius: 20, padding: '4px 14px', marginBottom: 20,
+        }}>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a', animation: 'inst-pulse 1.2s ease-in-out infinite' }} />
+          <span style={{ color: '#16a34a', fontSize: 11, fontWeight: 600, letterSpacing: '0.06em' }}>
+            SIGNING ACTIVE
+          </span>
+          <style>{`@keyframes inst-pulse { 0%,100%{opacity:0.6} 50%{opacity:1} }`}</style>
+        </div>
+
+        <h2 style={{ color: '#0f172a', fontSize: 20, fontWeight: 700, margin: '0 0 8px', letterSpacing: '-0.02em' }}>
+          Authorising Transaction{dots}
+        </h2>
+        <p style={{ color: '#64748b', fontSize: 13, lineHeight: 1.65, margin: '0 0 24px' }}>
+          Generating post-quantum signatures using ML-DSA-65 + SLH-DSA-SHAKE-256s.
+        </p>
+
+        <div style={{
+          background: '#f8fafc', border: '1px solid #e2e8f0',
+          borderRadius: 8, padding: '12px 16px', textAlign: 'left',
+        }}>
+          <p style={{ color: '#94a3b8', fontSize: 11, fontFamily: 'monospace', margin: 0, lineHeight: 1.7 }}>
+            FIPS 204 · FIPS 205<br />
+            <span style={{ color: '#dc2626', fontWeight: 600 }}>Do not close this window</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function QuantumSigningOverlay() {
   const [active, setActive] = useState(false)
   const [tick,   setTick]   = useState(0)
+  const [institutional, setInstitutional] = useState(false)
+
+  useEffect(() => {
+    const checkTheme = () => setInstitutional(
+      localStorage.getItem('qufi_theme') === 'light' ||
+      localStorage.getItem('qufi_user_type') === 'institutional'
+    )
+    checkTheme()
+    window.addEventListener('qufi-profile-changed', checkTheme)
+    return () => window.removeEventListener('qufi-profile-changed', checkTheme)
+  }, [])
 
   useEffect(() => {
     const onStart = () => { setActive(true);  setTick(t => t + 1) }
@@ -36,6 +125,7 @@ export function QuantumSigningOverlay() {
   }), [tick])  // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!active) return null
+  if (institutional) return <InstitutionalSigningOverlay />
 
   return (
     <div style={{

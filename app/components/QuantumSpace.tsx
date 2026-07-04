@@ -216,14 +216,22 @@ function Scene({ mobile }: { mobile: boolean }) {
 // ── Public component ─────────────────────────────────────────────────────────
 export function QuantumSpace() {
   const pathname = usePathname()
-  const [mobile, setMobile] = useState(false)
+  const [mobile,        setMobile]        = useState(false)
+  const [institutional, setInstitutional] = useState(false)
 
   useEffect(() => {
     setMobile(window.innerWidth < 768 || window.devicePixelRatio < 1.5)
+    const check = () => setInstitutional(
+      localStorage.getItem('qufi_theme') === 'light' ||
+      localStorage.getItem('qufi_user_type') === 'institutional'
+    )
+    check()
+    window.addEventListener('qufi-profile-changed', check)
+    return () => window.removeEventListener('qufi-profile-changed', check)
   }, [])
 
-  // Landing page has its own Three.js scene — skip R3F there
-  if (pathname === '/') return null
+  // No 3-D space for institutional clean UI or landing page
+  if (pathname === '/' || institutional) return null
 
   return (
     <div style={{

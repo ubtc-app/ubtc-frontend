@@ -14,6 +14,7 @@ export default function Header() {
   const [activeAddress, setActiveAddress] = useState<string | null>(null)
   const [usernames, setUsernames]     = useState<Record<string, string>>({})
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [institutional, setInstitutional] = useState(false)
   const isMobile   = useIsMobile()
   const dropdownRef = useRef<HTMLDivElement>(null)
   const pathname   = usePathname()
@@ -39,8 +40,17 @@ export default function Header() {
   useEffect(() => { loadWalletState() }, [pathname])
 
   useEffect(() => {
+    const check = () => setInstitutional(
+      localStorage.getItem('qufi_theme') === 'light' ||
+      localStorage.getItem('qufi_user_type') === 'institutional'
+    )
+    check()
+    window.addEventListener('qufi-profile-changed', check)
     window.addEventListener('wallets-updated', loadWalletState)
-    return () => window.removeEventListener('wallets-updated', loadWalletState)
+    return () => {
+      window.removeEventListener('qufi-profile-changed', check)
+      window.removeEventListener('wallets-updated', loadWalletState)
+    }
   }, [])
 
   useEffect(() => {
@@ -146,8 +156,8 @@ export default function Header() {
               onClick={() => setDropdownOpen(!dropdownOpen)}
               style={{
                 display: 'flex', alignItems: 'center', gap: '8px',
-                background: dropdownOpen ? 'rgba(0,212,255,0.1)' : 'rgba(0,212,255,0.06)',
-                border: `1px solid ${dropdownOpen ? 'rgba(0,212,255,0.3)' : 'rgba(0,212,255,0.15)'}`,
+                background: institutional ? (dropdownOpen?'#f1f5f9':'#f8fafc') : (dropdownOpen ? 'rgba(0,212,255,0.1)' : 'rgba(0,212,255,0.06)'),
+                border: institutional ? `1px solid ${dropdownOpen?'#cbd5e1':'#e2e8f0'}` : `1px solid ${dropdownOpen ? 'rgba(0,212,255,0.3)' : 'rgba(0,212,255,0.15)'}`,
                 borderRadius: '50px', padding: isMobile ? '6px 10px' : '6px 14px 6px 8px',
                 cursor: 'pointer',
                 transition: 'all 0.2s cubic-bezier(0.16,1,0.3,1)',
@@ -156,8 +166,8 @@ export default function Header() {
               {/* Avatar circle */}
               <div style={{
                 width: '26px', height: '26px', borderRadius: '50%',
-                background: 'linear-gradient(135deg, rgba(0,212,255,0.3), rgba(124,58,255,0.3))',
-                border: '1px solid rgba(0,212,255,0.3)',
+                background: institutional ? '#e2e8f0' : 'linear-gradient(135deg, rgba(0,212,255,0.3), rgba(124,58,255,0.3))',
+                border: institutional ? '1px solid #cbd5e1' : '1px solid rgba(0,212,255,0.3)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '11px', fontWeight: '700', color: 'var(--q-electric)',
                 fontFamily: 'var(--font-mono)', flexShrink: 0,
@@ -186,11 +196,11 @@ export default function Header() {
             {dropdownOpen && (
               <div style={{
                 position: 'absolute', top: 'calc(100% + 10px)', right: 0,
-                background: 'rgba(2, 8, 24, 0.95)',
-                border: '1px solid rgba(255,255,255,0.08)',
+                background: institutional ? '#fff' : 'rgba(2, 8, 24, 0.95)',
+                border: institutional ? '1px solid #e2e8f0' : '1px solid rgba(255,255,255,0.08)',
                 borderRadius: '18px', padding: '8px',
                 minWidth: '260px',
-                boxShadow: '0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(0,212,255,0.06), inset 0 1px 0 rgba(255,255,255,0.05)',
+                boxShadow: institutional ? '0 8px 32px rgba(0,0,0,0.1)' : '0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(0,212,255,0.06), inset 0 1px 0 rgba(255,255,255,0.05)',
                 backdropFilter: 'blur(40px)',
                 zIndex: 100,
                 animation: 'dropdown-in 0.18s cubic-bezier(0.16,1,0.3,1)',
@@ -211,8 +221,8 @@ export default function Header() {
                       onClick={() => switchAccount(w.address)}
                       style={{
                         display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
-                        background: isActive ? 'rgba(0,212,255,0.06)' : 'transparent',
-                        border: `1px solid ${isActive ? 'rgba(0,212,255,0.18)' : 'transparent'}`,
+                        background: isActive ? (institutional?'#eff6ff':'rgba(0,212,255,0.06)') : 'transparent',
+                        border: `1px solid ${isActive ? (institutional?'#bfdbfe':'rgba(0,212,255,0.18)') : 'transparent'}`,
                         borderRadius: '12px', padding: '10px 12px', cursor: 'pointer',
                         fontFamily: 'var(--font-display)', marginBottom: '2px',
                         transition: 'all 0.15s ease',
@@ -232,8 +242,8 @@ export default function Header() {
                     >
                       <div style={{
                         width: '30px', height: '30px', borderRadius: '50%',
-                        background: isActive ? 'linear-gradient(135deg,rgba(0,212,255,0.25),rgba(124,58,255,0.2))' : 'rgba(255,255,255,0.06)',
-                        border: `1px solid ${isActive ? 'rgba(0,212,255,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                        background: isActive ? (institutional?'#dbeafe':'linear-gradient(135deg,rgba(0,212,255,0.25),rgba(124,58,255,0.2))') : (institutional?'#f1f5f9':'rgba(255,255,255,0.06)'),
+                        border: `1px solid ${isActive ? (institutional?'#93c5fd':'rgba(0,212,255,0.3)') : (institutional?'#e2e8f0':'rgba(255,255,255,0.08)')}`,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: '11px', color: isActive ? 'var(--q-electric)' : 'rgba(180,210,255,0.5)',
                         fontWeight: '700', flexShrink: 0, fontFamily: 'var(--font-mono)',
