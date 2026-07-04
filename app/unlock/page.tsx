@@ -1,6 +1,7 @@
 'use client'
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { InstitutionalUnlock } from '../components/InstitutionalUnlock'
 
 const PARTICLES = Array.from({ length: 22 }, (_, i) => ({
   id: i,
@@ -14,6 +15,10 @@ const PARTICLES = Array.from({ length: 22 }, (_, i) => ({
 }))
 
 export default function Unlock() {
+  const [userType, setUserType] = useState<string | null>(null)
+  useEffect(() => { setUserType(localStorage.getItem('qufi_user_type')) }, [])
+  if (userType === 'institutional') return <InstitutionalUnlock />
+
   const router    = useRouter()
   const cardRef   = useRef<HTMLDivElement>(null)
   const rafRef    = useRef<number | null>(null)

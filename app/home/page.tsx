@@ -5,6 +5,7 @@ import { useQuantumNav } from '../components/QuantumTransition'
 import { Icons } from '../components/Icons'
 import { SiteLogo } from '../components/SiteLogo'
 import { hasStoredWallet } from '../lib/wallet/storage'
+import { InstitutionalHome } from '../components/InstitutionalHome'
 
 const tags = [
   { label: 'UBTC',            color: 'var(--q-electric)' },
@@ -137,6 +138,10 @@ function HoloCard({ id, href, label, desc, accent, glow, border, bg, icon }: {
 }
 
 export default function Home() {
+  const [userType, setUserType] = useState<string | null>(null)
+  useEffect(() => { setUserType(localStorage.getItem('qufi_user_type')) }, [])
+  if (userType === 'institutional') return <InstitutionalHome />
+
   const router = useRouter()
   const [accountHref, setAccountHref] = useState('/vault')
   const [accountLabel, setAccountLabel] = useState('Open Account')
