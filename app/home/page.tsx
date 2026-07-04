@@ -1,6 +1,5 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { InstitutionalHome } from '../components/InstitutionalHome'
 import { ConsumerHome } from '../components/ConsumerHome'
 import Image from 'next/image'
 
@@ -164,9 +163,5 @@ export default function Home() {
     <div style={{ minHeight: '100vh', background: '#07090d' }} />
   )
 
-  return (
-    <>
-      {theme === 'light' ? <InstitutionalHome /> : <ConsumerHome />}
-    </>
-  )
+  return <ConsumerHome />
 }
