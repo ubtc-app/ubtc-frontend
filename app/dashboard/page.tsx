@@ -203,11 +203,10 @@ function DashboardConsumer() {
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: '20px', flexWrap: 'wrap', marginBottom: '8px' }}>
               <p style={{
                 fontSize: isMobile ? '44px' : '68px',
-                fontWeight: '700', color: 'var(--q-text)',
+                fontWeight: '700', color: inst ? '#0f172a' : 'var(--q-text)',
                 lineHeight: '1', letterSpacing: '-0.03em',
                 fontFamily: 'var(--font-syne)',
                 textShadow: inst ? 'none' : '0 0 80px rgba(0,212,255,0.12)',
-                color: inst ? '#0f172a' : 'var(--q-text)',
                 margin: 0,
               }}>
                 ${fmt(totalUsd)}
