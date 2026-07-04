@@ -134,7 +134,7 @@ function getQoraResponse(input: string): string {
   }
 
   // How are you / small talk
-  if (match(q, ['how are you', 'how are u', 'how r u', 'you ok', 'you good', 'what's up', 'whats up'])) {
+  if (match(q, ['how are you', 'how are u', 'how r u', 'you ok', 'you good', 'whats up', 'what up'])) {
     return "I'm doing great, thanks for asking! Running at full quantum capacity. How can I help you today?"
   }
 
