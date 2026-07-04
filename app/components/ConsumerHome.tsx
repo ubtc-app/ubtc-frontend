@@ -62,7 +62,10 @@ function HoloCard({ href, label, desc, accent, glow, border, bg, icon, inst }: {
       ref={ref}
       onClick={e => { const r = e.currentTarget.getBoundingClientRect(); navigate(href, r.left + r.width/2, r.top + r.height/2) }}
       onMouseMove={onMove}
-      onMouseLeave={onLeave}
+      onMouseLeave={e => {
+        onLeave()
+        if (!inst) e.currentTarget.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.06), 0 10px 40px rgba(0,0,0,0.4)`
+      }}
       className={inst ? 'inst-btn' : 'q-holo'}
       style={{
         background: inst ? '#fff' : `color-mix(in srgb, var(--q-surface) 70%, transparent), ${bg}`,
@@ -81,13 +84,7 @@ function HoloCard({ href, label, desc, accent, glow, border, bg, icon, inst }: {
       }}
       onMouseEnter={e => {
         if (inst) return
-        const el = e.currentTarget
-        el.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.08), 0 20px 60px rgba(0,0,0,0.7), 0 0 60px ${glow}`
-      }}
-      onMouseLeave={e => {
-        if (inst) return
-        const el = e.currentTarget
-        el.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.06), 0 10px 40px rgba(0,0,0,0.4)`
+        e.currentTarget.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.08), 0 20px 60px rgba(0,0,0,0.7), 0 0 60px ${glow}`
       }}
     >
       <div style={{
