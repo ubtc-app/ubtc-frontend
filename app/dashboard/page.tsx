@@ -7,26 +7,31 @@ import { Icons } from '../components/Icons'
 import { useIsMobile } from '../lib/useIsMobile'
 import { loadWallet, hasStoredWallet } from '../lib/wallet/storage'
 
+const isInstitutional = () =>
+  typeof window !== 'undefined' &&
+  (localStorage.getItem('qufi_theme') === 'light' || localStorage.getItem('qufi_user_type') === 'institutional')
+
 const stagger = { animate: { transition: { staggerChildren: 0.07 } } }
 const cardVariant = { initial: { opacity: 0, y: 18 }, animate: { opacity: 1, y: 0, transition: { duration: 0.45 } } }
 
 function StatPill({ label, value, color, glow }: { label: string; value: string; color: string; glow: string }) {
+  const inst = isInstitutional()
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', gap: '5px',
       padding: '14px 20px',
-      background: `linear-gradient(135deg,${color}0d,${color}04)`,
-      border: `1px solid ${color}22`,
+      background: inst ? '#fff' : `linear-gradient(135deg,${color}0d,${color}04)`,
+      border: inst ? '1px solid #e2e8f0' : `1px solid ${color}22`,
       borderRadius: '16px',
       minWidth: '116px',
-      boxShadow: `0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 ${color}12`,
+      boxShadow: inst ? '0 2px 8px rgba(0,0,0,0.06)' : `0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 ${color}12`,
       transition: 'transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s',
     }}
-    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = `0 12px 40px rgba(0,0,0,0.5), 0 0 24px ${glow}22, inset 0 1px 0 ${color}18` }}
-    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'none'; (e.currentTarget as HTMLDivElement).style.boxShadow = `0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 ${color}12` }}
+    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = inst ? '0 4px 16px rgba(0,0,0,0.1)' : `0 12px 40px rgba(0,0,0,0.5), 0 0 24px ${glow}22, inset 0 1px 0 ${color}18` }}
+    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'none'; (e.currentTarget as HTMLDivElement).style.boxShadow = inst ? '0 2px 8px rgba(0,0,0,0.06)' : `0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 ${color}12` }}
     >
-      <p style={{ color: 'rgba(120,160,220,0.5)', display: 'block', margin: 0, fontSize: '10px', fontWeight: '500', letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>{label}</p>
-      <p style={{ color, fontSize: '16px', fontWeight: '700', margin: 0, fontFamily: 'var(--font-syne)', letterSpacing: '-0.02em', textShadow: `0 0 20px ${glow}` }}>{value}</p>
+      <p style={{ color: inst ? '#64748b' : 'rgba(120,160,220,0.5)', display: 'block', margin: 0, fontSize: '10px', fontWeight: '500', letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>{label}</p>
+      <p style={{ color, fontSize: '16px', fontWeight: '700', margin: 0, fontFamily: 'var(--font-syne)', letterSpacing: '-0.02em', textShadow: inst ? 'none' : `0 0 20px ${glow}` }}>{value}</p>
     </div>
   )
 }
@@ -34,14 +39,15 @@ function StatPill({ label, value, color, glow }: { label: string; value: string;
 function AssetRow({ icon, name, subtitle, value, color, addHref }: {
   icon: React.ReactNode; name: string; subtitle: string; value: string | null; color: string; addHref?: string
 }) {
+  const inst = isInstitutional()
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: '12px',
       padding: '13px 16px',
-      background: 'linear-gradient(135deg,#050f20,#020810)',
+      background: inst ? '#f8fafc' : 'linear-gradient(135deg,#050f20,#020810)',
       borderRadius: '14px', marginBottom: '6px',
-      border: '1px solid rgba(0,212,255,0.08)',
-      boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
+      border: inst ? '1px solid #e2e8f0' : '1px solid rgba(0,212,255,0.08)',
+      boxShadow: inst ? '0 1px 4px rgba(0,0,0,0.05)' : '0 4px 16px rgba(0,0,0,0.35)',
       transition: 'background 0.2s',
     }}>
       <div style={{
@@ -52,8 +58,8 @@ function AssetRow({ icon, name, subtitle, value, color, addHref }: {
         {icon}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ color: 'var(--q-text)', fontWeight: '600', fontSize: '13px', margin: '0 0 2px' }}>{name}</p>
-        <p className="number" style={{ color: 'var(--q-text-3)', fontSize: '10px', margin: 0, letterSpacing: '0.03em' }}>{subtitle}</p>
+        <p style={{ color: inst ? '#0f172a' : 'var(--q-text)', fontWeight: '600', fontSize: '13px', margin: '0 0 2px' }}>{name}</p>
+        <p className="number" style={{ color: inst ? '#64748b' : 'var(--q-text-3)', fontSize: '10px', margin: 0, letterSpacing: '0.03em' }}>{subtitle}</p>
       </div>
       {value !== null
         ? <p className="number" style={{ color, fontWeight: '700', fontSize: '15px', margin: 0, flexShrink: 0 }}>{value}</p>
@@ -83,6 +89,7 @@ function DashboardConsumer() {
   const [hasWallet, setHasWallet]     = useState(false)
   const pollRef = useRef<NodeJS.Timeout | null>(null)
   const isMobile = useIsMobile()
+  const inst = isInstitutional()
 
   useEffect(() => { hasStoredWallet().then(setHasWallet) }, [])
   useEffect(() => {
@@ -160,10 +167,10 @@ function DashboardConsumer() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--q-bg)', fontFamily: 'var(--font-display)', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ minHeight: '100vh', background: inst ? '#f5f7fa' : 'var(--q-bg)', fontFamily: 'var(--font-display)', position: 'relative', overflow: 'hidden' }}>
 
       {/* Quantum vortex background */}
-      <div className="q-vortex-scene">
+      {!inst && <div className="q-vortex-scene">
         <div className="q-glow-node" style={{ top: '-10%', left: '25%', width: 900, height: 900, background: 'rgba(0,212,255,0.04)' }} />
         <div className="q-glow-node" style={{ bottom: '-5%', right: '10%', width: 700, height: 700, background: 'rgba(124,58,255,0.05)' }} />
         <div className="q-circuit-grid" style={{ position: 'absolute', inset: 0, opacity: 0.5 }} />
@@ -174,7 +181,7 @@ function DashboardConsumer() {
           <div className="q-energy-ring" style={{ animationDuration: '9s' }} />
           <div className="q-energy-ring" style={{ animationDuration: '9s', animationDelay: '3s' }} />
         </div>
-      </div>
+      </div>}
 
       {/* ── Hero ── */}
       <div style={{ position: 'relative', zIndex: 1 }}>
@@ -184,7 +191,7 @@ function DashboardConsumer() {
           transition={{ duration: 0.5 }}
           style={{
             padding: isMobile ? '28px 20px 32px' : '40px 48px 36px',
-            borderBottom: '1px solid rgba(0,212,255,0.08)',
+            borderBottom: inst ? '1px solid #e2e8f0' : '1px solid rgba(0,212,255,0.08)',
             background: 'transparent',
           }}
         >
@@ -199,7 +206,8 @@ function DashboardConsumer() {
                 fontWeight: '700', color: 'var(--q-text)',
                 lineHeight: '1', letterSpacing: '-0.03em',
                 fontFamily: 'var(--font-syne)',
-                textShadow: '0 0 80px rgba(0,212,255,0.12)',
+                textShadow: inst ? 'none' : '0 0 80px rgba(0,212,255,0.12)',
+                color: inst ? '#0f172a' : 'var(--q-text)',
                 margin: 0,
               }}>
                 ${fmt(totalUsd)}
@@ -208,7 +216,7 @@ function DashboardConsumer() {
                 <p className="number" style={{
                   color: 'var(--q-green)', fontSize: '14px', fontWeight: '600',
                   marginBottom: '8px',
-                  textShadow: '0 0 20px rgba(0,255,157,0.3)',
+                  textShadow: inst ? 'none' : '0 0 20px rgba(0,255,157,0.3)',
                 }}>
                   +${fmt(availableToMint)} mintable
                 </p>
@@ -327,7 +335,7 @@ function DashboardConsumer() {
           {vaults.length > 0 && (
             <>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
-                <p className="label" style={{ display: 'block', letterSpacing: '0.2em' }}>Your Vaults</p>
+                <p className="label" style={{ display: 'block', letterSpacing: '0.2em', color: inst ? '#64748b' : undefined }}>Your Vaults</p>
                 <a href="/vault" style={{
                   color: 'var(--q-electric)', fontSize: '10px',
                   fontFamily: 'var(--font-mono)', letterSpacing: '0.12em',
@@ -356,14 +364,20 @@ function DashboardConsumer() {
 
                   return (
                     <motion.div key={vault.vault_id} variants={cardVariant} style={{
-                      background: isPending
-                        ? 'linear-gradient(160deg,rgba(26,16,0,0.9),rgba(13,8,0,0.95))'
-                        : 'linear-gradient(160deg,rgba(5,14,32,0.92),rgba(2,8,18,0.96))',
-                      border: `1px solid ${isPending ? 'rgba(255,184,0,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                      background: inst
+                        ? (isPending ? '#fffbf0' : '#fff')
+                        : (isPending
+                          ? 'linear-gradient(160deg,rgba(26,16,0,0.9),rgba(13,8,0,0.95))'
+                          : 'linear-gradient(160deg,rgba(5,14,32,0.92),rgba(2,8,18,0.96))'),
+                      border: inst
+                        ? `1px solid ${isPending ? '#fde68a' : '#e2e8f0'}`
+                        : `1px solid ${isPending ? 'rgba(255,184,0,0.2)' : 'rgba(255,255,255,0.06)'}`,
                       borderRadius: '24px',
-                      boxShadow: isPending
-                        ? `0 16px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,184,0,0.08), inset 0 1px 0 rgba(255,184,0,0.07)`
-                        : `0 16px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,212,255,0.04), inset 0 1px 0 rgba(255,255,255,0.04)`,
+                      boxShadow: inst
+                        ? '0 4px 16px rgba(0,0,0,0.08)'
+                        : (isPending
+                          ? `0 16px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,184,0,0.08), inset 0 1px 0 rgba(255,184,0,0.07)`
+                          : `0 16px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,212,255,0.04), inset 0 1px 0 rgba(255,255,255,0.04)`),
                       overflow: 'hidden',
                       backdropFilter: 'blur(20px)',
                       transition: 'transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s',
@@ -371,16 +385,20 @@ function DashboardConsumer() {
                     onMouseEnter={e => {
                       const el = e.currentTarget as HTMLDivElement
                       el.style.transform = 'translateY(-3px)'
-                      el.style.boxShadow = isPending
-                        ? `0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,184,0,0.12), inset 0 1px 0 rgba(255,184,0,0.1)`
-                        : `0 24px 64px rgba(0,0,0,0.7), 0 0 40px rgba(0,212,255,0.06), inset 0 1px 0 rgba(255,255,255,0.06)`
+                      el.style.boxShadow = inst
+                        ? '0 8px 24px rgba(0,0,0,0.12)'
+                        : (isPending
+                          ? `0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,184,0,0.12), inset 0 1px 0 rgba(255,184,0,0.1)`
+                          : `0 24px 64px rgba(0,0,0,0.7), 0 0 40px rgba(0,212,255,0.06), inset 0 1px 0 rgba(255,255,255,0.06)`)
                     }}
                     onMouseLeave={e => {
                       const el = e.currentTarget as HTMLDivElement
                       el.style.transform = 'none'
-                      el.style.boxShadow = isPending
-                        ? `0 16px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,184,0,0.08), inset 0 1px 0 rgba(255,184,0,0.07)`
-                        : `0 16px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,212,255,0.04), inset 0 1px 0 rgba(255,255,255,0.04)`
+                      el.style.boxShadow = inst
+                        ? '0 4px 16px rgba(0,0,0,0.08)'
+                        : (isPending
+                          ? `0 16px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,184,0,0.08), inset 0 1px 0 rgba(255,184,0,0.07)`
+                          : `0 16px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,212,255,0.04), inset 0 1px 0 rgba(255,255,255,0.04)`)
                     }}
                     >
 
@@ -412,7 +430,7 @@ function DashboardConsumer() {
                           {thisScan && (
                             <p className="number" style={{ color: thisScan.includes('BTC') ? 'var(--q-green)' : 'var(--q-text-3)', fontSize: '11px', margin: '8px 0 0' }}>{thisScan}</p>
                           )}
-                          <div style={{ marginTop: '12px', background: 'rgba(0,5,20,0.5)', borderRadius: '10px', padding: '12px 14px', border: '1px solid var(--q-border-subtle)' }}>
+                          <div style={{ marginTop: '12px', background: inst ? '#f8fafc' : 'rgba(0,5,20,0.5)', borderRadius: '10px', padding: '12px 14px', border: inst ? '1px solid #e2e8f0' : '1px solid var(--q-border-subtle)' }}>
                             <p className="label" style={{ display: 'block', marginBottom: '5px' }}>Send BTC here</p>
                             <p className="number" style={{ color: 'var(--q-electric)', fontSize: '10px', margin: 0, wordBreak: 'break-all', lineHeight: '1.7' }}>
                               {vault.mast_address || vault.deposit_address}
@@ -424,7 +442,7 @@ function DashboardConsumer() {
                       {/* Card header */}
                       <div style={{
                         padding: isMobile ? '20px 18px' : '22px 24px',
-                        borderBottom: '1px solid rgba(255,255,255,0.04)',
+                        borderBottom: inst ? '1px solid #f1f5f9' : '1px solid rgba(255,255,255,0.04)',
                         display: 'flex', justifyContent: 'space-between',
                         alignItems: isMobile ? 'flex-start' : 'center',
                         flexDirection: isMobile ? 'column' : 'row', gap: '14px',
@@ -432,14 +450,14 @@ function DashboardConsumer() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                           <div style={{
                             width: '46px', height: '46px', borderRadius: '14px',
-                            background: 'rgba(0,212,255,0.08)',
-                            border: '1px solid rgba(0,212,255,0.18)',
+                            background: inst ? '#eff6ff' : 'rgba(0,212,255,0.08)',
+                            border: inst ? '1px solid #bfdbfe' : '1px solid rgba(0,212,255,0.18)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                           }}>
                             {Icons.currentAccount(22, 'var(--q-electric)')}
                           </div>
                           <div>
-                            <p style={{ fontFamily: 'var(--font-syne)', color: 'var(--q-text)', fontWeight: '600', fontSize: '15px', margin: '0 0 6px', letterSpacing: '-0.01em' }}>
+                            <p style={{ fontFamily: 'var(--font-syne)', color: inst ? '#0f172a' : 'var(--q-text)', fontWeight: '600', fontSize: '15px', margin: '0 0 6px', letterSpacing: '-0.01em' }}>
                               {accountTypeLabel[vault.account_type] ?? 'Current'} Account
                             </p>
                             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -455,10 +473,10 @@ function DashboardConsumer() {
                           </div>
                         </div>
                         <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
-                          <p style={{ color: 'var(--q-text)', fontWeight: '700', fontSize: '26px', margin: '0 0 4px', lineHeight: '1', fontFamily: 'var(--font-syne)', letterSpacing: '-0.02em', textShadow: '0 0 30px rgba(0,212,255,0.1)' }}>
+                          <p style={{ color: inst ? '#0f172a' : 'var(--q-text)', fontWeight: '700', fontSize: '26px', margin: '0 0 4px', lineHeight: '1', fontFamily: 'var(--font-syne)', letterSpacing: '-0.02em', textShadow: inst ? 'none' : '0 0 30px rgba(0,212,255,0.1)' }}>
                             ${fmt(btcValue)}
                           </p>
-                          <p className="number" style={{ color: 'var(--q-text-3)', fontSize: '10px', margin: '0 0 2px' }}>{btcLocked.toFixed(6)} BTC locked</p>
+                          <p className="number" style={{ color: inst ? '#64748b' : 'var(--q-text-3)', fontSize: '10px', margin: '0 0 2px' }}>{btcLocked.toFixed(6)} BTC locked</p>
                           {ratio > 0 && <p className="number" style={{ color: ratioColor, fontSize: '10px', margin: '0 0 2px' }}>{ratio.toFixed(0)}% collateral</p>}
                           {mintable > 0 && <p className="number" style={{ color: 'var(--q-btc)', fontSize: '10px', margin: 0 }}>${fmt(mintable)} mintable</p>}
                         </div>
@@ -473,24 +491,25 @@ function DashboardConsumer() {
                         <a href={`/account/${vault.vault_id}`} style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
                           marginTop: '10px',
-                          background: 'rgba(0,212,255,0.06)',
-                          border: '1px solid rgba(0,212,255,0.14)',
-                          color: 'rgba(0,212,255,0.8)',
+                          background: inst ? '#1d4ed8' : 'rgba(0,212,255,0.06)',
+                          border: inst ? 'none' : '1px solid rgba(0,212,255,0.14)',
+                          color: inst ? '#fff' : 'rgba(0,212,255,0.8)',
                           textDecoration: 'none', borderRadius: '14px',
                           padding: '12px', fontSize: '12px', fontWeight: '600',
                           fontFamily: 'var(--font-display)', letterSpacing: '0.01em',
                           transition: 'all 0.2s cubic-bezier(0.16,1,0.3,1)',
+                          boxShadow: inst ? '0 4px 12px rgba(29,78,216,0.3)' : 'none',
                         }}
                           onMouseEnter={e => {
-                            e.currentTarget.style.background = 'rgba(0,212,255,0.1)'
-                            e.currentTarget.style.borderColor = 'rgba(0,212,255,0.25)'
-                            e.currentTarget.style.color = 'var(--q-electric)'
+                            e.currentTarget.style.background = inst ? '#1e40af' : 'rgba(0,212,255,0.1)'
+                            e.currentTarget.style.borderColor = inst ? 'none' : 'rgba(0,212,255,0.25)'
+                            e.currentTarget.style.color = inst ? '#fff' : 'var(--q-electric)'
                             e.currentTarget.style.transform = 'translateY(-1px)'
                           }}
                           onMouseLeave={e => {
-                            e.currentTarget.style.background = 'rgba(0,212,255,0.06)'
-                            e.currentTarget.style.borderColor = 'rgba(0,212,255,0.14)'
-                            e.currentTarget.style.color = 'rgba(0,212,255,0.8)'
+                            e.currentTarget.style.background = inst ? '#1d4ed8' : 'rgba(0,212,255,0.06)'
+                            e.currentTarget.style.borderColor = inst ? 'none' : 'rgba(0,212,255,0.14)'
+                            e.currentTarget.style.color = inst ? '#fff' : 'rgba(0,212,255,0.8)'
                             e.currentTarget.style.transform = 'none'
                           }}
                         >

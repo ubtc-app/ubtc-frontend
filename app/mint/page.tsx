@@ -216,7 +216,7 @@ function MintContent() {
   const inputSmall: any = { flex: 1, padding: '10px 12px', background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '10px', color: 'hsl(0 0% 80%)', fontSize: '13px', fontFamily: 'var(--font-mono)', outline: 'none', minWidth: 0 }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--q-bg)', fontFamily: 'var(--font-display)' }}>
+    <div style={{ minHeight: '100vh', background: inst ? '#f5f7fa' : 'var(--q-bg)', fontFamily: 'var(--font-display)' }}>
 
       <PasswordModal
         isOpen={passwordModalOpen}
