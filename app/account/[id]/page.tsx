@@ -311,11 +311,11 @@ function AccountContent() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--q-bg)', fontFamily: 'var(--font-display)', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ minHeight: '100vh', background: inst ? '#f5f7fa' : 'var(--q-bg)', fontFamily: 'var(--font-display)', position: 'relative', overflow: 'hidden' }}>
 
       {/* Background */}
-      <div className="dot-grid" style={{ position: 'fixed', inset: 0, opacity: 0.3, pointerEvents: 'none' }} />
-      <div style={{ position: 'fixed', top: '-20%', right: '20%', width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(0,212,255,0.04) 0%, transparent 65%)', pointerEvents: 'none' }} />
+      {!inst && <div className="dot-grid" style={{ position: 'fixed', inset: 0, opacity: 0.3, pointerEvents: 'none' }} />}
+      {!inst && <div style={{ position: 'fixed', top: '-20%', right: '20%', width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(0,212,255,0.04) 0%, transparent 65%)', pointerEvents: 'none' }} />}
 
       {/* ── NOTIFICATIONS ── */}
       {notifications.map(notif => (

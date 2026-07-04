@@ -183,7 +183,7 @@ function WalletContent() {
 
   // ── LOADING (auto-fetching wallet) ──
   if (view === 'loading') return (
-    <div style={{ minHeight: '100vh', background: 'var(--q-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 20 }}>
+    <div style={{ minHeight: '100vh', background: inst ? '#f5f7fa' : 'var(--q-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 20 }}>
       <div style={{ width: 48, height: 48, borderRadius: '50%', border: '2px solid rgba(0,212,255,0.15)', borderTopColor: 'var(--q-electric)', animation: 'wlb-spin .85s linear infinite' }} />
       <p style={{ color: 'var(--q-text-3)', fontSize: 12, fontFamily: 'var(--font-mono)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>Opening Wallet…</p>
       <style>{`@keyframes wlb-spin { to { transform: rotate(360deg) } }`}</style>
@@ -192,7 +192,7 @@ function WalletContent() {
 
   // ── LANDING ──
   if (view === 'landing') return (
-    <div style={{ minHeight: '100vh', background: 'var(--q-bg)', fontFamily: 'var(--font-display)', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', padding: '40px 20px', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ minHeight: '100vh', background: inst ? '#f5f7fa' : 'var(--q-bg)', fontFamily: 'var(--font-display)', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', padding: '40px 20px', position: 'relative', overflow: 'hidden' }}>
       {/* Quantum ambient */}
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none' }}>
         <div className="q-glow-node" style={{ top: '15%', left: '10%', width: 500, height: 500, background: 'rgba(0,212,255,0.04)' }} />
@@ -230,7 +230,7 @@ function WalletContent() {
 
   // ── CREATE ──
   if (view === 'create') return (
-    <div style={{ minHeight: '100vh', background: 'var(--q-bg)', fontFamily: 'var(--font-display)', padding: '40px 20px' }}>
+    <div style={{ minHeight: '100vh', background: inst ? '#f5f7fa' : 'var(--q-bg)', fontFamily: 'var(--font-display)', padding: '40px 20px' }}>
       <div style={{ maxWidth: '480px', margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '32px' }}>
           <button onClick={() => setView('landing')} style={{ background: 'none', border: 'none', color: 'var(--t-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>{Icons.back(20, 'var(--t-muted)')}</button>
@@ -298,7 +298,7 @@ function WalletContent() {
 
   // ── LOOKUP ──
   if (view === 'lookup') return (
-    <div style={{ minHeight: '100vh', background: 'var(--q-bg)', fontFamily: 'var(--font-display)', padding: '40px 20px' }}>
+    <div style={{ minHeight: '100vh', background: inst ? '#f5f7fa' : 'var(--q-bg)', fontFamily: 'var(--font-display)', padding: '40px 20px' }}>
       <div style={{ maxWidth: '480px', margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '32px' }}>
           <button onClick={() => { setView('landing'); setError(''); setLookupResult(null); setLookupUsername('') }} style={{ background: 'none', border: 'none', color: 'var(--t-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>{Icons.back(20, 'var(--t-muted)')}</button>
@@ -327,11 +327,11 @@ function WalletContent() {
 
   // ── DASHBOARD ──
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--q-bg)', fontFamily: 'var(--font-display)' }}>
+    <div style={{ minHeight: '100vh', background: inst ? '#f5f7fa' : 'var(--q-bg)', fontFamily: 'var(--font-display)' }}>
 
       {/* Proof download modal */}
       {proofModal.type && (
-        <div style={{ position: 'fixed', inset: 0, background: 'var(--q-bg)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+        <div style={{ position: 'fixed', inset: 0, background: inst ? 'rgba(245,247,250,0.97)' : 'var(--q-bg)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
           <div style={{ background: 'var(--t-surface)', borderRadius: '24px', padding: '40px', maxWidth: '480px', width: '100%', border: `2px solid ${proofModal.type === 'success' ? 'hsl(142 76% 36% / 0.4)' : 'hsl(38 92% 50% / 0.4)'}` }}>
             {proofModal.type === 'warning' && (
               <>
@@ -449,9 +449,9 @@ function WalletContent() {
       `}</style>
 
       {/* Scanline */}
-      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 2, overflow: 'hidden' }}>
+      {!inst && <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 2, overflow: 'hidden' }}>
         <div style={{ position: 'absolute', left: 0, right: 0, height: 1, background: 'linear-gradient(90deg,transparent,rgba(0,212,255,0.08),transparent)', animation: 'w-scan 10s linear infinite' }} />
-      </div>
+      </div>}
 
       {/* Back nav */}
       <div style={{ position: 'relative', zIndex: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 24px 0' }}>
