@@ -270,8 +270,6 @@ export default function OnboardingPage() {
           <QoraAvatar
             size={100}
             speaking={isSpeaking || (step === 'waitlist' && !waitlistTw.done) || (step === 'waitlist-done' && !doneTw.done)}
-            theme="dark"
-            waving={step === 'intro' || step === 'waitlist-done'}
           />
           <div style={{
             marginTop: 10, padding: '4px 12px',

@@ -5,7 +5,6 @@ import { useQuantumNav } from './QuantumTransition'
 import { Icons } from './Icons'
 import { SiteLogo } from './SiteLogo'
 import { hasStoredWallet } from '../lib/wallet/storage'
-import { QoraAvatar } from './QoraAvatar'
 
 const tags = [
   { label: 'UBTC',            color: 'var(--q-electric)' },
@@ -136,11 +135,9 @@ export function ConsumerHome() {
   const [accountHref,  setAccountHref]  = useState('/vault')
   const [accountLabel, setAccountLabel] = useState('Open Account')
   const [accountDesc,  setAccountDesc]  = useState('Current, Savings, Yield or Managed')
-  const [userName,     setUserName]     = useState('')
 
   useEffect(() => {
-    setUserName(localStorage.getItem('qufi_name') || '')
-    const auth = sessionStorage.getItem('wlb_auth')
+const auth = sessionStorage.getItem('wlb_auth')
     if (auth) return
     hasStoredWallet().then(has => {
       if (has) sessionStorage.setItem('wlb_auth', '1')
@@ -194,65 +191,7 @@ export function ConsumerHome() {
 
       <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 660 }}>
 
-        {/* QORA greeting */}
-        <div className="warp-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 40, gap: 0 }}>
-          <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <QoraAvatar size={110} theme="dark" waving />
-            {/* Speech bubble */}
-            <div style={{
-              position: 'absolute', left: '100%', top: '15%', marginLeft: 16,
-              background: 'rgba(8,14,26,0.92)',
-              border: '1px solid rgba(0,212,255,0.22)',
-              borderRadius: '16px 16px 16px 4px',
-              padding: '14px 18px',
-              minWidth: 220, maxWidth: 280,
-              backdropFilter: 'blur(20px)',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 20px rgba(0,212,255,0.08)',
-              animation: 'fade-up 0.5s 0.3s ease both',
-            }}>
-              {/* Bubble pointer */}
-              <div style={{
-                position: 'absolute', left: -8, top: 16,
-                width: 0, height: 0,
-                borderTop: '6px solid transparent',
-                borderBottom: '6px solid transparent',
-                borderRight: '8px solid rgba(0,212,255,0.22)',
-              }} />
-              <div style={{
-                position: 'absolute', left: -6, top: 17,
-                width: 0, height: 0,
-                borderTop: '5px solid transparent',
-                borderBottom: '5px solid transparent',
-                borderRight: '7px solid rgba(8,14,26,0.92)',
-              }} />
-              <p style={{
-                color: 'rgba(180,210,240,0.85)', fontSize: '12px',
-                fontFamily: "'JetBrains Mono', monospace",
-                lineHeight: 1.65, margin: '0 0 6px',
-              }}>
-                Hi {userName ? `@${userName}` : 'there'}! 👋
-              </p>
-              <p style={{
-                color: 'rgba(0,212,255,0.75)', fontSize: '11px',
-                fontFamily: "'JetBrains Mono', monospace",
-                lineHeight: 1.6, margin: 0,
-              }}>
-                Your assets are protected.<br />All quantum systems secure.
-              </p>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 6, marginTop: 10,
-                paddingTop: 8, borderTop: '1px solid rgba(0,212,255,0.1)',
-              }}>
-                <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#00ff88', boxShadow: '0 0 6px #00ff88' }} />
-                <span style={{ color: 'rgba(0,212,255,0.4)', fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
-                  QORA · Online
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="warp-in" style={{ display: 'flex', justifyContent: 'center', marginBottom: 40 }}>
+        <div className="warp-in" style={{ display: 'flex', justifyContent: 'center', marginBottom: 52 }}>
           <SiteLogo height={36} />
         </div>
 
