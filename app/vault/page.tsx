@@ -5,22 +5,9 @@ import { useSearchParams } from 'next/navigation'
 import { API_URL } from '../lib/supabase'
 import { isInTelegram } from '../lib/telegram'
 import { TelegramSafeDisplay } from '../components/TelegramSafeDisplay'
-import { InstitutionalVault } from '../components/InstitutionalVault'
 const PUBKEY = '032bb4a115bddb717274ba34d757338d309865e632232f31c874a0707c2c566ef5'
 type Step = 'account' | 'custody' | 'confirm' | 'done'
 type AccountType = 'current' | 'savings' | 'yield' | 'custody_yield' | 'prime' | 'managed_yield'
-
-function ThemeRouter({ children }: { children: React.ReactNode }) {
-  const [institutional, setInstitutional] = useState(false)
-  useEffect(() => {
-    setInstitutional(
-      localStorage.getItem('qufi_theme') === 'light' ||
-      localStorage.getItem('qufi_user_type') === 'institutional'
-    )
-  }, [])
-  if (institutional) return <InstitutionalVault />
-  return <>{children}</>
-}
 
 export default function VaultPage() {
   return (
@@ -36,9 +23,7 @@ export default function VaultPage() {
         <style>{`@keyframes q-spin { to { transform: rotate(360deg) } }`}</style>
       </div>
     }>
-      <ThemeRouter>
-        <VaultPageInner />
-      </ThemeRouter>
+      <VaultPageInner />
     </Suspense>
   )
 }
