@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600;700;800&family=Rajdhani:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap');
 
 /* ─── Quantum Noir Design System ──────────────────────────────────────────── */
 :root {
@@ -54,8 +54,8 @@
   --q-blur-light:  blur(20px) saturate(180%);
 
   /* ── Typography ── */
-  --font-display:  'Rajdhani', -apple-system, system-ui, sans-serif;
-  --font-syne:     'Oxanium', -apple-system, system-ui, sans-serif;
+  --font-display:  'Inter', -apple-system, system-ui, sans-serif;
+  --font-syne:     'Space Grotesk', -apple-system, system-ui, sans-serif;
   --font-mono:     'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
 
   /* Legacy aliases — kept so existing component code still works */
@@ -382,36 +382,36 @@ input[type=number] { -moz-appearance: textfield; }
 
 /* ─── Nav ───────────────────────────────────────────────────────────────── */
 .frosted-nav {
-  background: rgba(0, 5, 16, 0.85);
-  backdrop-filter: var(--q-blur);
-  -webkit-backdrop-filter: var(--q-blur);
-  border-bottom: 1px solid var(--q-border-subtle);
-}
-[data-theme="light"] .frosted-nav {
-  background: rgba(240, 245, 255, 0.88);
+  background: rgba(0, 2, 10, 0.80);
+  backdrop-filter: blur(48px) saturate(180%);
+  -webkit-backdrop-filter: blur(48px) saturate(180%);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  box-shadow: 0 1px 0 rgba(0,212,255,0.06), 0 4px 24px rgba(0,0,0,0.4);
 }
 
 .nav-link {
-  display: flex; align-items: center; gap: 6px;
-  color: var(--q-text-3); text-decoration: none;
-  font-size: 12px; font-weight: 600;
-  font-family: var(--font-mono);
-  padding: 7px 14px; border-radius: 10px;
+  display: flex; align-items: center; gap: 7px;
+  color: rgba(180,210,255,0.5); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  font-family: var(--font-display);
+  padding: 7px 16px; border-radius: 50px;
   border: 1px solid transparent;
-  letter-spacing: 0.06em; text-transform: uppercase;
-  transition: all 0.18s ease; white-space: nowrap;
+  letter-spacing: 0.01em;
+  transition: all 0.2s cubic-bezier(0.16,1,0.3,1); white-space: nowrap;
 }
 .nav-link:hover {
-  color: var(--q-electric);
-  background: var(--q-electric-dim);
-  border-color: rgba(0,212,255,0.2);
-  opacity: 1;
+  color: rgba(220,240,255,0.9);
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.08);
 }
 .nav-link.active {
   color: var(--q-electric);
-  background: var(--q-electric-dim);
-  border-color: rgba(0,212,255,0.25);
+  background: rgba(0,212,255,0.08);
+  border-color: rgba(0,212,255,0.2);
+  box-shadow: 0 0 20px rgba(0,212,255,0.08);
 }
+.nav-link svg { opacity: 0.7; }
+.nav-link.active svg, .nav-link:hover svg { opacity: 1; }
 
 /* ─── Theme toggle ──────────────────────────────────────────────────────── */
 .theme-toggle {

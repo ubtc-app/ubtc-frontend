@@ -13,16 +13,20 @@ const cardVariant = { initial: { opacity: 0, y: 18 }, animate: { opacity: 1, y: 
 function StatPill({ label, value, color, glow }: { label: string; value: string; color: string; glow: string }) {
   return (
     <div style={{
-      display: 'flex', flexDirection: 'column', gap: '4px',
-      padding: '14px 18px',
-      background: `linear-gradient(135deg,${color}10,${color}05)`,
-      border: `1px solid ${color}28`,
-      borderRadius: '14px',
-      minWidth: '110px',
-      boxShadow: `0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 ${color}15`,
-    }}>
-      <p className="label" style={{ color: 'var(--q-text-3)', display: 'block' }}>{label}</p>
-      <p className="number" style={{ color, fontSize: '15px', fontWeight: '700', margin: 0, textShadow: `0 0 20px ${glow}` }}>{value}</p>
+      display: 'flex', flexDirection: 'column', gap: '5px',
+      padding: '14px 20px',
+      background: `linear-gradient(135deg,${color}0d,${color}04)`,
+      border: `1px solid ${color}22`,
+      borderRadius: '16px',
+      minWidth: '116px',
+      boxShadow: `0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 ${color}12`,
+      transition: 'transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s',
+    }}
+    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = `0 12px 40px rgba(0,0,0,0.5), 0 0 24px ${glow}22, inset 0 1px 0 ${color}18` }}
+    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'none'; (e.currentTarget as HTMLDivElement).style.boxShadow = `0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 ${color}12` }}
+    >
+      <p style={{ color: 'rgba(120,160,220,0.5)', display: 'block', margin: 0, fontSize: '10px', fontWeight: '500', letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>{label}</p>
+      <p style={{ color, fontSize: '16px', fontWeight: '700', margin: 0, fontFamily: 'var(--font-syne)', letterSpacing: '-0.02em', textShadow: `0 0 20px ${glow}` }}>{value}</p>
     </div>
   )
 }
@@ -190,11 +194,13 @@ export default function Dashboard() {
             </p>
 
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: '20px', flexWrap: 'wrap', marginBottom: '8px' }}>
-              <p className="number" style={{
-                fontSize: isMobile ? '42px' : '64px',
+              <p style={{
+                fontSize: isMobile ? '44px' : '68px',
                 fontWeight: '700', color: 'var(--q-text)',
-                lineHeight: '1', letterSpacing: '-0.04em',
-                textShadow: '0 0 60px rgba(0,212,255,0.15)',
+                lineHeight: '1', letterSpacing: '-0.03em',
+                fontFamily: 'var(--font-syne)',
+                textShadow: '0 0 80px rgba(0,212,255,0.12)',
+                margin: 0,
               }}>
                 ${fmt(totalUsd)}
               </p>
@@ -350,12 +356,33 @@ export default function Dashboard() {
 
                   return (
                     <motion.div key={vault.vault_id} variants={cardVariant} style={{
-                      background: isPending ? 'linear-gradient(135deg,#1a1000,#0d0800)' : 'linear-gradient(135deg,#050f20,#020810)',
-                      border: `1px solid ${isPending ? 'rgba(255,184,0,0.25)' : 'rgba(0,212,255,0.12)'}`,
-                      borderRadius: '22px',
-                      boxShadow: `0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 ${isPending ? 'rgba(255,184,0,0.08)' : 'rgba(0,212,255,0.08)'}`,
+                      background: isPending
+                        ? 'linear-gradient(160deg,rgba(26,16,0,0.9),rgba(13,8,0,0.95))'
+                        : 'linear-gradient(160deg,rgba(5,14,32,0.92),rgba(2,8,18,0.96))',
+                      border: `1px solid ${isPending ? 'rgba(255,184,0,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                      borderRadius: '24px',
+                      boxShadow: isPending
+                        ? `0 16px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,184,0,0.08), inset 0 1px 0 rgba(255,184,0,0.07)`
+                        : `0 16px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,212,255,0.04), inset 0 1px 0 rgba(255,255,255,0.04)`,
                       overflow: 'hidden',
-                    }}>
+                      backdropFilter: 'blur(20px)',
+                      transition: 'transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s',
+                    }}
+                    onMouseEnter={e => {
+                      const el = e.currentTarget as HTMLDivElement
+                      el.style.transform = 'translateY(-3px)'
+                      el.style.boxShadow = isPending
+                        ? `0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,184,0,0.12), inset 0 1px 0 rgba(255,184,0,0.1)`
+                        : `0 24px 64px rgba(0,0,0,0.7), 0 0 40px rgba(0,212,255,0.06), inset 0 1px 0 rgba(255,255,255,0.06)`
+                    }}
+                    onMouseLeave={e => {
+                      const el = e.currentTarget as HTMLDivElement
+                      el.style.transform = 'none'
+                      el.style.boxShadow = isPending
+                        ? `0 16px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,184,0,0.08), inset 0 1px 0 rgba(255,184,0,0.07)`
+                        : `0 16px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,212,255,0.04), inset 0 1px 0 rgba(255,255,255,0.04)`
+                    }}
+                    >
 
                       {/* Pending banner */}
                       {isPending && (
@@ -412,7 +439,7 @@ export default function Dashboard() {
                             {Icons.currentAccount(22, 'var(--q-electric)')}
                           </div>
                           <div>
-                            <p style={{ fontFamily: 'var(--font-syne)', color: 'var(--q-text)', fontWeight: '700', fontSize: '15px', margin: '0 0 6px', letterSpacing: '-0.02em' }}>
+                            <p style={{ fontFamily: 'var(--font-syne)', color: 'var(--q-text)', fontWeight: '600', fontSize: '15px', margin: '0 0 6px', letterSpacing: '-0.01em' }}>
                               {accountTypeLabel[vault.account_type] ?? 'Current'} Account
                             </p>
                             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -428,7 +455,7 @@ export default function Dashboard() {
                           </div>
                         </div>
                         <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
-                          <p className="number" style={{ color: 'var(--q-text)', fontWeight: '700', fontSize: '24px', margin: '0 0 4px', lineHeight: '1', textShadow: '0 0 30px rgba(0,212,255,0.1)' }}>
+                          <p style={{ color: 'var(--q-text)', fontWeight: '700', fontSize: '26px', margin: '0 0 4px', lineHeight: '1', fontFamily: 'var(--font-syne)', letterSpacing: '-0.02em', textShadow: '0 0 30px rgba(0,212,255,0.1)' }}>
                             ${fmt(btcValue)}
                           </p>
                           <p className="number" style={{ color: 'var(--q-text-3)', fontSize: '10px', margin: '0 0 2px' }}>{btcLocked.toFixed(6)} BTC locked</p>
@@ -445,21 +472,30 @@ export default function Dashboard() {
 
                         <a href={`/account/${vault.vault_id}`} style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
-                          marginTop: '8px',
-                          background: 'linear-gradient(135deg, rgba(0,212,255,0.12), rgba(124,58,255,0.08))',
-                          border: '1px solid rgba(0,212,255,0.2)',
-                          color: 'var(--q-electric)',
+                          marginTop: '10px',
+                          background: 'rgba(0,212,255,0.06)',
+                          border: '1px solid rgba(0,212,255,0.14)',
+                          color: 'rgba(0,212,255,0.8)',
                           textDecoration: 'none', borderRadius: '14px',
-                          padding: '13px', fontSize: '12px', fontWeight: '700',
-                          fontFamily: 'var(--font-mono)', letterSpacing: '0.08em',
-                          textTransform: 'uppercase',
-                          transition: 'background 0.2s, box-shadow 0.2s',
-                          boxShadow: '0 0 20px rgba(0,212,255,0.06)',
+                          padding: '12px', fontSize: '12px', fontWeight: '600',
+                          fontFamily: 'var(--font-display)', letterSpacing: '0.01em',
+                          transition: 'all 0.2s cubic-bezier(0.16,1,0.3,1)',
                         }}
-                          onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0,212,255,0.18), rgba(124,58,255,0.12))'; e.currentTarget.style.boxShadow = '0 0 30px rgba(0,212,255,0.15)' }}
-                          onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0,212,255,0.12), rgba(124,58,255,0.08))'; e.currentTarget.style.boxShadow = '0 0 20px rgba(0,212,255,0.06)' }}
+                          onMouseEnter={e => {
+                            e.currentTarget.style.background = 'rgba(0,212,255,0.1)'
+                            e.currentTarget.style.borderColor = 'rgba(0,212,255,0.25)'
+                            e.currentTarget.style.color = 'var(--q-electric)'
+                            e.currentTarget.style.transform = 'translateY(-1px)'
+                          }}
+                          onMouseLeave={e => {
+                            e.currentTarget.style.background = 'rgba(0,212,255,0.06)'
+                            e.currentTarget.style.borderColor = 'rgba(0,212,255,0.14)'
+                            e.currentTarget.style.color = 'rgba(0,212,255,0.8)'
+                            e.currentTarget.style.transform = 'none'
+                          }}
                         >
-                          Open Account →
+                          Manage Account
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                         </a>
                       </div>
                     </motion.div>

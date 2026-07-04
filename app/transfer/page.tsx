@@ -1,11 +1,12 @@
 'use client'
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { API_URL } from '../lib/supabase'
 import { QuantumLoader } from '../components/QuantumLoader'
 import { Icons } from '../components/Icons'
 import { signedSpendWithPassword } from '../lib/wallet/challenge'
 import { isInTelegram } from '../lib/telegram'
+import { listWallets, getActiveAddress } from '../lib/wallet/storage'
 
 const toHex = (bytes: Uint8Array) => Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
 const fromHex = (hex: string) => new Uint8Array(hex.match(/.{1,2}/g)!.map(b => parseInt(b, 16)))
@@ -39,6 +40,9 @@ function TransferContent() {
 
   const [vaults, setVaults] = useState<any[]>([])
   const [wallets, setWallets] = useState<any[]>([])
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [localWallets, setLocalWallets] = useState<any[]>([])
+  const [activeLocalAddress, setActiveLocalAddress] = useState<string | null>(null)
   const [stablecoins, setStablecoins] = useState<any[]>([])
   const [activeCurrency, setActiveCurrency] = useState(currencyParam)
   const [activeVaultId, setActiveVaultId] = useState(vaultId)
@@ -79,17 +83,20 @@ function TransferContent() {
   const loadAll = async () => {
     setDataLoading(true)
     try {
-      const [dashRes, scRes, walletsRes] = await Promise.all([
-        fetch(`${API_URL}/dashboard`),
-        fetch(`${API_URL}/stablecoins`),
-        fetch(`${API_URL}/wallets/all`),
+      const [[dashRes, scRes], localWs, activeAddr] = await Promise.all([
+        Promise.all([
+          fetch(`${API_URL}/dashboard`),
+          fetch(`${API_URL}/stablecoins`),
+        ]),
+        listWallets(),
+        getActiveAddress(),
       ])
       const dash = await dashRes.json()
       const sc = await scRes.json()
-      const wd = await walletsRes.json()
       setVaults(dash.vaults || [])
       setStablecoins(sc.stablecoins || [])
-      setWallets(wd.wallets || [])
+      setLocalWallets(localWs)
+      setActiveLocalAddress(activeAddr)
     } catch (e) { console.error(e) }
     setDataLoading(false)
   }
@@ -162,23 +169,41 @@ function TransferContent() {
     reader.readAsText(file)
   }
 
+  const searchTimerRef = useRef<NodeJS.Timeout | null>(null)
+
   const handleSearch = (val: string) => {
     setSearchQuery(val)
     setSelectedWallet(null)
     setSearchError('')
+    setWallets([])
+
     if (!val) return
+
+    // Direct ubtc address — no search needed
+    if (val.startsWith('ubtc') && val.length > 20) return
+
     if (val.length > 20 && !val.startsWith('ubtc') && !val.startsWith('@')) {
       setSearchError('Can only send UBTC to another UBTC Wallet — address must start with ubtc')
+      return
     }
+
+    const q = val.startsWith('@') ? val.slice(1) : val
+    if (q.length < 2) return
+
+    // Debounced live search
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+    searchTimerRef.current = setTimeout(async () => {
+      setSearchLoading(true)
+      try {
+        const res = await fetch(`${API_URL}/wallet/search?q=${encodeURIComponent(q)}`)
+        const data = await res.json()
+        setWallets((data.wallets || []).filter((w: any) => w.wallet_address !== fromWallet))
+      } catch {}
+      setSearchLoading(false)
+    }, 300)
   }
 
-  const searchResults = searchQuery.length > 1 && !searchError
-    ? wallets.filter((w: any) =>
-        (w.username?.toLowerCase().includes(searchQuery.replace('@', '').toLowerCase()) ||
-        w.wallet_address?.toLowerCase().includes(searchQuery.toLowerCase())) &&
-        w.wallet_address !== fromWallet
-      ).slice(0, 5)
-    : []
+  const searchResults = wallets
 
   const isManualUbtcAddress = searchQuery.startsWith('ubtc') && searchQuery.length > 20 && !searchError
   const recipient = selectedWallet?.wallet_address || (isManualUbtcAddress ? searchQuery : '')
@@ -581,8 +606,73 @@ function TransferContent() {
 
             {/* TO — search only, UBTC wallets only */}
             <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '20px', padding: '20px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
-              <p style={{ color: 'rgba(0,212,255,0.5)', fontSize: '9px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.35em', margin: '0 0 6px' }}>To</p>
-              <p style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono, margin: '0 0 12px' }}>
+              <p style={{ color: 'rgba(0,212,255,0.5)', fontSize: '9px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.35em', margin: '0 0 12px' }}>To</p>
+
+              {/* Your own wallets quick-pick */}
+              {localWallets.filter(w => w.address !== (fromWallet || activeLocalAddress)).length > 0 && (
+                <div style={{ marginBottom: '14px' }}>
+                  <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 8px' }}>Your wallets</p>
+                  <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '6px' }}>
+                    {localWallets
+                      .filter(w => w.address !== (fromWallet || activeLocalAddress))
+                      .sort((a, b) => (a.accountIndex ?? 0) - (b.accountIndex ?? 0))
+                      .map(w => {
+                        const username = localStorage.getItem(`ubtc_username_${w.address}`)
+                        const label = username ? `@${username}` : `Account ${(w.accountIndex ?? 0) + 1}`
+                        const isSelected = selectedWallet?._localAddress === w.address
+                        return (
+                          <div
+                            key={w.address}
+                            onClick={() => {
+                              if (isSelected) {
+                                setSelectedWallet(null); setSearchQuery('')
+                              } else {
+                                setSelectedWallet({ _localAddress: w.address, wallet_address: w.address, username: username || '' })
+                                setSearchQuery(w.address)
+                                fetchRecipientWallet(w.address)
+                              }
+                            }}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: '12px',
+                              padding: '11px 14px',
+                              background: isSelected ? 'rgba(0,212,255,0.08)' : 'rgba(255,255,255,0.03)',
+                              border: `1px solid ${isSelected ? 'rgba(0,212,255,0.35)' : 'rgba(255,255,255,0.07)'}`,
+                              borderRadius: '12px', cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            <div style={{
+                              width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0,
+                              background: isSelected ? 'rgba(0,212,255,0.15)' : 'rgba(255,255,255,0.05)',
+                              border: `1px solid ${isSelected ? 'rgba(0,212,255,0.3)' : 'rgba(255,255,255,0.1)'}`,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: '12px', fontWeight: '700',
+                              color: isSelected ? 'var(--t-accent)' : 'var(--t-muted)',
+                              fontFamily: 'var(--font-mono)',
+                            }}>
+                              {(w.accountIndex ?? 0) + 1}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <p style={{ color: isSelected ? 'var(--t-text)' : 'rgba(180,210,255,0.8)', fontWeight: '600', fontSize: '13px', margin: '0 0 2px' }}>{label}</p>
+                              <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+                                {w.address.slice(0, 18)}···{w.address.slice(-6)}
+                              </p>
+                            </div>
+                            {isSelected && (
+                              <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'var(--t-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                {Icons.check(9, 'white')}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                  </div>
+                  <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '14px 0 12px' }} />
+                  <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 8px' }}>Or search</p>
+                </div>
+              )}
+
+              <p style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono, margin: '0 0 10px' }}>
                 Search by <strong style={{ color: 'var(--t-muted)' }}>@username</strong> or paste a <strong style={{ color: 'var(--t-accent)' }}>ubtc...</strong> address
               </p>
               <input
@@ -597,6 +687,14 @@ function TransferContent() {
                   {Icons.warning(13, 'var(--t-red)')}
                   <p style={{ color: 'var(--t-red)', fontSize: '11px', ...mono, margin: 0, lineHeight: '1.5' }}>{searchError}</p>
                 </div>
+              )}
+
+              {searchLoading && (
+                <p style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono, margin: '8px 0 0', textAlign: 'center' as const }}>Searching…</p>
+              )}
+
+              {!searchLoading && searchQuery.length > 1 && !searchError && !searchQuery.startsWith('ubtc') && searchResults.length === 0 && (
+                <p style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono, margin: '8px 0 0', textAlign: 'center' as const }}>No users found</p>
               )}
 
               {searchResults.length > 0 && (
