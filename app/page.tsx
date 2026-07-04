@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { QoraAvatar } from './components/QoraAvatar'
+import { useIsMobile } from './lib/useIsMobile'
 
 type Step = 'intro' | 'name-input' | 'user-type' | 'ui-pref' | 'routing'
 
@@ -154,12 +155,15 @@ export default function OnboardingPage() {
   }, [name, userType, router])
 
   const isSpeaking = step === 'intro' && !intro.done
+  const isMobile = useIsMobile()
 
   return (
     <div style={{
       position: 'fixed', inset: 0, background: '#07090d',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontFamily: "'JetBrains Mono', monospace", padding: '24px', overflow: 'hidden',
+      display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'center',
+      fontFamily: "'JetBrains Mono', monospace",
+      padding: isMobile ? '24px 20px' : '24px',
+      overflowY: isMobile ? 'auto' : 'hidden',
     }}>
       {/* Subtle grid */}
       <div style={{
@@ -176,20 +180,23 @@ export default function OnboardingPage() {
         pointerEvents: 'none',
       }} />
 
-      {/* QORA + conversation side-by-side */}
+      {/* QORA + conversation — desktop: side-by-side, mobile: stacked */}
       <div style={{
         position: 'relative', zIndex: 10,
-        display: 'flex', alignItems: 'flex-start', gap: 44,
-        width: '100%', maxWidth: 780,
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        alignItems: isMobile ? 'center' : 'flex-start',
+        gap: isMobile ? 16 : 44,
+        width: '100%', maxWidth: isMobile ? '100%' : 780,
       }}>
 
         {/* ── QORA avatar column ── */}
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center',
-          flexShrink: 0, paddingTop: 8,
+          flexShrink: 0, paddingTop: isMobile ? 0 : 8,
           opacity: step === 'routing' ? 0 : 1, transition: 'opacity 0.6s',
         }}>
-          <QoraAvatar size={120} speaking={isSpeaking} />
+          <QoraAvatar size={isMobile ? 100 : 120} speaking={isSpeaking} />
           <div style={{
             marginTop: 10, padding: '4px 14px',
             background: 'rgba(140,60,255,0.07)',
@@ -203,7 +210,7 @@ export default function OnboardingPage() {
         </div>
 
         {/* ── Conversation column ── */}
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: 1, minWidth: 0, width: isMobile ? '100%' : undefined }}>
 
           {/* Status badge */}
           {step !== 'routing' && (
