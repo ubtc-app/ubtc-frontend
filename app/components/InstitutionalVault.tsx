@@ -205,7 +205,7 @@ function InstitutionalVaultInner() {
     setCheckingUsername(false)
   }
 
-  const setQuantumUsername = async () => {
+  const saveQuantumUsername = async () => {
     if (!quantumUsernameAvail || quantumUsername.length < 3) return
     try {
       await fetch(`${API_URL}/wallet/username`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({wallet_address:result.wallet_address,vault_id:result.vault_id,quantum_username:quantumUsername})})
@@ -372,7 +372,7 @@ function InstitutionalVaultInner() {
                   </div>
                   <div style={{display:'flex',gap:10}}>
                     <button onClick={()=>setQuantumUsernameSet(true)} style={{...btnSecondary}}>Skip for now</button>
-                    <button onClick={setQuantumUsername} disabled={!quantumUsernameAvail||quantumUsername.length<3} style={{...btnPrimary(!!quantumUsernameAvail&&quantumUsername.length>=3),flex:1}}>
+                    <button onClick={saveQuantumUsername} disabled={!quantumUsernameAvail||quantumUsername.length<3} style={{...btnPrimary(!!quantumUsernameAvail&&quantumUsername.length>=3),flex:1}}>
                       Confirm Username →
                     </button>
                   </div>
