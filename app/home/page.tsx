@@ -160,7 +160,9 @@ export default function Home() {
     setReady(true)
   }, [])
 
-  if (!ready) return null
+  if (!ready) return (
+    <div style={{ minHeight: '100vh', background: '#07090d' }} />
+  )
 
   return (
     <>
