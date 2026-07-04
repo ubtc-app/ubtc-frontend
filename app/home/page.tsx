@@ -165,7 +165,6 @@ export default function Home() {
   return (
     <>
       {theme === 'light' ? <InstitutionalHome /> : <ConsumerHome />}
-      <HomeQora />
     </>
   )
 }

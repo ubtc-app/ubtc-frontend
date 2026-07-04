@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import { QoraAvatar } from './QoraAvatar'
+import { useIsMobile } from '../lib/useIsMobile'
 
 const STEPS = [
   {
@@ -48,6 +49,7 @@ const STEPS = [
 
 export function QoraPanel() {
   const pathname = usePathname()
+  const isMobile = useIsMobile()
   const [open,    setOpen]    = useState(false)
   const [step,    setStep]    = useState(0)
   const [visible, setVisible] = useState(false)   // button slide-up
@@ -235,86 +237,142 @@ export function QoraPanel() {
             >✕</button>
           </div>
 
-          {/* QORA + Speech area */}
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 0, padding: '8px 24px 0', position: 'relative' }}>
-            {/* QORA image */}
-            <div style={{ flexShrink: 0, marginBottom: -8 }}>
-              <QoraAvatar size={180} speaking={speaking} globalMouse style={{ filter: 'drop-shadow(0 0 30px rgba(140,60,255,0.4))' }} />
-            </div>
+          {/* QORA + Speech area — desktop: side by side, mobile: QORA on top */}
+          {isMobile ? (
+            /* ── Mobile layout: QORA head centred above bubble ── */
+            <div style={{ padding: '4px 20px 0', position: 'relative' }}>
+              {/* QORA head centred */}
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: -16 }}>
+                <QoraAvatar size={120} speaking={speaking} globalMouse style={{ filter: 'drop-shadow(0 0 24px rgba(140,60,255,0.5))' }} />
+              </div>
 
-            {/* Speech bubble */}
-            <div style={{
-              flex: 1, minWidth: 0,
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(160,80,255,0.2)',
-              borderRadius: '16px 16px 16px 4px',
-              padding: '14px 16px',
-              marginBottom: 16,
-              marginLeft: -8,
-              position: 'relative',
-              backdropFilter: 'blur(10px)',
-            }}>
-              {/* Bubble pointer */}
+              {/* Speech bubble below */}
               <div style={{
-                position: 'absolute', left: -7, bottom: 12,
-                width: 0, height: 0,
-                borderTop: '6px solid transparent',
-                borderBottom: '6px solid transparent',
-                borderRight: '7px solid rgba(160,80,255,0.2)',
-              }} />
-              <div style={{
-                position: 'absolute', left: -5, bottom: 13,
-                width: 0, height: 0,
-                borderTop: '5px solid transparent',
-                borderBottom: '5px solid transparent',
-                borderRight: '6px solid rgba(8,6,20,0.95)',
-              }} />
-
-              <p style={{
-                color: 'rgba(160,80,255,0.8)', fontSize: '10px',
-                letterSpacing: '0.14em', textTransform: 'uppercase',
-                margin: '0 0 8px', fontFamily: 'monospace',
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(160,80,255,0.2)',
+                borderRadius: '16px',
+                padding: '14px 16px',
+                marginBottom: 12,
+                backdropFilter: 'blur(10px)',
               }}>
-                {currentStep.icon} {currentStep.title}
-              </p>
-              <p style={{
-                color: 'rgba(210,220,240,0.88)', fontSize: '12.5px',
-                lineHeight: 1.7, margin: 0,
-                fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
-                minHeight: 80,
-              }}>
-                {displayedText}
-                {speaking && (
-                  <span style={{
-                    display: 'inline-block', width: 2, height: '1em',
-                    background: 'rgba(160,80,255,0.7)', marginLeft: 1,
-                    verticalAlign: 'text-bottom',
-                    animation: 'qora-cursor 0.5s step-end infinite',
-                  }} />
-                )}
-              </p>
-
-              {/* Link to section */}
-              {currentStep.href && !speaking && (
-                <a
-                  href={currentStep.href}
-                  style={{
+                <p style={{
+                  color: 'rgba(160,80,255,0.8)', fontSize: '10px',
+                  letterSpacing: '0.14em', textTransform: 'uppercase',
+                  margin: '0 0 8px', fontFamily: 'monospace',
+                }}>
+                  {currentStep.icon} {currentStep.title}
+                </p>
+                <p style={{
+                  color: 'rgba(210,220,240,0.88)', fontSize: '13px',
+                  lineHeight: 1.65, margin: 0,
+                  fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
+                  minHeight: 60,
+                }}>
+                  {displayedText}
+                  {speaking && (
+                    <span style={{
+                      display: 'inline-block', width: 2, height: '1em',
+                      background: 'rgba(160,80,255,0.7)', marginLeft: 1,
+                      verticalAlign: 'text-bottom',
+                      animation: 'qora-cursor 0.5s step-end infinite',
+                    }} />
+                  )}
+                </p>
+                {currentStep.href && !speaking && (
+                  <a href={currentStep.href} style={{
                     display: 'inline-flex', alignItems: 'center', gap: 6,
-                    marginTop: 12,
-                    color: 'rgba(160,80,255,0.8)', fontSize: '10px',
+                    marginTop: 10, color: 'rgba(160,80,255,0.8)', fontSize: '10px',
                     letterSpacing: '0.12em', textTransform: 'uppercase',
                     textDecoration: 'none', fontFamily: 'monospace',
                     animation: 'fade-up 0.35s ease both',
-                    transition: 'color 0.2s',
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.color = 'rgba(200,140,255,1)')}
-                  onMouseLeave={e => (e.currentTarget.style.color = 'rgba(160,80,255,0.8)')}
-                >
-                  Go there now →
-                </a>
-              )}
+                  }}>
+                    Go there now →
+                  </a>
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            /* ── Desktop layout: QORA left, bubble right ── */
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 0, padding: '8px 24px 0', position: 'relative' }}>
+              {/* QORA image */}
+              <div style={{ flexShrink: 0, marginBottom: -8 }}>
+                <QoraAvatar size={180} speaking={speaking} globalMouse style={{ filter: 'drop-shadow(0 0 30px rgba(140,60,255,0.4))' }} />
+              </div>
+
+              {/* Speech bubble */}
+              <div style={{
+                flex: 1, minWidth: 0,
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(160,80,255,0.2)',
+                borderRadius: '16px 16px 16px 4px',
+                padding: '14px 16px',
+                marginBottom: 16,
+                marginLeft: -8,
+                position: 'relative',
+                backdropFilter: 'blur(10px)',
+              }}>
+                {/* Bubble pointer */}
+                <div style={{
+                  position: 'absolute', left: -7, bottom: 12,
+                  width: 0, height: 0,
+                  borderTop: '6px solid transparent',
+                  borderBottom: '6px solid transparent',
+                  borderRight: '7px solid rgba(160,80,255,0.2)',
+                }} />
+                <div style={{
+                  position: 'absolute', left: -5, bottom: 13,
+                  width: 0, height: 0,
+                  borderTop: '5px solid transparent',
+                  borderBottom: '5px solid transparent',
+                  borderRight: '6px solid rgba(8,6,20,0.95)',
+                }} />
+
+                <p style={{
+                  color: 'rgba(160,80,255,0.8)', fontSize: '10px',
+                  letterSpacing: '0.14em', textTransform: 'uppercase',
+                  margin: '0 0 8px', fontFamily: 'monospace',
+                }}>
+                  {currentStep.icon} {currentStep.title}
+                </p>
+                <p style={{
+                  color: 'rgba(210,220,240,0.88)', fontSize: '12.5px',
+                  lineHeight: 1.7, margin: 0,
+                  fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
+                  minHeight: 80,
+                }}>
+                  {displayedText}
+                  {speaking && (
+                    <span style={{
+                      display: 'inline-block', width: 2, height: '1em',
+                      background: 'rgba(160,80,255,0.7)', marginLeft: 1,
+                      verticalAlign: 'text-bottom',
+                      animation: 'qora-cursor 0.5s step-end infinite',
+                    }} />
+                  )}
+                </p>
+
+                {/* Link to section */}
+                {currentStep.href && !speaking && (
+                  <a
+                    href={currentStep.href}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      marginTop: 12,
+                      color: 'rgba(160,80,255,0.8)', fontSize: '10px',
+                      letterSpacing: '0.12em', textTransform: 'uppercase',
+                      textDecoration: 'none', fontFamily: 'monospace',
+                      animation: 'fade-up 0.35s ease both',
+                      transition: 'color 0.2s',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.color = 'rgba(200,140,255,1)')}
+                    onMouseLeave={e => (e.currentTarget.style.color = 'rgba(160,80,255,0.8)')}
+                  >
+                    Go there now →
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* ── Navigation ── */}
           <div style={{ padding: '4px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
