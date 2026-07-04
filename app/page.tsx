@@ -162,7 +162,7 @@ export default function OnboardingPage() {
       position: 'fixed', inset: 0, background: '#07090d',
       display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'center',
       fontFamily: "'JetBrains Mono', monospace",
-      padding: isMobile ? '24px 20px' : '24px',
+      padding: isMobile ? '72px 20px 32px' : '24px',
       overflowY: isMobile ? 'auto' : 'hidden',
     }}>
       {/* Subtle grid */}
