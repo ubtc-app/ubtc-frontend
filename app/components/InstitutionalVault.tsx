@@ -240,10 +240,10 @@ function InstitutionalVaultInner() {
     if (walletPassword !== walletPasswordConfirm || walletPassword.length < 8) return
     try {
       const { sealWithPassword } = await import('../lib/wallet/password')
-      const { storeMnemonicVault } = await import('../lib/wallet/storage')
+      const { saveMnemonicVault } = await import('../lib/wallet/storage')
       if (newWalletMnemonic) {
         const enc = await sealWithPassword(new TextEncoder().encode(newWalletMnemonic), walletPassword)
-        await storeMnemonicVault(enc)
+        await saveMnemonicVault(enc)
       }
     } catch {}
     setPasswordSet(true); setOnboardStep(2)
