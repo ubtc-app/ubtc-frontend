@@ -567,7 +567,7 @@ function WalletContent() {
                 {pendingProofs.length} Proof File{pendingProofs.length > 1 ? 's' : ''} — Action Required
               </p>
             </div>
-            <p style={{ color: 'rgba(200,160,100,0.6)', fontSize: 11, fontFamily: 'var(--font-mono)', margin: '0 0 14px', lineHeight: 1.7 }}>
+            <p style={{ color: inst ? '#92400e' : 'rgba(200,160,100,0.6)', fontSize: 11, fontFamily: 'var(--font-mono)', margin: '0 0 14px', lineHeight: 1.7 }}>
               You have received UBTC. Redeem to Bitcoin or download your proof file.
             </p>
             {pendingProofs.map((proof: any) => {
@@ -577,16 +577,16 @@ function WalletContent() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                        <p style={{ color: '#fff', fontSize: 15, fontFamily: 'var(--font-mono)', margin: 0, fontWeight: 700 }}>{proof.proof_data?.ownership?.ubtc_amount || '?'} UBTC</p>
-                        <span style={{ background: isDownloaded ? 'rgba(255,255,255,0.06)' : 'rgba(0,212,255,0.15)', color: isDownloaded ? 'rgba(160,180,220,0.4)' : '#00D4FF', fontSize: 9, fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', padding: '2px 8px', borderRadius: 999, textTransform: 'uppercase' }}>
+                        <p style={{ color: inst ? '#0f172a' : '#fff', fontSize: 15, fontFamily: 'var(--font-mono)', margin: 0, fontWeight: 700 }}>{proof.proof_data?.ownership?.ubtc_amount || '?'} UBTC</p>
+                        <span style={{ background: isDownloaded ? (inst ? '#f1f5f9' : 'rgba(255,255,255,0.06)') : (inst ? '#dbeafe' : 'rgba(0,212,255,0.15)'), color: isDownloaded ? (inst ? '#64748b' : 'rgba(160,180,220,0.4)') : (inst ? '#1d4ed8' : '#00D4FF'), fontSize: 9, fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', padding: '2px 8px', borderRadius: 999, textTransform: 'uppercase' }}>
                           {isDownloaded ? 'Saved' : 'New'}
                         </span>
                       </div>
-                      <p style={{ color: 'rgba(160,180,220,0.4)', fontSize: 10, fontFamily: 'var(--font-mono)', margin: 0 }}>{new Date(proof.created_at).toLocaleString()}</p>
+                      <p style={{ color: inst ? '#64748b' : 'rgba(160,180,220,0.4)', fontSize: 10, fontFamily: 'var(--font-mono)', margin: 0 }}>{new Date(proof.created_at).toLocaleString()}</p>
                     </div>
                     <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                       {!isInTelegram() && (
-                        <button onClick={() => downloadProof(proof)} style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(160,190,240,0.6)', fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600, padding: '8px 10px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, cursor: 'pointer' }}>
+                        <button onClick={() => downloadProof(proof)} style={{ background: inst ? '#f1f5f9' : 'rgba(255,255,255,0.06)', color: inst ? '#374151' : 'rgba(160,190,240,0.6)', fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600, padding: '8px 10px', border: inst ? '1px solid #e2e8f0' : '1px solid rgba(255,255,255,0.08)', borderRadius: 8, cursor: 'pointer' }}>
                           {isDownloaded ? '↻' : '↓'}
                         </button>
                       )}

@@ -1,11 +1,14 @@
 'use client'
+import { useState, useEffect } from 'react'
 
 const isInstitutional = () =>
   typeof window !== 'undefined' &&
   (localStorage.getItem('qufi_theme') === 'light' || localStorage.getItem('qufi_user_type') === 'institutional')
 
 export function QuantumLoader({ text = 'Loading' }: { text?: string }) {
-  const inst = isInstitutional()
+  const [inst, setInst] = useState(false)
+  useEffect(() => { setInst(isInstitutional()) }, [])
+
   return (
     <div style={{
       minHeight: '100vh', display: 'flex', alignItems: 'center',
@@ -20,10 +23,10 @@ export function QuantumLoader({ text = 'Loading' }: { text?: string }) {
       }}>
         {/* Triple quantum rings */}
         <div style={{ position: 'relative', width: 72, height: 72 }}>
-          <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '1.5px solid rgba(0,212,255,0.12)', borderTopColor: '#00D4FF', animation: 'ql-spin 1s linear infinite' }} />
-          <div style={{ position: 'absolute', inset: 10, borderRadius: '50%', border: '1.5px solid rgba(124,58,255,0.12)', borderTopColor: '#7C3AFF', animation: 'ql-spin .7s linear infinite reverse' }} />
-          <div style={{ position: 'absolute', inset: 20, borderRadius: '50%', border: '1.5px solid rgba(0,255,224,0.12)', borderTopColor: '#00FFE0', animation: 'ql-spin 1.3s linear infinite' }} />
-          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 8, height: 8, borderRadius: '50%', background: '#00D4FF', boxShadow: '0 0 14px #00D4FF, 0 0 28px rgba(0,212,255,0.5)' }} />
+          <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: inst ? '1.5px solid #e2e8f0' : '1.5px solid rgba(0,212,255,0.12)', borderTopColor: inst ? '#1d4ed8' : '#00D4FF', animation: 'ql-spin 1s linear infinite' }} />
+          <div style={{ position: 'absolute', inset: 10, borderRadius: '50%', border: inst ? '1.5px solid #f1f5f9' : '1.5px solid rgba(124,58,255,0.12)', borderTopColor: inst ? '#7c3aed' : '#7C3AFF', animation: 'ql-spin .7s linear infinite reverse' }} />
+          <div style={{ position: 'absolute', inset: 20, borderRadius: '50%', border: inst ? '1.5px solid #f8fafc' : '1.5px solid rgba(0,255,224,0.12)', borderTopColor: inst ? '#0891b2' : '#00FFE0', animation: 'ql-spin 1.3s linear infinite' }} />
+          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 8, height: 8, borderRadius: '50%', background: inst ? '#1d4ed8' : '#00D4FF', boxShadow: inst ? 'none' : '0 0 14px #00D4FF, 0 0 28px rgba(0,212,255,0.5)' }} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <p style={{ color: inst ? '#374151' : 'rgba(0,212,255,0.7)', fontSize: 11, fontFamily: 'var(--font-mono)', letterSpacing: '0.3em', textTransform: 'uppercase', margin: 0 }}>{text}</p>
@@ -43,12 +46,14 @@ export function QuantumLoader({ text = 'Loading' }: { text?: string }) {
 }
 
 export function QuantumLoaderInline({ text = 'Loading' }: { text?: string }) {
-  const inst = isInstitutional()
+  const [inst, setInst] = useState(false)
+  useEffect(() => { setInst(isInstitutional()) }, [])
+
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
       <div style={{ position: 'relative', width: 20, height: 20, flexShrink: 0 }}>
-        <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '1.5px solid rgba(0,212,255,0.12)', borderTopColor: '#00D4FF', animation: 'ql-spin 1s linear infinite' }} />
-        <div style={{ position: 'absolute', inset: 4, borderRadius: '50%', border: '1.5px solid rgba(124,58,255,0.12)', borderTopColor: '#7C3AFF', animation: 'ql-spin .7s linear infinite reverse' }} />
+        <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: inst ? '1.5px solid #e2e8f0' : '1.5px solid rgba(0,212,255,0.12)', borderTopColor: inst ? '#1d4ed8' : '#00D4FF', animation: 'ql-spin 1s linear infinite' }} />
+        <div style={{ position: 'absolute', inset: 4, borderRadius: '50%', border: inst ? '1.5px solid #f1f5f9' : '1.5px solid rgba(124,58,255,0.12)', borderTopColor: inst ? '#7c3aed' : '#7C3AFF', animation: 'ql-spin .7s linear infinite reverse' }} />
       </div>
       <span style={{ color: inst ? '#374151' : 'rgba(0,212,255,0.6)', fontSize: 11, fontFamily: 'var(--font-mono)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>{text}</span>
       <style>{`@keyframes ql-spin { to { transform: rotate(360deg) } }`}</style>

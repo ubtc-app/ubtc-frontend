@@ -578,11 +578,11 @@ function AccountContent() {
 
           {/* Balance */}
           <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-            <p style={{ color: 'var(--q-text-3)', fontSize: '9px', fontWeight: '600', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.22em', ...mono }}>
+            <p style={{ color: inst ? '#64748b' : 'var(--q-text-3)', fontSize: '9px', fontWeight: '600', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.22em', ...mono }}>
               {isActive ? 'UBTC Balance' : 'Bitcoin Backing'}
             </p>
             <p className="number" style={{
-              color: 'var(--q-text)',
+              color: inst ? '#0f172a' : 'var(--q-text)',
               fontSize: isMobile ? '52px' : '72px',
               fontWeight: '700', margin: '0 0 12px', lineHeight: '1',
               letterSpacing: '-0.04em',
@@ -594,7 +594,7 @@ function AccountContent() {
             </p>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
               {isActive && (
-                <span style={{ color: 'var(--q-text-3)', fontSize: '12px', ...mono }}>
+                <span style={{ color: inst ? '#64748b' : 'var(--q-text-3)', fontSize: '12px', ...mono }}>
                   {btcLocked.toFixed(6)} BTC backing
                 </span>
               )}
