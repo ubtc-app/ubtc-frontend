@@ -8,11 +8,16 @@ import { Icons } from '../components/Icons'
 import { PasswordModal } from '../components/PasswordModal'
 import { signedSpendWithPassword } from '../lib/wallet/challenge'
 
+const isInstitutional = () =>
+  typeof window !== 'undefined' &&
+  (localStorage.getItem('qufi_theme') === 'light' || localStorage.getItem('qufi_user_type') === 'institutional')
+
 function RiskGauge({ pct, collateralRatio, liqPrice, alert120, alert115, ubtcAmount }: {
   pct: number; collateralRatio: number; liqPrice: number; alert120: number; alert115: number; ubtcAmount: number
 }) {
   const CX = 210, CY = 140, R = 115, ZONE = 75
   const isAmber = pct >= ZONE
+  const inst = isInstitutional()
   const needleColor = isAmber ? 'var(--t-orange)' : 'var(--t-green)'
   const mono = 'var(--font-mono)'
   const c = Math.min(Math.max(pct, 0), 100)
@@ -29,7 +34,7 @@ function RiskGauge({ pct, collateralRatio, liqPrice, alert120, alert115, ubtcAmo
   const tip = pt(180 - c * 1.8, R - 10)
 
   return (
-    <div style={{ background: 'linear-gradient(135deg,#080c1a,#04080e)', border: `1px solid ${isAmber ? 'rgba(255,184,0,0.25)' : 'rgba(0,212,255,0.12)'}`, borderRadius: '18px', padding: '16px 16px 14px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', transition: 'border-color 0.3s' }}>
+    <div style={{ background: inst ? '#fff' : 'linear-gradient(135deg,#080c1a,#04080e)', border: `1px solid ${isAmber ? 'rgba(255,184,0,0.25)' : inst ? '#e2e8f0' : 'rgba(0,212,255,0.12)'}`, borderRadius: '18px', padding: '16px 16px 14px', boxShadow: inst ? '0 4px 16px rgba(0,0,0,0.06)' : '0 8px 32px rgba(0,0,0,0.5)', transition: 'border-color 0.3s' }}>
       <svg viewBox="0 -18 420 190" style={{ width: '100%', display: 'block' }}>
         <path d="M 95 140 A 115 115 0 0 1 291 59" fill="none" stroke="hsl(142 40% 8%)" strokeWidth="22" strokeLinecap="butt" />
         <path d="M 291 59 A 115 115 0 0 1 325 140" fill="none" stroke="hsl(38 40% 8%)" strokeWidth="22" strokeLinecap="round" />
@@ -105,6 +110,7 @@ function MintContent() {
   const [signingStage, setSigningStage] = useState<'' | 'signing' | 'broadcasting'>('')
 
   const mono: any = { fontFamily: 'var(--font-mono)' }
+  const inst = isInstitutional()
 
   const currencies = [
     { key: 'ubtc', label: 'UBTC', sub: 'Bitcoin-backed - 150% collateral', color: 'var(--t-accent)', icon: Icons.bitcoin },
@@ -220,7 +226,7 @@ function MintContent() {
         subtitle={`Sign the mint of ${amount} ${cur.label} from vault ${vaultId.slice(0, 16)}... with your wallet password.`}
       />
 
-      <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', borderBottom: '1px solid rgba(0,212,255,0.12)', height: '60px', display: 'flex', alignItems: 'center', padding: '0 24px', gap: '16px' }}>
+      <div style={{ background: inst ? '#fff' : 'linear-gradient(135deg,#050f20,#020810)', borderBottom: inst ? '1px solid #e2e8f0' : '1px solid rgba(0,212,255,0.12)', height: '60px', display: 'flex', alignItems: 'center', padding: '0 24px', gap: '16px' }}>
         <a href={`/account/${vaultId}?currency=${activeCurrency}`} style={{ color: 'var(--t-muted)', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>{Icons.back(20, 'var(--t-muted)')}</a>
         <div style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center' }}>
           {['amount', 'done'].map((s, i) => (
@@ -242,7 +248,7 @@ function MintContent() {
               <p style={{ color: 'var(--t-faint)', fontSize: '13px', ...mono, margin: 0 }}>{cur.sub}</p>
             </div>
 
-            <div style={{ display: 'flex', background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '14px', padding: '4px', gap: '4px', marginBottom: '18px' }}>
+            <div style={{ display: 'flex', background: inst ? '#f8fafc' : 'linear-gradient(135deg,#050f20,#020810)', border: inst ? '1px solid #e2e8f0' : '1px solid rgba(0,212,255,0.12)', borderRadius: '14px', padding: '4px', gap: '4px', marginBottom: '18px' }}>
               {currencies.map(c => (
                 <button key={c.key} onClick={() => { setActiveCurrency(c.key); setAmount(''); setSelectedPct(0); setError(''); setMaxWarningAcknowledged(false) }} style={{ flex: 1, background: activeCurrency === c.key ? 'var(--t-surface3)' : 'transparent', border: activeCurrency === c.key ? `1px solid ${c.color}35` : '1px solid transparent', borderRadius: '10px', padding: '10px 6px', cursor: 'pointer', fontFamily: 'var(--font-display)', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: '5px' }}>
                   {c.icon(16, activeCurrency === c.key ? c.color : 'var(--t-faint)')}
@@ -262,7 +268,7 @@ function MintContent() {
 
             {!isStable && (
               <>
-                <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: `1px solid ${cur.color}28`, borderRadius: '20px', padding: '20px', marginBottom: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+                <div style={{ background: inst ? '#fff' : 'linear-gradient(135deg,#050f20,#020810)', border: inst ? '1px solid #e2e8f0' : `1px solid ${cur.color}28`, borderRadius: '20px', padding: '20px', marginBottom: '12px', boxShadow: inst ? '0 4px 16px rgba(0,0,0,0.06)' : '0 8px 32px rgba(0,0,0,0.5)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                     <p style={{ color: 'hsl(0 0% 26%)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: 0 }}>Amount to mint</p>
                     <button onClick={() => handlePct(100)} style={{ background: cur.color + '12', border: `1px solid ${cur.color}28`, color: cur.color, borderRadius: '7px', padding: '4px 10px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', ...mono }}>
@@ -414,7 +420,7 @@ function MintContent() {
               <h1 style={{ color: 'var(--t-text)', fontSize: '26px', fontWeight: '700', margin: '0 0 6px' }}>Minted Successfully</h1>
               <p style={{ color: cur.color, fontSize: '14px', ...mono, margin: 0 }}>{parseFloat(amount).toLocaleString()} {cur.label} - Hybrid PQ-authorized</p>
             </div>
-            <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '16px', padding: '18px', marginBottom: '14px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+            <div style={{ background: inst ? '#fff' : 'linear-gradient(135deg,#050f20,#020810)', border: inst ? '1px solid #e2e8f0' : '1px solid rgba(0,212,255,0.12)', borderRadius: '16px', padding: '18px', marginBottom: '14px', boxShadow: inst ? '0 4px 16px rgba(0,0,0,0.06)' : '0 8px 32px rgba(0,0,0,0.5)' }}>
               <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, textTransform: 'uppercase' as const, letterSpacing: '0.15em', margin: '0 0 12px' }}>Mint Summary</p>
               {[
                 { label: 'Minted', value: parseFloat(amount).toLocaleString() + ' ' + cur.label },

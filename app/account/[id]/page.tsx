@@ -284,15 +284,16 @@ function AccountContent() {
   const TxRow = ({ tx, i, total }: { tx: any; i: number; total: number }) => {
     const isCredit = ['deposit', 'mint'].includes(tx.kind)
     const color = kindColor(tx.kind)
+    const txInst = isInstitutional()
     return (
       <div style={{
         display: 'flex', alignItems: 'center',
         padding: '14px 20px',
-        borderBottom: i < total - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
+        borderBottom: i < total - 1 ? `1px solid ${txInst ? '#f1f5f9' : 'rgba(255,255,255,0.03)'}` : 'none',
         gap: '14px',
         transition: 'background 0.15s',
       }}
-        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
+        onMouseEnter={e => (e.currentTarget.style.background = txInst ? '#f8fafc' : 'rgba(255,255,255,0.02)')}
         onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
       >
         <div style={{
@@ -526,7 +527,7 @@ function AccountContent() {
                     </div>
                     <CopyBtn text={qSigningKey} id="qsk" />
                   </div>
-                  <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,56,96,0.2)', borderRadius: '12px', padding: '18px', textAlign: 'center' }}>
+                  <div style={{ background: inst ? '#fff5f5' : 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,56,96,0.2)', borderRadius: '12px', padding: '18px', textAlign: 'center' }}>
                     <p className="number" style={{ color: 'var(--q-red)', fontSize: '18px', fontWeight: '700', letterSpacing: '0.06em', margin: 0, lineHeight: '1.6', wordBreak: 'break-all' }}>{qSigningKey}</p>
                   </div>
                 </div>
@@ -548,9 +549,9 @@ function AccountContent() {
       {/* ── HERO ── */}
       <div style={{ position: 'relative', zIndex: 1 }}>
         <div style={{
-          background: 'linear-gradient(180deg, rgba(0,5,20,0.95) 0%, rgba(0,8,30,0.7) 60%, transparent 100%)',
+          background: inst ? '#f5f7fa' : 'linear-gradient(180deg, rgba(0,5,20,0.95) 0%, rgba(0,8,30,0.7) 60%, transparent 100%)',
           padding: isMobile ? '24px 20px 40px' : '32px 40px 52px',
-          borderBottom: '1px solid rgba(255,255,255,0.04)',
+          borderBottom: inst ? '1px solid #e2e8f0' : '1px solid rgba(255,255,255,0.04)',
         }}>
 
           {/* Top nav */}
@@ -562,7 +563,7 @@ function AccountContent() {
               {Icons.back(12, 'currentColor')} Accounts
             </a>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '9px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '7px 14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '9px', background: inst?'#fff':'rgba(255,255,255,0.04)', border: inst?'1px solid #e2e8f0':'1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '7px 14px' }}>
               <div style={{ width: '22px', height: '22px', borderRadius: '6px', background: meta.color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{meta.icon}</div>
               <span style={{ color: 'var(--q-text-2)', fontSize: '12px', fontWeight: '600' }}>{meta.title}</span>
             </div>
@@ -585,7 +586,7 @@ function AccountContent() {
               fontSize: isMobile ? '52px' : '72px',
               fontWeight: '700', margin: '0 0 12px', lineHeight: '1',
               letterSpacing: '-0.04em',
-              textShadow: '0 0 80px rgba(0,212,255,0.12)',
+              textShadow: inst ? 'none' : '0 0 80px rgba(0,212,255,0.12)',
             }}>
               ${isActive
                 ? ubtcBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -622,47 +623,47 @@ function AccountContent() {
               {/* CREATE UBTC */}
               <a href={`/mint?vault=${vaultId}&currency=ubtc`} className="acc-action" style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-                background: 'linear-gradient(145deg,#001a2e,#002844)',
-                border: '1px solid rgba(0,212,255,0.3)',
+                background: inst ? '#fff' : 'linear-gradient(145deg,#001a2e,#002844)',
+                border: inst ? '1px solid #bfdbfe' : '1px solid rgba(0,212,255,0.3)',
                 borderRadius: 20, padding: '20px 10px',
                 textDecoration: 'none',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(0,212,255,0.2)',
+                boxShadow: inst ? '0 2px 12px rgba(0,0,0,0.08)' : '0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(0,212,255,0.2)',
               }}>
-                <div style={{ width: 48, height: 48, borderRadius: 15, background: 'rgba(0,212,255,0.15)', border: '1px solid rgba(0,212,255,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(0,212,255,0.3)' }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <div style={{ width: 48, height: 48, borderRadius: 15, background: inst?'#eff6ff':'rgba(0,212,255,0.15)', border: inst?'1px solid #bfdbfe':'1px solid rgba(0,212,255,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: inst?'none':'0 0 20px rgba(0,212,255,0.3)' }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={inst?'#1d4ed8':'#00D4FF'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
                 </div>
-                <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: 'center', color: '#e0eeff' }}>Create UBTC</span>
+                <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: 'center', color: inst?'#1e40af':'#e0eeff' }}>Create UBTC</span>
               </a>
 
               {/* MOVE TO WALLET */}
               {hasMinted && (
                 <button onClick={() => { setShowMoveModal(true); setMoveAmount(''); setMoveError(''); setMoveDone(false) }} className="acc-action" style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-                  background: 'linear-gradient(145deg,#1a1000,#2a1a00)',
-                  border: '1px solid rgba(255,184,0,0.35)',
+                  background: inst ? '#fff' : 'linear-gradient(145deg,#1a1000,#2a1a00)',
+                  border: inst ? '1px solid #fde68a' : '1px solid rgba(255,184,0,0.35)',
                   borderRadius: 20, padding: '20px 10px',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,184,0,0.2)',
+                  boxShadow: inst ? '0 2px 12px rgba(0,0,0,0.08)' : '0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,184,0,0.2)',
                 }}>
-                  <div style={{ width: 48, height: 48, borderRadius: 15, background: 'rgba(255,184,0,0.15)', border: '1px solid rgba(255,184,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(255,184,0,0.3)' }}>
-                    {Icons.wallet(22, '#FFB800')}
+                  <div style={{ width: 48, height: 48, borderRadius: 15, background: inst?'#fffbeb':'rgba(255,184,0,0.15)', border: inst?'1px solid #fde68a':'1px solid rgba(255,184,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: inst?'none':'0 0 20px rgba(255,184,0,0.3)' }}>
+                    {Icons.wallet(22, inst?'#d97706':'#FFB800')}
                   </div>
-                  <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: 'center', color: '#e0eeff' }}>Move to Wallet</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: 'center', color: inst?'#92400e':'#e0eeff' }}>Move to Wallet</span>
                 </button>
               )}
 
               {/* MY WALLET */}
               <a href={vault.linked_wallet ? `/wallet?address=${vault.linked_wallet}` : '/wallet'} className="acc-action" style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-                background: 'linear-gradient(145deg,#0e0028,#160040)',
-                border: '1px solid rgba(167,139,250,0.3)',
+                background: inst ? '#fff' : 'linear-gradient(145deg,#0e0028,#160040)',
+                border: inst ? '1px solid #e9d5ff' : '1px solid rgba(167,139,250,0.3)',
                 borderRadius: 20, padding: '20px 10px',
                 textDecoration: 'none',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(167,139,250,0.15)',
+                boxShadow: inst ? '0 2px 12px rgba(0,0,0,0.08)' : '0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(167,139,250,0.15)',
               }}>
-                <div style={{ width: 48, height: 48, borderRadius: 15, background: 'rgba(167,139,250,0.15)', border: '1px solid rgba(167,139,250,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(167,139,250,0.3)' }}>
-                  {Icons.send(22, '#A78BFA')}
+                <div style={{ width: 48, height: 48, borderRadius: 15, background: inst?'#f5f3ff':'rgba(167,139,250,0.15)', border: inst?'1px solid #e9d5ff':'1px solid rgba(167,139,250,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: inst?'none':'0 0 20px rgba(167,139,250,0.3)' }}>
+                  {Icons.send(22, inst?'#7c3aed':'#A78BFA')}
                 </div>
-                <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: 'center', color: '#e0eeff' }}>My Wallet</span>
+                <span style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: 'center', color: inst?'#6d28d9':'#e0eeff' }}>My Wallet</span>
               </a>
             </div>
           ) : (
@@ -725,7 +726,7 @@ function AccountContent() {
               </div>
 
               {/* Bar */}
-              <div style={{ height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden', marginBottom: '8px' }}>
+              <div style={{ height: '4px', background: inst ? '#e2e8f0' : 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden', marginBottom: '8px' }}>
                 <div style={{ height: '100%', width: Math.min(100, ratio / 3) + '%', background: `linear-gradient(90deg, ${ratioColor}99, ${ratioColor})`, borderRadius: '2px', transition: 'width 0.8s ease', boxShadow: `0 0 12px ${ratioColor}60` }} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '18px' }}>
@@ -741,7 +742,7 @@ function AccountContent() {
                   { label: 'BTC locked', val: btcLocked.toFixed(6), sub: '$' + btcValue.toLocaleString(undefined,{maximumFractionDigits:0}) + ' USD', color: 'var(--q-btc)' },
                   { label: 'UBTC created', val: '$' + ubtcBalance.toLocaleString(undefined,{maximumFractionDigits:2}), sub: remainingMintable > 0 ? '$' + remainingMintable.toLocaleString(undefined,{maximumFractionDigits:0}) + ' more available' : 'Fully minted', color: 'var(--q-electric)' },
                 ].map(s => (
-                  <div key={s.label} style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '14px', padding: '14px 16px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                  <div key={s.label} style={{ background: inst ? '#f8fafc' : 'rgba(0,0,0,0.3)', borderRadius: '14px', padding: '14px 16px', border: inst ? '1px solid #e2e8f0' : '1px solid rgba(255,255,255,0.04)' }}>
                     <p style={{ color: 'var(--q-text-3)', fontSize: '9px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 6px' }}>{s.label}</p>
                     <p className="number" style={{ color: s.color, fontSize: '17px', fontWeight: '700', margin: '0 0 2px', textShadow: `0 0 20px ${s.color}40` }}>{s.val}</p>
                     <p style={{ color: 'var(--q-text-3)', fontSize: '10px', ...mono, margin: 0 }}>{s.sub}</p>
@@ -835,7 +836,7 @@ function AccountContent() {
                 <a href={vault.linked_wallet ? `/wallet?address=${vault.linked_wallet}` : '/wallet'} style={{
                   flex: availableToMove > 0 ? '0 0 auto' : 1,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                  background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                  background: inst ? '#f8fafc' : 'rgba(255,255,255,0.04)', border: inst ? '1px solid #e2e8f0' : '1px solid rgba(255,255,255,0.08)',
                   borderRadius: '12px', padding: '14px 22px',
                   textDecoration: 'none', color: 'var(--q-text-3)', fontSize: '13px', fontWeight: '600',
                   transition: 'background 0.2s',
@@ -895,7 +896,7 @@ function AccountContent() {
                 <p style={{ color: 'var(--q-text-3)', fontSize: '12px', lineHeight: '1.8', margin: '0 0 14px', fontWeight: '300' }}>
                   When you redeem UBTC, the tokens are burned and the equivalent amount of Bitcoin unlocks from your vault at the current BTC price.
                 </p>
-                <p style={{ color: 'var(--q-text-3)', fontSize: '11px', ...mono, lineHeight: '1.8', margin: '0 0 16px', background: 'rgba(0,0,0,0.3)', borderRadius: '10px', padding: '12px 14px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                <p style={{ color: 'var(--q-text-3)', fontSize: '11px', ...mono, lineHeight: '1.8', margin: '0 0 16px', background: inst ? '#f8fafc' : 'rgba(0,0,0,0.3)', borderRadius: '10px', padding: '12px 14px', border: inst ? '1px solid #e2e8f0' : '1px solid rgba(255,255,255,0.04)' }}>
                   Example: 100 UBTC created at BTC = $50,000. Redeem at $60,000 → ~0.00167 BTC unlocked ($100 worth). Remaining BTC stays as collateral.
                 </p>
                 <a href={`/redeem?vault=${vaultId}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--q-text-3)', fontSize: '11px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '8px 16px', ...mono, letterSpacing: '0.06em', transition: 'all 0.2s' }}
@@ -915,7 +916,7 @@ function AccountContent() {
             </summary>
             <div style={{ marginTop: '16px' }}>
               {isActive && depositAddr && (
-                <div style={{ marginBottom: '14px', paddingBottom: '14px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                <div style={{ marginBottom: '14px', paddingBottom: '14px', borderBottom: inst ? '1px solid #f1f5f9' : '1px solid rgba(255,255,255,0.04)' }}>
                   <p style={{ color: 'var(--q-text-3)', fontSize: '8px', ...mono, textTransform: 'uppercase', letterSpacing: '0.16em', margin: '0 0 7px' }}>Bitcoin Deposit Address</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <p style={{ color: 'var(--q-electric)', fontSize: '10px', ...mono, margin: 0, flex: 1, wordBreak: 'break-all', lineHeight: '1.7' }}>{depositAddr}</p>
@@ -930,7 +931,7 @@ function AccountContent() {
                 { label: 'Network', value: vault.network === 'testnet4' ? 'Bitcoin Testnet4' : vault.network === 'mainnet' ? 'Bitcoin Mainnet' : vault.network || 'Bitcoin Testnet4' },
                 ...(vault.mast_address ? [{ label: 'MAST Vault (P2TR)', value: vault.mast_address }] : []),
               ].map(item => (
-                <div key={item.label} style={{ padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                <div key={item.label} style={{ padding: '8px 0', borderBottom: inst ? '1px solid #f1f5f9' : '1px solid rgba(255,255,255,0.03)' }}>
                   <p style={{ color: 'var(--q-text-3)', fontSize: '8px', ...mono, textTransform: 'uppercase', letterSpacing: '0.14em', margin: '0 0 4px' }}>{item.label}</p>
                   <p style={{ color: 'rgba(150,190,255,0.6)', fontSize: '10px', ...mono, margin: 0, wordBreak: 'break-all' }}>{item.value}</p>
                 </div>

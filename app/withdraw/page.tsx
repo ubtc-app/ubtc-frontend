@@ -124,6 +124,7 @@ function WithdrawContent() {
   }
 
   const canProceed = vaultId && amount && destination && withdrawAmount > 0 && withdrawAmount <= outstanding
+  const inst = typeof window !== 'undefined' && (localStorage.getItem('qufi_theme') === 'light' || localStorage.getItem('qufi_user_type') === 'institutional')
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--q-bg)', padding: '40px 24px', fontFamily: 'var(--font-display)' }}>
@@ -149,7 +150,7 @@ function WithdrawContent() {
           ))}
         </div>
 
-        <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '16px', padding: '28px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+        <div style={{ background: inst?'#fff':'linear-gradient(135deg,#050f20,#020810)', border: inst?'1px solid #e2e8f0':'1px solid rgba(0,212,255,0.12)', borderRadius: '16px', padding: '28px', boxShadow: inst?'0 4px 16px rgba(0,0,0,0.06)':'0 8px 32px rgba(0,0,0,0.5)' }}>
 
           {step === 'form' && (
             <>

@@ -13,6 +13,9 @@ export function ThemeApplicator() {
       document.documentElement.dataset.userType = userType ?? ''
       document.documentElement.dataset.theme    = isInstitutional ? 'light' : 'dark'
       document.body.dataset.inst                = isInstitutional ? 'true' : ''
+      // Force body background immediately — CSS cascade alone is too slow
+      document.body.style.background            = isInstitutional ? '#f5f7fa' : ''
+      document.body.style.color                 = isInstitutional ? '#0f172a' : ''
     }
     apply()
     window.addEventListener('qufi-profile-changed', apply)

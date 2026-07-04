@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
@@ -7,6 +7,10 @@ import { QuantumLoader } from '../components/QuantumLoader'
 import { MnemonicModal } from '../components/MnemonicModal'
 import { SigningOverlay } from '../components/SigningOverlay'
 import { signedSpend } from '../lib/wallet/challenge'
+
+const isInstitutional = () =>
+  typeof window !== 'undefined' &&
+  (localStorage.getItem('qufi_theme') === 'light' || localStorage.getItem('qufi_user_type') === 'institutional')
 
 function RedeemContent() {
   const searchParams = useSearchParams()
@@ -137,6 +141,7 @@ function RedeemContent() {
 
   const canRedeem = !!amount && !!destination && parseFloat(amount) > 0 &&
     parseFloat(amount) <= activeBalance && !loading
+  const inst = isInstitutional()
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--q-bg)', fontFamily: 'var(--font-display)' }}>
@@ -158,7 +163,7 @@ function RedeemContent() {
       />
 
       {/* Nav */}
-      <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', borderBottom: '1px solid rgba(0,212,255,0.12)', padding: '16px 28px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+      <div style={{ background: inst?'#fff':'linear-gradient(135deg,#050f20,#020810)', borderBottom: inst?'1px solid #e2e8f0':'1px solid rgba(0,212,255,0.12)', padding: '16px 28px', display: 'flex', alignItems: 'center', gap: '14px' }}>
         <a href={`/account/${vaultId}?currency=${activeCurrency}`} style={{ color: 'var(--t-muted)', textDecoration: 'none', fontSize: '13px', ...mono, background: 'var(--t-surface2)', border: '1px solid var(--t-border)', borderRadius: '8px', padding: '8px 14px' }}>← Back</a>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: tokenColor + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: '700', color: tokenColor }}>{tokenIcon}</div>
@@ -178,7 +183,7 @@ function RedeemContent() {
               <h2 style={{ color: 'var(--t-text)', fontSize: '26px', fontWeight: '700', margin: '0 0 6px' }}>Redemption Complete</h2>
               <p style={{ color: 'var(--t-muted)', fontSize: '14px', ...mono, margin: 0 }}>{amount} {utokenName} burned · {tokenName} sent on-chain</p>
             </div>
-            <div style={{ width: '100%', background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '18px', padding: '22px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+            <div style={{ width: '100%', background: inst?'#fff':'linear-gradient(135deg,#050f20,#020810)', border: inst?'1px solid #e2e8f0':'1px solid rgba(0,212,255,0.12)', borderRadius: '18px', padding: '22px', boxShadow: inst?'0 4px 16px rgba(0,0,0,0.06)':'0 8px 32px rgba(0,0,0,0.5)' }}>
               {[
                 { label: 'UBTC Burned', value: result.ubtc_burned + ' UBTC' },
                 { label: 'BTC Released', value: result.btc_released_btc + ' BTC (' + result.btc_released_sats + ' sats)' },
@@ -214,7 +219,7 @@ function RedeemContent() {
           <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '14px' }}>
 
             {/* Currency tabs */}
-            <div style={{ display: 'flex', gap: '4px', background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '16px', padding: '4px' }}>
+            <div style={{ display: 'flex', gap: '4px', background: inst?'#f8fafc':'linear-gradient(135deg,#050f20,#020810)', border: inst?'1px solid #e2e8f0':'1px solid rgba(0,212,255,0.12)', borderRadius: '16px', padding: '4px' }}>
               {[
                 { key: 'ubtc', icon: '₿', label: 'UBTC → BTC', bal: ubtcBalance, color: 'var(--t-orange)' },
                 { key: 'uusdt', icon: '₮', label: 'UUSDT → USDT', bal: uusdtBal, color: 'var(--t-green)' },
@@ -261,7 +266,7 @@ function RedeemContent() {
             </div>
 
             {/* Amount */}
-            <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '18px', padding: '20px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+            <div style={{ background: inst?'#fff':'linear-gradient(135deg,#050f20,#020810)', border: inst?'1px solid #e2e8f0':'1px solid rgba(0,212,255,0.12)', borderRadius: '18px', padding: '20px', boxShadow: inst?'0 4px 16px rgba(0,0,0,0.06)':'0 8px 32px rgba(0,0,0,0.5)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                 <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: 0 }}>Amount to Redeem</p>
                 <button onClick={() => setAmount(activeBalance.toFixed(2))}
@@ -291,7 +296,7 @@ function RedeemContent() {
             </div>
 
             {/* Destination */}
-            <div style={{ background: 'linear-gradient(135deg,#050f20,#020810)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '18px', padding: '20px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+            <div style={{ background: inst?'#fff':'linear-gradient(135deg,#050f20,#020810)', border: inst?'1px solid #e2e8f0':'1px solid rgba(0,212,255,0.12)', borderRadius: '18px', padding: '20px', boxShadow: inst?'0 4px 16px rgba(0,0,0,0.06)':'0 8px 32px rgba(0,0,0,0.5)' }}>
               <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 12px' }}>
                 {isStable ? `Destination ${tokenName} Address` : 'Destination Bitcoin Address'}
               </p>
