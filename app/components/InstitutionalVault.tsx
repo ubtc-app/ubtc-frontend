@@ -249,7 +249,9 @@ function InstitutionalVaultInner() {
     setPasswordSet(true); setOnboardStep(2)
   }
 
-  const stepNames = ['Account Type','Details','Review']
+  // Advance onboard steps automatically when intermediate states complete
+  useEffect(() => { if (passwordSet && onboardStep === 2) setOnboardStep(3) }, [passwordSet, onboardStep])
+  useEffect(() => { if (pskVerified && onboardStep === 4) setOnboardStep(5) }, [pskVerified, onboardStep])
 
   // ── STEP: done — post-creation wizard ────────────────────────────────────
   if (step === 'done' && result) {
@@ -314,9 +316,8 @@ function InstitutionalVaultInner() {
           )}
 
           {/* Step 3: Download PSK */}
-          {(onboardStep===2&&passwordSet||onboardStep===3) && !pskDownloaded && (
+          {onboardStep===3 && !pskDownloaded && (
             <div>
-              {onboardStep===2&&passwordSet&&setTimeout(()=>setOnboardStep(3),50)&&null}
               <h2 style={{color:'#0f172a',fontSize:22,fontWeight:700,margin:'0 0 8px'}}>Download Protocol Second Key</h2>
               <p style={{color:'#64748b',fontSize:14,margin:'0 0 24px',lineHeight:1.6}}>This key is required to authorise transfers. Store it in your password manager or a secure vault.</p>
               <div style={{...card,padding:24,marginBottom:20}}>
@@ -348,14 +349,12 @@ function InstitutionalVaultInner() {
               <button onClick={()=>verifyProtocolKeyText(pskPasteInput)} disabled={!pskPasteInput} style={{...btnPrimary(!!pskPasteInput),width:'100%'}}>
                 Verify Key →
               </button>
-              {pskVerified && setTimeout(()=>setOnboardStep(5),50)&&null}
             </div>
           )}
 
           {/* Step 5: Set QuFi username */}
-          {(onboardStep===5||pskVerified) && (
+          {onboardStep===5 && (
             <div>
-              {onboardStep===4&&pskVerified&&setTimeout(()=>setOnboardStep(5),50)&&null}
               {!quantumUsernameSet ? (
                 <>
                   <h2 style={{color:'#0f172a',fontSize:22,fontWeight:700,margin:'0 0 8px'}}>Set your QuFi username</h2>
