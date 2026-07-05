@@ -896,7 +896,17 @@ function TransferContent() {
 
             <button onClick={handleSendClick} disabled={!canSend} style={{ width: '100%', background: canSend ? `linear-gradient(135deg, ${tokenColor}, ${tokenColor}bb)` : 'var(--t-border-subtle)', color: canSend ? 'white' : 'var(--t-faint)', border: 'none', borderRadius: '16px', padding: '18px', fontSize: '17px', fontWeight: '700', cursor: canSend ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', boxShadow: canSend ? `0 0 40px ${tokenColor}35` : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
               {Icons.send(20, canSend ? 'white' : 'var(--t-faint)')}
-              {canSend ? `Send ${parseFloat(amount).toLocaleString()} ${utokenName}` : (isWalletSend && walletPassword && !userPassword ? 'Enter wallet password' : 'Enter amount and recipient')}
+              {canSend
+                ? `Send ${parseFloat(amount).toLocaleString()} ${utokenName}`
+                : !recipientValid
+                  ? 'Select a recipient above'
+                  : !amount || parseFloat(amount) <= 0
+                    ? 'Enter an amount'
+                    : isWalletSend && !walletPassword
+                      ? 'Upload Protocol Second Key ↓'
+                      : isWalletSend && !userPassword
+                        ? 'Enter wallet password ↓'
+                        : 'Complete all fields above'}
             </button>
 
             <p style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono, textAlign: 'center' as const, margin: 0 }}>
