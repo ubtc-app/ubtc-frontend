@@ -12,9 +12,24 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    const saved = localStorage.getItem('ubtc_theme') as Theme | null
-    if (saved === 'light' || saved === 'dark') setTheme(saved)
+    const qufi = localStorage.getItem('qufi_theme')
+    const userType = localStorage.getItem('qufi_user_type')
+    const isInstitutional = qufi === 'light' || userType === 'institutional'
+    if (isInstitutional) {
+      setTheme('light')
+    } else {
+      const saved = localStorage.getItem('ubtc_theme') as Theme | null
+      if (saved === 'light' || saved === 'dark') setTheme(saved)
+    }
     setMounted(true)
+
+    const recheck = () => {
+      const q = localStorage.getItem('qufi_theme')
+      const u = localStorage.getItem('qufi_user_type')
+      setTheme(q === 'light' || u === 'institutional' ? 'light' : 'dark')
+    }
+    window.addEventListener('qufi-profile-changed', recheck)
+    return () => window.removeEventListener('qufi-profile-changed', recheck)
   }, [])
 
   useEffect(() => {
