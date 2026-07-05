@@ -732,7 +732,10 @@ function TransferContent() {
                         key={i}
                         type="button"
                         onMouseDown={e => e.preventDefault()}
-                        onClick={() => { setSelectedWallet(isSel ? null : w); if (!isSel) { setSearchQuery(w.wallet_address); fetchRecipientWallet(w.wallet_address) } }}
+                        onClick={() => {
+                          if (isSel) { setSelectedWallet(null) }
+                          else { setSelectedWallet(w); setWallets([]); fetchRecipientWallet(w.wallet_address) }
+                        }}
                         style={{
                           display: 'flex', alignItems: 'center', gap: '12px',
                           padding: '12px 14px', width: '100%', textAlign: 'left',
