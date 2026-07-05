@@ -145,8 +145,10 @@ export default function Header() {
           <a href="/dashboard" style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             width: '36px', height: '36px',
-            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
-            borderRadius: '10px', color: 'rgba(180,210,255,0.5)',
+            background: institutional ? '#f1f5f9' : 'rgba(255,255,255,0.04)',
+            border: institutional ? '1px solid #e2e8f0' : '1px solid rgba(255,255,255,0.07)',
+            borderRadius: '10px',
+            color: institutional ? '#64748b' : 'rgba(180,210,255,0.5)',
           }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
@@ -191,7 +193,7 @@ export default function Header() {
               )}
               <svg
                 width="10" height="10" viewBox="0 0 24 24" fill="none"
-                stroke="rgba(0,212,255,0.6)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                stroke={institutional ? '#94a3b8' : 'rgba(0,212,255,0.6)'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
                 style={{ transform: dropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease', flexShrink: 0 }}
               >
                 <polyline points="6 9 12 15 18 9"/>
@@ -235,8 +237,8 @@ export default function Header() {
                       }}
                       onMouseEnter={e => {
                         if (!isActive) {
-                          (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.04)'
-                          ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.06)'
+                          (e.currentTarget as HTMLButtonElement).style.background = institutional ? '#f8fafc' : 'rgba(255,255,255,0.04)'
+                          ;(e.currentTarget as HTMLButtonElement).style.borderColor = institutional ? '#e2e8f0' : 'rgba(255,255,255,0.06)'
                         }
                       }}
                       onMouseLeave={e => {
@@ -265,7 +267,7 @@ export default function Header() {
                         </p>
                       </div>
                       {isActive && (
-                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--q-electric)', flexShrink: 0, boxShadow: '0 0 8px rgba(0,212,255,0.6)' }} />
+                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--q-electric)', flexShrink: 0, boxShadow: institutional ? 'none' : '0 0 8px rgba(0,212,255,0.6)' }} />
                       )}
                     </button>
                   )
@@ -285,15 +287,15 @@ export default function Header() {
                   onClick={e => { setDropdownOpen(false); navigate('/vault') }}
                   onMouseEnter={e => {
                     const el = e.currentTarget
-                    el.style.background = 'rgba(0,212,255,0.05)'
-                    el.style.borderColor = 'rgba(0,212,255,0.12)'
-                    el.style.color = 'var(--q-electric)'
+                    el.style.background = institutional ? '#f1f5f9' : 'rgba(0,212,255,0.05)'
+                    el.style.borderColor = institutional ? '#e2e8f0' : 'rgba(0,212,255,0.12)'
+                    el.style.color = institutional ? '#1d4ed8' : 'var(--q-electric)'
                   }}
                   onMouseLeave={e => {
                     const el = e.currentTarget
                     el.style.background = 'transparent'
                     el.style.borderColor = 'transparent'
-                    el.style.color = 'rgba(180,210,255,0.6)'
+                    el.style.color = institutional ? '#475569' : 'rgba(180,210,255,0.6)'
                   }}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
