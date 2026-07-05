@@ -29,8 +29,13 @@ const PARTICLES = Array.from({ length: 26 }, (_, i) => {
   }
 })
 
+const isInstitutional = () =>
+  typeof window !== 'undefined' &&
+  (localStorage.getItem('qufi_theme') === 'light' || localStorage.getItem('qufi_user_type') === 'institutional')
+
 // ── Overlay ──────────────────────────────────────────────────────────────────
 function TransitionOverlay({ ox, oy, phase }: { ox: number; oy: number; phase: 'in' | 'out' }) {
+  const inst = isInstitutional()
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 9500,
@@ -63,10 +68,12 @@ function TransitionOverlay({ ox, oy, phase }: { ox: number; oy: number; phase: '
         }
       `}</style>
 
-      {/* Dark flash — momentary background darkening */}
+      {/* Flash — momentary background */}
       <div style={{
         position: 'fixed', inset: 0,
-        background: 'radial-gradient(ellipse 120% 120% at 50% 50%, rgba(0,2,16,0.85) 0%, rgba(0,0,8,0.95) 100%)',
+        background: inst
+          ? 'radial-gradient(ellipse 120% 120% at 50% 50%, rgba(241,245,249,0.82) 0%, rgba(226,232,240,0.92) 100%)'
+          : 'radial-gradient(ellipse 120% 120% at 50% 50%, rgba(0,2,16,0.85) 0%, rgba(0,0,8,0.95) 100%)',
         animation: 'qt-bg 0.42s ease forwards',
       }} />
 
@@ -75,7 +82,9 @@ function TransitionOverlay({ ox, oy, phase }: { ox: number; oy: number; phase: '
         position: 'fixed', left: ox, top: oy,
         width: '250vmax', height: '250vmax',
         borderRadius: '50%',
-        background: `radial-gradient(circle, rgba(0,100,255,0.22) 0%, rgba(100,0,255,0.1) 35%, transparent 65%)`,
+        background: inst
+          ? `radial-gradient(circle, rgba(29,78,216,0.10) 0%, rgba(124,58,237,0.05) 35%, transparent 65%)`
+          : `radial-gradient(circle, rgba(0,100,255,0.22) 0%, rgba(100,0,255,0.1) 35%, transparent 65%)`,
         animation: 'qt-bloom 0.5s ease forwards',
         pointerEvents: 'none',
       }} />

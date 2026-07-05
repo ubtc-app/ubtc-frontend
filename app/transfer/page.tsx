@@ -645,8 +645,10 @@ function TransferContent() {
                         const label = username ? `@${username}` : `Account ${(w.accountIndex ?? 0) + 1}`
                         const isSelected = selectedWallet?._localAddress === w.address
                         return (
-                          <div
+                          <button
                             key={w.address}
+                            type="button"
+                            onMouseDown={e => e.preventDefault()}
                             onClick={() => {
                               if (isSelected) {
                                 setSelectedWallet(null); setSearchQuery('')
@@ -658,11 +660,11 @@ function TransferContent() {
                             }}
                             style={{
                               display: 'flex', alignItems: 'center', gap: '12px',
-                              padding: '11px 14px',
+                              padding: '11px 14px', width: '100%', textAlign: 'left',
                               background: isSelected ? (institutional?'#eff6ff':'rgba(0,212,255,0.08)') : (institutional?'#f8fafc':'rgba(255,255,255,0.03)'),
                               border: `1px solid ${isSelected ? (institutional?'#bfdbfe':'rgba(0,212,255,0.35)') : (institutional?'#e2e8f0':'rgba(255,255,255,0.07)')}`,
                               borderRadius: '12px', cursor: 'pointer',
-                              transition: 'all 0.15s ease',
+                              fontFamily: 'inherit', transition: 'all 0.15s ease',
                             }}
                           >
                             <div style={{
@@ -677,7 +679,7 @@ function TransferContent() {
                               {(w.accountIndex ?? 0) + 1}
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <p style={{ color: isSelected ? 'var(--t-text)' : 'rgba(180,210,255,0.8)', fontWeight: '600', fontSize: '13px', margin: '0 0 2px' }}>{label}</p>
+                              <p style={{ color: 'var(--t-text)', fontWeight: '600', fontSize: '13px', margin: '0 0 2px' }}>{label}</p>
                               <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
                                 {w.address.slice(0, 18)}···{w.address.slice(-6)}
                               </p>
@@ -687,7 +689,7 @@ function TransferContent() {
                                 {Icons.check(9, 'white')}
                               </div>
                             )}
-                          </div>
+                          </button>
                         )
                       })}
                   </div>
@@ -726,7 +728,20 @@ function TransferContent() {
                   {searchResults.map((w: any, i: number) => {
                     const isSel = selectedWallet?.wallet_id === w.wallet_id
                     return (
-                      <div key={i} onClick={() => { setSelectedWallet(isSel ? null : w); if (!isSel) { setSearchQuery(w.wallet_address); fetchRecipientWallet(w.wallet_address) } }} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', background: isSel ? 'hsl(205 85% 55% / 0.07)' : 'var(--t-surface)', border: `1px solid ${isSel ? 'var(--t-accent-border)' : 'var(--t-border-subtle)'}`, borderRadius: '12px', cursor: 'pointer', marginTop: '6px' }}>
+                      <button
+                        key={i}
+                        type="button"
+                        onMouseDown={e => e.preventDefault()}
+                        onClick={() => { setSelectedWallet(isSel ? null : w); if (!isSel) { setSearchQuery(w.wallet_address); fetchRecipientWallet(w.wallet_address) } }}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '12px',
+                          padding: '12px 14px', width: '100%', textAlign: 'left',
+                          background: isSel ? (institutional ? '#eff6ff' : 'hsl(205 85% 55% / 0.12)') : 'var(--t-surface)',
+                          border: `1px solid ${isSel ? (institutional ? '#bfdbfe' : 'var(--t-accent-border)') : 'var(--t-border-subtle)'}`,
+                          borderRadius: '12px', cursor: 'pointer', marginTop: '6px',
+                          fontFamily: 'inherit', transition: 'background 0.15s',
+                        }}
+                      >
                         <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'var(--t-accent-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           {Icons.wallet(18, 'var(--t-accent)')}
                         </div>
@@ -735,11 +750,11 @@ function TransferContent() {
                           <p style={{ color: 'var(--t-faint)', fontSize: '10px', ...mono, margin: 0 }}>{w.wallet_address?.slice(0, 28)}...</p>
                         </div>
                         {isSel && (
-                          <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'var(--t-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'var(--t-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             {Icons.check(9, 'white')}
                           </div>
                         )}
-                      </div>
+                      </button>
                     )
                   })}
                 </div>
