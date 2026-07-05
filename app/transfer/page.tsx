@@ -726,7 +726,7 @@ function TransferContent() {
               {searchResults.length > 0 && (
                 <div style={{ marginTop: '8px' }}>
                   {searchResults.map((w: any, i: number) => {
-                    const isSel = selectedWallet?.wallet_id === w.wallet_id
+                    const isSel = !!selectedWallet && selectedWallet.wallet_address === w.wallet_address
                     return (
                       <button
                         key={i}
