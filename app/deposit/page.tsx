@@ -116,7 +116,7 @@ function DepositContent() {
         <a href={`/account/${vaultId}?currency=${activeCurrency}`} style={{ color: 'var(--t-muted)', textDecoration: 'none', fontSize: '13px', ...mono }}>← Back</a>
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
           <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: tokenColor + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '700', color: tokenColor }}>{tokenIcon}</div>
-          <span style={{ color: 'hsl(0 0% 80%)', fontWeight: '700', fontSize: '17px' }}>Deposit {tokenName}</span>
+          <span style={{ color: 'var(--t-text)', fontWeight: '700', fontSize: '17px' }}>Deposit {tokenName}</span>
         </div>
         <div style={{ width: '40px' }} />
       </div>
@@ -146,7 +146,7 @@ function DepositContent() {
               ]).map((item: any) => (
                 <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--t-border-subtle)', gap: '12px' }}>
                   <p style={{ color: 'var(--t-faint)', fontSize: '12px', ...mono, margin: 0, flexShrink: 0 }}>{item.label}</p>
-                  <p style={{ color: 'hsl(0 0% 82%)', fontSize: '12px', fontWeight: '600', ...mono, margin: 0, textAlign: 'right' as const, wordBreak: 'break-all' as const }}>{item.value}</p>
+                  <p style={{ color: 'var(--t-text)', fontSize: '12px', fontWeight: '600', ...mono, margin: 0, textAlign: 'right' as const, wordBreak: 'break-all' as const }}>{item.value}</p>
                 </div>
               ))}
             </div>
@@ -169,7 +169,7 @@ function DepositContent() {
               ].map(c => (
                 <button key={c.key} onClick={() => { setActiveCurrency(c.key); setAmount(''); setError(''); setResult(null) }} style={{ flex: 1, background: activeCurrency === c.key ? 'var(--t-surface3)' : 'transparent', border: activeCurrency === c.key ? `1px solid ${c.color}35` : '1px solid transparent', borderRadius: '12px', padding: '12px 8px', cursor: 'pointer', fontFamily: 'var(--font-display)', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: '3px', transition: 'all 0.12s' }}>
                   <span style={{ fontSize: '20px', fontWeight: '700', color: c.color }}>{c.icon}</span>
-                  <span style={{ fontSize: '12px', fontWeight: '600', color: activeCurrency === c.key ? 'hsl(0 0% 85%)' : 'var(--t-faint)' }}>{c.label}</span>
+                  <span style={{ fontSize: '12px', fontWeight: '600', color: activeCurrency === c.key ? 'var(--t-text)' : 'var(--t-faint)' }}>{c.label}</span>
                   <span style={{ fontSize: '10px', color: 'var(--t-faint)', ...mono }}>{c.sub}</span>
                 </button>
               ))}

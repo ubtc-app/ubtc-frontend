@@ -194,7 +194,7 @@ function RedeemContent() {
               ].map((item: any) => (
                 <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--t-border-subtle)', gap: '12px' }}>
                   <p style={{ color: 'var(--t-faint)', fontSize: '12px', ...mono, margin: 0, flexShrink: 0 }}>{item.label}</p>
-                  <p style={{ color: 'hsl(0 0% 85%)', fontSize: '11px', fontWeight: '600', ...mono, margin: 0, textAlign: 'right' as const, wordBreak: 'break-all' as const }}>{item.value}</p>
+                  <p style={{ color: 'var(--t-text)', fontSize: '11px', fontWeight: '600', ...mono, margin: 0, textAlign: 'right' as const, wordBreak: 'break-all' as const }}>{item.value}</p>
                 </div>
               ))}
             </div>

@@ -357,7 +357,7 @@ function VaultPageInner() {
     </div>
   )
 
-  const qa = (q: string, a: string, color = 'hsl(0 0% 78%)') => (
+  const qa = (q: string, a: string, color = 'var(--t-muted)') => (
     <div style={{ marginBottom: '12px' }}>
       <p style={{ color, fontSize: '13px', fontFamily: 'monospace', fontWeight: 700, margin: '0 0 4px' }}>{q}</p>
       <p style={{ color: 'rgba(160,200,240,0.7)', fontSize: '12px', fontFamily: 'monospace', margin: 0, lineHeight: '1.8' }} dangerouslySetInnerHTML={{ __html: a }} />
@@ -914,7 +914,7 @@ function VaultPageInner() {
                   </div>
 
                   {infoBox(<>
-                    <p style={{ color: 'hsl(0 0% 78%)', fontSize: '14px', fontFamily: 'monospace', fontWeight: 700, margin: '0 0 16px' }}>Understanding the QAP System</p>
+                    <p style={{ color: 'var(--t-muted)', fontSize: '14px', fontFamily: 'monospace', fontWeight: 700, margin: '0 0 16px' }}>Understanding the QAP System</p>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                       <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '8px', padding: '12px' }}>
                         <p style={{ color: '#f59e0b', fontSize: '12px', fontFamily: 'monospace', fontWeight: 700, margin: '0 0 8px' }}>🏦 YOUR VAULT</p>
@@ -1037,7 +1037,7 @@ function VaultPageInner() {
                           <span style={{ color: item.color, fontSize: '11px', fontWeight: 700, fontFamily: 'monospace' }}>{item.n}</span>
                         </div>
                         <div>
-                          <p style={{ color: 'hsl(0 0% 78%)', fontSize: '13px', fontFamily: 'monospace', fontWeight: 600, margin: '0 0 2px' }}>{item.label}</p>
+                          <p style={{ color: 'var(--t-muted)', fontSize: '13px', fontFamily: 'monospace', fontWeight: 600, margin: '0 0 2px' }}>{item.label}</p>
                           <p style={{ color: 'rgba(160,200,240,0.5)', fontSize: '11px', fontFamily: 'monospace', margin: 0 }}>{item.detail}</p>
                         </div>
                       </div>

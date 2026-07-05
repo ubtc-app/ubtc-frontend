@@ -355,7 +355,7 @@ function TransferContent() {
             <h3 style={{ color: 'var(--t-text)', fontSize: '20px', fontWeight: '700', margin: '0 0 10px', textAlign: 'center' as const }}>Is this your own wallet?</h3>
             <p style={{ color: 'hsl(0 0% 42%)', fontSize: '13px', ...mono, textAlign: 'center' as const, margin: '0 0 28px', lineHeight: '1.7' }}>
               Sending <strong style={{ color: tokenColor }}>{parseFloat(amount || '0').toLocaleString()} {utokenName}</strong> to{' '}
-              <strong style={{ color: 'hsl(0 0% 70%)' }}>{selectedWallet ? `@${selectedWallet.username}` : recipient.slice(0, 16) + '...'}</strong>
+              <strong style={{ color: 'var(--t-muted)' }}>{selectedWallet ? `@${selectedWallet.username}` : recipient.slice(0, 16) + '...'}</strong>
             </p>
             <div style={{ display: 'flex', gap: '10px' }}>
               <button onClick={() => handleOwnWalletAnswer(true)} style={{ flex: 1, background: 'var(--t-accent-bg)', border: '2px solid hsl(205 85% 55% / 0.4)', color: 'var(--t-accent)', borderRadius: '14px', padding: '16px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
@@ -466,7 +466,7 @@ function TransferContent() {
           <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: tokenColor + '18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {activeCurrency === 'ubtc' ? <img src="/ubtc-icon.png" style={{ width: '18px', height: '18px', objectFit: 'contain' }} /> : tokenIcon(16, tokenColor)}
           </div>
-          <span style={{ color: 'hsl(0 0% 80%)', fontWeight: '700', fontSize: '17px' }}>
+          <span style={{ color: 'var(--t-text)', fontWeight: '700', fontSize: '17px' }}>
             {isWalletSend ? 'Send from Wallet' : `Transfer ${utokenName}`}
           </span>
         </div>
@@ -494,7 +494,7 @@ function TransferContent() {
               ].map(item => (
                 <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--t-border-subtle)', gap: '12px', alignItems: 'center' }}>
                   <p style={{ color: 'var(--t-faint)', fontSize: '12px', ...mono, margin: 0, flexShrink: 0 }}>{item.label}</p>
-                  <p style={{ color: 'hsl(0 0% 80%)', fontSize: '12px', fontWeight: '600', ...mono, margin: 0, textAlign: 'right' as const, wordBreak: 'break-all' as const }}>{item.value}</p>
+                  <p style={{ color: 'var(--t-text)', fontSize: '12px', fontWeight: '600', ...mono, margin: 0, textAlign: 'right' as const, wordBreak: 'break-all' as const }}>{item.value}</p>
                 </div>
               ))}
             </div>

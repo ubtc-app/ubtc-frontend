@@ -1253,6 +1253,76 @@ input[type=number] { -moz-appearance: textfield; }
    Applied when html[data-theme="light"] — overrides all dark quantum styles
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* Reset ALL CSS vars to light values — higher specificity than [data-user-type="institutional"] */
+html[data-theme="light"] {
+  --q-bg:              #f5f7fa !important;
+  --q-bg-2:            #eef1f6 !important;
+  --q-surface:         #ffffff !important;
+  --q-surface-2:       #f8fafc !important;
+  --q-glass:           rgba(255,255,255,0.9) !important;
+  --q-glass-strong:    #ffffff !important;
+
+  --q-border:          #e2e8f0 !important;
+  --q-border-subtle:   #f1f5f9 !important;
+  --q-border-bright:   #cbd5e1 !important;
+
+  --q-text:            #0f172a !important;
+  --q-text-2:          #1e293b !important;
+  --q-text-3:          #64748b !important;
+  --q-muted:           #94a3b8 !important;
+
+  --q-electric:        #1d4ed8 !important;
+  --q-electric-dim:    rgba(29,78,216,0.08) !important;
+  --q-electric-glow:   rgba(29,78,216,0.15) !important;
+
+  --q-violet:          #7c3aed !important;
+  --q-violet-dim:      rgba(124,58,237,0.08) !important;
+  --q-violet-glow:     rgba(124,58,237,0.15) !important;
+
+  --q-cyan:            #0891b2 !important;
+  --q-cyan-dim:        rgba(8,145,178,0.08) !important;
+
+  --q-btc:             #d97706 !important;
+  --q-btc-dim:         rgba(217,119,6,0.08) !important;
+
+  --q-green:           #16a34a !important;
+  --q-green-dim:       rgba(22,163,74,0.08) !important;
+
+  --q-red:             #dc2626 !important;
+  --q-red-dim:         rgba(220,38,38,0.08) !important;
+
+  --q-shadow-sm:   0 1px 3px rgba(0,0,0,0.06) !important;
+  --q-shadow-md:   0 4px 12px rgba(0,0,0,0.08) !important;
+  --q-shadow-lg:   0 8px 24px rgba(0,0,0,0.10) !important;
+  --q-shadow-xl:   0 16px 48px rgba(0,0,0,0.12) !important;
+  --q-glow-blue:   none !important;
+  --q-glow-violet: none !important;
+
+  --t-bg:          #f5f7fa !important;
+  --t-surface:     #ffffff !important;
+  --t-surface2:    #f8fafc !important;
+  --t-surface3:    #f1f5f9 !important;
+  --t-border:      #e2e8f0 !important;
+  --t-border-subtle: #f1f5f9 !important;
+  --t-text:        #0f172a !important;
+  --t-muted:       #475569 !important;
+  --t-faint:       #64748b !important;
+  --t-accent:      #1d4ed8 !important;
+  --t-accent-bg:   rgba(29,78,216,0.08) !important;
+  --t-accent-border: rgba(29,78,216,0.2) !important;
+  --t-green:       #16a34a !important;
+  --t-green-bg:    rgba(22,163,74,0.06) !important;
+  --t-orange:      #d97706 !important;
+  --t-orange-bg:   rgba(217,119,6,0.06) !important;
+  --t-red:         #dc2626 !important;
+  --t-red-bg:      rgba(220,38,38,0.06) !important;
+  --t-purple:      #7c3aed !important;
+  --t-purple-bg:   rgba(124,58,237,0.06) !important;
+  --t-teal:        #0891b2 !important;
+  --t-teal-bg:     rgba(8,145,178,0.06) !important;
+  --t-nav-bg:      rgba(255,255,255,0.95) !important;
+}
+
 html[data-theme="light"] body {
   background: #f5f6f8 !important;
   color: #0f172a !important;

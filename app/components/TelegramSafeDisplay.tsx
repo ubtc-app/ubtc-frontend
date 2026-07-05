@@ -76,7 +76,7 @@ export function TelegramSafeDisplay({
         <div style={{ width: '22px', height: '22px', borderRadius: '6px', border: `2px solid ${confirmed ? 'var(--t-green)' : 'var(--t-border)'}`, background: confirmed ? 'var(--t-green)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           {confirmed && <span style={{ color: 'white', fontSize: '14px', fontWeight: 700 }}>✓</span>}
         </div>
-        <p style={{ color: 'hsl(0 0% 60%)', fontSize: '12px', ...mono, margin: 0, lineHeight: 1.6 }}>{confirmLabel}</p>
+        <p style={{ color: 'var(--t-muted)', fontSize: '12px', ...mono, margin: 0, lineHeight: 1.6 }}>{confirmLabel}</p>
       </div>
     </div>
   )

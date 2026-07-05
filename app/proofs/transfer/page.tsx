@@ -237,7 +237,7 @@ export default function ProofTransferPage() {
           <label style={{ display: 'block', background: 'var(--t-surface)', border: '2px dashed var(--t-border)', borderRadius: '20px', padding: '48px 24px', textAlign: 'center' as const, cursor: 'pointer' }}>
             <input type="file" accept=".ubtc,.json" style={{ display: 'none' }} onChange={handleProofUpload} />
             <div style={{ fontSize: '40px', marginBottom: '14px', lineHeight: 1 }}>📄</div>
-            <p style={{ color: 'hsl(0 0% 80%)', fontSize: '15px', fontWeight: '600', margin: '0 0 6px' }}>Upload your .ubtc proof file</p>
+            <p style={{ color: 'var(--t-text)', fontSize: '15px', fontWeight: '600', margin: '0 0 6px' }}>Upload your .ubtc proof file</p>
             <p style={{ color: 'var(--t-faint)', fontSize: '12px', ...mono, margin: '0 0 24px' }}>The proof you want to send to someone else</p>
             <div style={{ display: 'inline-block', background: 'var(--t-accent)', color: 'white', fontWeight: '700', fontSize: '13px', padding: '10px 28px', borderRadius: '10px' }}>
               Choose File
@@ -275,7 +275,7 @@ export default function ProofTransferPage() {
               <input ref={keyFileRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleKeyFileUpload} />
               <span style={{ fontSize: '24px', flexShrink: 0 }}>🔑</span>
               <div>
-                <p style={{ color: kyberKey ? 'var(--t-green)' : 'hsl(0 0% 75%)', fontSize: '13px', fontWeight: '600', margin: '0 0 3px' }}>
+                <p style={{ color: kyberKey ? 'var(--t-green)' : 'var(--t-muted)', fontSize: '13px', fontWeight: '600', margin: '0 0 3px' }}>
                   {kyberKey ? '✅ KEY 3 loaded' : 'Upload your key file'}
                 </p>
                 <p style={{ color: 'var(--t-faint)', fontSize: '11px', ...mono, margin: 0 }}>
@@ -331,7 +331,7 @@ export default function ProofTransferPage() {
               <button
                 onClick={lookupRecipient}
                 disabled={loading || !recipientInput}
-                style={{ width: '100%', padding: '12px', borderRadius: '12px', border: 'none', background: recipientInput && !loading ? 'var(--t-surface3)' : 'var(--t-border-subtle)', color: recipientInput && !loading ? 'hsl(0 0% 70%)' : 'var(--t-faint)', fontSize: '14px', fontWeight: '600', cursor: recipientInput && !loading ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)' }}
+                style={{ width: '100%', padding: '12px', borderRadius: '12px', border: 'none', background: recipientInput && !loading ? 'var(--t-surface3)' : 'var(--t-border-subtle)', color: recipientInput && !loading ? 'var(--t-text)' : 'var(--t-faint)', fontSize: '14px', fontWeight: '600', cursor: recipientInput && !loading ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)' }}
               >
                 {loading ? 'Searching...' : 'Find Recipient →'}
               </button>
@@ -379,7 +379,7 @@ export default function ProofTransferPage() {
                 { label: 'Amount', value: `${proofFile?.ownership?.ubtc_amount} UBTC`, color: 'var(--t-accent)' },
                 { label: 'From proof', value: proofFile?.proof_id?.slice(0, 20) + '...', color: 'var(--t-muted)' },
                 { label: 'New proof', value: newProof?.proof_id?.slice(0, 20) + '...', color: 'var(--t-green)' },
-                { label: 'Recipient', value: `@${recipientWallet?.username}`, color: 'hsl(0 0% 75%)' },
+                { label: 'Recipient', value: `@${recipientWallet?.username}`, color: 'var(--t-muted)' },
                 { label: 'Chain depth', value: `Hop ${newProof?.ownership_chain?.length}`, color: 'var(--t-orange)' },
                 { label: 'Encryption', value: 'Kyber1024 client-side', color: 'var(--t-green)' },
               ].map(row => (

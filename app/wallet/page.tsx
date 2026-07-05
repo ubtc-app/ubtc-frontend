@@ -343,12 +343,12 @@ function WalletContent() {
                   </div>
                 </div>
                 <div style={{ background: 'var(--t-surface)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
-                  <p style={{ color: 'hsl(0 0% 75%)', fontSize: '13px', ...mono, margin: '0 0 16px', lineHeight: '1.7' }}>This proof file is <strong style={{ color: 'var(--t-orange)' }}>digital cash</strong>. Anyone with both of these can redeem your Bitcoin:</p>
+                  <p style={{ color: 'var(--t-muted)', fontSize: '13px', ...mono, margin: '0 0 16px', lineHeight: '1.7' }}>This proof file is <strong style={{ color: 'var(--t-orange)' }}>digital cash</strong>. Anyone with both of these can redeem your Bitcoin:</p>
                   <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '8px', marginBottom: '16px' }}>
                     {[{ icon: '📄', label: 'This .ubtc proof file' }, { icon: '🔑', label: 'Your 24-word recovery phrase' }].map(item => (
                       <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--t-red-bg)', border: '1px solid hsl(0 84% 60% / 0.2)', borderRadius: '8px', padding: '12px 14px' }}>
                         <span style={{ fontSize: '18px' }}>{item.icon}</span>
-                        <p style={{ color: 'hsl(0 0% 82%)', fontSize: '13px', ...mono, margin: 0, fontWeight: 600 }}>{item.label}</p>
+                        <p style={{ color: 'var(--t-text)', fontSize: '13px', ...mono, margin: 0, fontWeight: 600 }}>{item.label}</p>
                       </div>
                     ))}
                   </div>
@@ -384,7 +384,7 @@ function WalletContent() {
                   ].map((item, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '10px' }}>
                       <span style={{ fontSize: '16px', flexShrink: 0 }}>{item.icon}</span>
-                      <p style={{ color: 'hsl(0 0% 70%)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.5' }}>{item.text}</p>
+                      <p style={{ color: 'var(--t-muted)', fontSize: '12px', ...mono, margin: 0, lineHeight: '1.5' }}>{item.text}</p>
                     </div>
                   ))}
                 </div>

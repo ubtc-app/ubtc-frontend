@@ -51,9 +51,9 @@ function RiskGauge({ pct, collateralRatio, liqPrice, alert120, alert115, ubtcAmo
         <line x1="140" y1="94" x2="124" y2="78" stroke="var(--t-bg)" strokeWidth="2" />
         <line x1="210" y1="55" x2="210" y2="33" stroke="var(--t-bg)" strokeWidth="2" />
         <line x1="280" y1="94" x2="296" y2="78" stroke="var(--t-bg)" strokeWidth="2" />
-        <text x="112" y="46" fontSize="9" textAnchor="middle" fill="hsl(0 0% 72%)" fontFamily={mono}>25%</text>
-        <text x="210" y="4" fontSize="9" textAnchor="middle" fill="hsl(0 0% 72%)" fontFamily={mono}>50%</text>
-        <text x="308" y="46" fontSize="9" textAnchor="middle" fill="hsl(0 0% 72%)" fontFamily={mono}>75%</text>
+        <text x="112" y="46" fontSize="9" textAnchor="middle" fill="var(--t-muted)" fontFamily={mono}>25%</text>
+        <text x="210" y="4" fontSize="9" textAnchor="middle" fill="var(--t-muted)" fontFamily={mono}>50%</text>
+        <text x="308" y="46" fontSize="9" textAnchor="middle" fill="var(--t-muted)" fontFamily={mono}>75%</text>
         <text x="78" y="170" fontSize="10" fontWeight="600" textAnchor="middle" fill="hsl(142 50% 28%)" fontFamily={mono}>Safe</text>
         <text x="342" y="170" fontSize="10" fontWeight="600" textAnchor="start" fill="hsl(38 65% 36%)" fontFamily={mono}>Caution</text>
         {c > 0 && <line x1={CX} y1={CY} x2={tip.x.toFixed(1)} y2={tip.y.toFixed(1)} stroke={needleColor} strokeWidth="2.5" strokeLinecap="round" />}
@@ -67,7 +67,7 @@ function RiskGauge({ pct, collateralRatio, liqPrice, alert120, alert115, ubtcAmo
           { label: 'Liquidation if BTC hits', value: c > 0 ? `$${liqPrice.toLocaleString()}` : '-', color: 'hsl(0 84% 62%)' },
         ].map(s => (
           <div key={s.label} style={{ background: 'var(--t-surface)', borderRadius: '10px', padding: '8px 10px' }}>
-            <p style={{ color: 'hsl(0 0% 62%)', fontSize: '9px', fontFamily: mono, textTransform: 'uppercase' as const, letterSpacing: '0.08em', margin: '0 0 4px' }}>{s.label}</p>
+            <p style={{ color: 'var(--t-muted)', fontSize: '9px', fontFamily: mono, textTransform: 'uppercase' as const, letterSpacing: '0.08em', margin: '0 0 4px' }}>{s.label}</p>
             <p style={{ color: s.color, fontSize: '13px', fontWeight: '700', fontFamily: mono, margin: 0 }}>{s.value}</p>
           </div>
         ))}
@@ -213,7 +213,7 @@ function MintContent() {
     }
   }
 
-  const inputSmall: any = { flex: 1, padding: '10px 12px', background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '10px', color: 'hsl(0 0% 80%)', fontSize: '13px', fontFamily: 'var(--font-mono)', outline: 'none', minWidth: 0 }
+  const inputSmall: any = { flex: 1, padding: '10px 12px', background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '10px', color: 'var(--t-text)', fontSize: '13px', fontFamily: 'var(--font-mono)', outline: 'none', minWidth: 0 }
 
   return (
     <div style={{ minHeight: '100vh', background: inst ? '#f5f7fa' : 'var(--q-bg)', fontFamily: 'var(--font-display)' }}>
@@ -337,9 +337,9 @@ function MintContent() {
 
                     <div style={{ background: 'var(--t-surface)', borderRadius: '12px', overflow: 'hidden', marginBottom: '14px' }}>
                       {[
-                        { label: 'First alert', sublabel: 'BTC drops to', price: gaugeAlert120, color: 'hsl(142 60% 38%)', bg: 'hsl(142 40% 6%)' },
-                        { label: 'Top up urgently', sublabel: 'BTC drops to', price: gaugeAlert115, color: 'hsl(38 80% 48%)', bg: 'hsl(38 40% 6%)' },
-                        { label: 'Auto-liquidation', sublabel: 'BTC drops to', price: gaugeLiqPrice, color: 'hsl(0 75% 58%)', bg: 'hsl(0 40% 6%)' },
+                        { label: 'First alert', sublabel: 'BTC drops to', price: gaugeAlert120, color: 'hsl(142 60% 38%)', bg: inst ? 'rgba(22,163,74,0.06)' : 'hsl(142 40% 6%)' },
+                        { label: 'Top up urgently', sublabel: 'BTC drops to', price: gaugeAlert115, color: 'hsl(38 80% 48%)', bg: inst ? 'rgba(217,119,6,0.06)' : 'hsl(38 40% 6%)' },
+                        { label: 'Auto-liquidation', sublabel: 'BTC drops to', price: gaugeLiqPrice, color: 'hsl(0 75% 58%)', bg: inst ? 'rgba(220,38,38,0.06)' : 'hsl(0 40% 6%)' },
                       ].map((item, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 14px', background: item.bg, borderBottom: i < 2 ? '1px solid var(--t-border-subtle)' : 'none' }}>
                           <div>
@@ -431,7 +431,7 @@ function MintContent() {
               ].map(item => (
                 <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 0', borderBottom: '1px solid var(--t-border-subtle)', gap: '12px', alignItems: 'center' }}>
                   <p style={{ color: 'var(--t-faint)', fontSize: '12px', ...mono, margin: 0 }}>{item.label}</p>
-                  <p style={{ color: 'hsl(0 0% 75%)', fontSize: '12px', fontWeight: '600', ...mono, margin: 0, textAlign: 'right' as const, wordBreak: 'break-all' as const }}>{item.value}</p>
+                  <p style={{ color: 'var(--t-text)', fontSize: '12px', fontWeight: '600', ...mono, margin: 0, textAlign: 'right' as const, wordBreak: 'break-all' as const }}>{item.value}</p>
                 </div>
               ))}
             </div>
